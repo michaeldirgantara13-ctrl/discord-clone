@@ -3,568 +3,55 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+
     <title>Discord Clone - Mobile</title>
+
     <script src="/socket.io/socket.io.js"></script>
 
     <style>
+
+        /* =========================================================
+           RESET
+           ========================================================= */
+
         * {
             box-sizing: border-box;
+            -webkit-tap-highlight-color: transparent;
         }
 
         html,
         body {
             width: 100%;
             height: 100%;
+            min-width: 0;
+            min-height: 0;
+
             margin: 0;
             padding: 0;
+
+            overflow: hidden;
         }
 
         body {
-            font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
+            font-family:
+                'Helvetica Neue',
+                Helvetica,
+                Arial,
+                sans-serif;
+
             background: #313338;
             color: #dbdee1;
-            overflow: hidden;
-            font-size: 16px;
-        }
 
-        .main-chat-container {
-            display: flex;
-            flex-direction: column;
-            width: 100%;
+            font-size: 16px;
+
+            width: 100vw;
             height: 100vh;
             height: 100dvh;
-            min-width: 0;
-            overflow: hidden;
-            background: #313338;
         }
+
 
         /* =========================================================
-           HEADER
-           ========================================================= */
-
-        .chat-header {
-            min-height: 58px;
-            height: auto;
-            padding: 5px 7px;
-            display: flex;
-            justify-content: flex-end;
-            align-items: center;
-            background: #313338;
-            border-bottom: 1px solid #1f2023;
-            box-shadow: 0 1px 2px rgba(0,0,0,0.2);
-            flex-shrink: 0;
-        }
-
-        .header-right-group {
-            width: 100%;
-            display: flex;
-            align-items: center;
-            justify-content: flex-end;
-            gap: 5px;
-            min-width: 0;
-        }
-
-        .vertical-controls {
-            flex: 1;
-            min-width: 0;
-            display: flex;
-            flex-direction: column;
-            gap: 3px;
-        }
-
-        select {
-            width: 100%;
-            min-width: 0;
-            height: 26px;
-            background: #1e1f22;
-            color: #dbdee1;
-            border: 1px solid #1f2023;
-            border-radius: 4px;
-            outline: none;
-            padding: 2px 5px;
-            font-size: 13px;
-        }
-
-        #memberBtn,
-        .chat-header button {
-            flex-shrink: 0;
-            white-space: nowrap;
-            border: none;
-            border-radius: 4px;
-            cursor: pointer;
-            font-size: 13px !important;
-            padding: 7px 8px !important;
-        }
-
-        /* =========================================================
-           CHAT
-           ========================================================= */
-
-        #chat-box {
-            flex: 1;
-            min-height: 0;
-            width: 100%;
-            overflow-y: auto;
-            overflow-x: hidden;
-            padding: 5px 6px;
-            background: #313338;
-            display: flex;
-            flex-direction: column;
-            gap: 0;
-            -webkit-overflow-scrolling: touch;
-        }
-
-        /* =========================================================
-           PESAN
-           ========================================================= */
-
-        .message-row {
-            width: 100%;
-            display: grid;
-            grid-template-columns: 42px minmax(0, 1fr);
-            grid-template-rows: auto auto auto;
-            column-gap: 9px;
-            align-items: start;
-            padding: 6px 2px;
-            margin: 0;
-            border-radius: 4px;
-            position: relative;
-            min-width: 0;
-        }
-
-        .message-row:hover {
-            background: #2e3035;
-        }
-
-        .avatar {
-            grid-column: 1;
-            grid-row: 1;
-            width: 42px;
-            height: 42px;
-            border-radius: 50%;
-            object-fit: cover;
-            flex-shrink: 0;
-            margin-top: 1px;
-        }
-
-        .message-content-wrapper {
-            grid-column: 2;
-            grid-row: 1;
-            width: 100%;
-            min-width: 0;
-            word-break: break-word;
-            overflow-wrap: anywhere;
-            margin: 0;
-            padding: 0;
-        }
-
-        .message-header {
-            display: block;
-            height: auto;
-            margin: 0;
-            padding: 0;
-            line-height: 20px;
-        }
-
-        .message-username {
-            display: block;
-            font-weight: 600;
-            color: white;
-            font-size: 16px;
-            line-height: 20px;
-            margin: 0;
-            padding: 0;
-        }
-
-        .message-text {
-            display: block;
-            color: #dbdee1;
-            font-size: 16px;
-            line-height: 1.4;
-            white-space: pre-wrap;
-            word-break: break-word;
-            overflow-wrap: anywhere;
-            margin: 0;
-            padding: 0;
-        }
-
-        .translation-text {
-            display: block;
-            color: #23a55a;
-            font-size: 13px;
-            line-height: 1.35;
-            margin: 3px 0 0 0;
-            padding: 0;
-            word-break: break-word;
-        }
-
-        .chat-img {
-            display: block;
-            max-width: 100%;
-            max-height: 300px;
-            border-radius: 7px;
-            margin: 6px 0 0 0;
-        }
-
-        .reply-indicator {
-            display: flex;
-            align-items: center;
-            gap: 4px;
-            color: #949ba4;
-            font-size: 12px;
-            line-height: 17px;
-            font-style: italic;
-            margin: 0 0 2px 0;
-            padding: 0;
-            overflow: hidden;
-        }
-
-        .reply-indicator b {
-            flex-shrink: 0;
-        }
-
-        /* =========================================================
-           ACTION BAR
-           
-           PENTING:
-           Sekarang bukan absolute.
-           Jadi benar-benar berada DI BAWAH pesan.
-           ========================================================= */
-
-        .message-actions {
-            grid-column: 2;
-            grid-row: 2;
-
-            display: none;
-            flex-wrap: wrap;
-            align-items: center;
-
-            width: fit-content;
-            max-width: 100%;
-
-            gap: 2px;
-            margin-top: 4px;
-            padding: 3px;
-
-            background: #2b2d31;
-            border: 1px solid #1f2023;
-            border-radius: 5px;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.3);
-
-            z-index: 100;
-        }
-
-        .message-row.show-actions .message-actions {
-            display: flex;
-        }
-
-        .action-icon-btn {
-            background: transparent;
-            border: none;
-            color: #b5bac1;
-            padding: 7px 8px;
-            cursor: pointer;
-            font-size: 17px;
-            line-height: 1;
-            border-radius: 4px;
-            min-width: 32px;
-            min-height: 32px;
-        }
-
-        .action-icon-btn:hover,
-        .action-icon-btn:active {
-            background: #404249;
-            color: white;
-        }
-
-        /* =========================================================
-           EMOJI PICKER
-           ========================================================= */
-
-        .emoji-picker-dialog {
-            grid-column: 2;
-            grid-row: 3;
-
-            display: none;
-
-            width: min(300px, calc(100vw - 65px));
-            max-height: 220px;
-
-            margin-top: 4px;
-            padding: 8px;
-
-            background: #313338;
-            border: 1px solid #1f2023;
-            border-radius: 7px;
-            box-shadow: 0 5px 15px rgba(0,0,0,0.5);
-
-            overflow-y: auto;
-            z-index: 200;
-        }
-
-        .emoji-picker-dialog.show {
-            display: block;
-        }
-
-        .emoji-grid {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 3px;
-        }
-
-        .emoji-item {
-            width: 36px;
-            height: 36px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 24px;
-            cursor: pointer;
-            border-radius: 4px;
-            user-select: none;
-        }
-
-        .emoji-item:hover {
-            background: #404249;
-        }
-
-        /* =========================================================
-           REACTION
-           ========================================================= */
-
-        .reaction-container {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 4px;
-            margin: 5px 0 0 0;
-            padding: 0;
-        }
-
-        .reaction-btn {
-            background: #2b2d31;
-            border: 1px solid transparent;
-            border-radius: 16px;
-            padding: 3px 8px;
-            font-size: 14px;
-            color: #b5bac1;
-            cursor: pointer;
-            display: flex;
-            align-items: center;
-            gap: 4px;
-        }
-
-        .reaction-btn:hover {
-            border-color: #4f545c;
-            background: #35373c;
-        }
-
-        .reaction-btn.active {
-            background: #313338;
-            border-color: #5865F2;
-            color: white;
-        }
-
-        /* =========================================================
-           EDIT
-           ========================================================= */
-
-        .edit-box {
-            display: flex;
-            flex-wrap: wrap;
-            align-items: center;
-            gap: 4px;
-            margin-top: 5px;
-            width: 100%;
-        }
-
-        .edit-input {
-            flex: 1;
-            min-width: 120px;
-            background: #1e1f22;
-            color: white;
-            border: 1px solid #5865F2;
-            border-radius: 4px;
-            outline: none;
-            padding: 7px;
-            font-size: 16px;
-        }
-
-        .edit-save,
-        .edit-cancel {
-            border: none;
-            border-radius: 4px;
-            cursor: pointer;
-            font-weight: bold;
-            font-size: 13px;
-            padding: 7px 9px;
-        }
-
-        .edit-save {
-            background: #248046;
-            color: white;
-        }
-
-        .edit-cancel {
-            background: #4e5058;
-            color: white;
-        }
-
-        /* =========================================================
-           BOTTOM INPUT
-           ========================================================= */
-
-        .bottom-panel {
-            width: 100%;
-            flex-shrink: 0;
-            padding: 0 6px 6px 6px;
-            background: #313338;
-        }
-
-        #typing-indicator {
-            height: 18px;
-            margin: 0 2px 2px;
-            color: #949ba4;
-            font-size: 12px;
-            line-height: 18px;
-            font-style: italic;
-        }
-
-        .input-wrapper {
-            width: 100%;
-            background: #383a40;
-            border: 1px solid transparent;
-            border-radius: 7px;
-            padding: 5px 7px;
-            display: flex;
-            flex-direction: column;
-        }
-
-        .input-wrapper:focus-within {
-            border-color: #4e5058;
-        }
-
-        .reply-preview-bar {
-            display: none;
-            width: 100%;
-            align-items: center;
-            justify-content: space-between;
-
-            background: #2b2d31;
-            border-radius: 4px;
-
-            padding: 5px 7px;
-            margin-bottom: 4px;
-
-            font-size: 12px;
-            color: #b5bac1;
-        }
-
-        .reply-preview-text {
-            flex: 1;
-            min-width: 0;
-            text-align: left;
-            margin-right: 7px;
-
-            white-space: nowrap;
-            overflow: hidden;
-            text-overflow: ellipsis;
-        }
-
-        .cancel-reply-btn {
-            flex-shrink: 0;
-            background: none;
-            border: none;
-            color: #949ba4;
-            cursor: pointer;
-            font-size: 20px;
-            padding: 0 4px;
-        }
-
-        .input-container {
-            width: 100%;
-            display: flex;
-            flex-direction: column;
-            gap: 3px;
-        }
-
-        textarea#messageInput {
-            width: 100%;
-            height: 42px;
-            min-height: 42px;
-            max-height: 120px;
-
-            background: transparent;
-            color: white;
-            border: none;
-            outline: none;
-            resize: none;
-
-            font-family: inherit;
-            font-size: 16px;
-            line-height: 1.35;
-
-            padding: 4px 0;
-            margin: 0;
-        }
-
-        textarea#messageInput::placeholder {
-            color: #949ba4;
-        }
-
-        .input-actions-bar {
-            width: 100%;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-
-            border-top: 1px solid #3f4248;
-            padding-top: 5px;
-        }
-
-        .file-upload-btn {
-            display: inline-flex;
-            align-items: center;
-            gap: 4px;
-
-            background: #4e5058;
-            color: white;
-
-            padding: 6px 8px;
-            border-radius: 4px;
-
-            font-size: 12px;
-            cursor: pointer;
-            font-weight: 500;
-        }
-
-        .file-upload-btn:hover {
-            background: #6d6f78;
-        }
-
-        .send-btn {
-            background: #5865F2;
-            color: white;
-            border: none;
-            border-radius: 4px;
-
-            padding: 6px 12px;
-
-            font-size: 13px;
-            font-weight: 600;
-            cursor: pointer;
-        }
-
-        .send-btn:hover {
-            background: #4752c4;
-        }
-
-        #fileName {
-            font-size: 10px !important;
-            margin-left: 3px !important;
-        }
-
-        /* =========================================================
-           PROFILE MODAL
+           PROFIL
            ========================================================= */
 
         #profile-modal {
@@ -572,6 +59,7 @@
             max-width: 420px;
 
             background: #313338;
+
             border: 1px solid #1f2023;
             border-radius: 9px;
 
@@ -579,7 +67,9 @@
             margin: 50px auto;
 
             text-align: center;
-            box-shadow: 0 8px 24px rgba(0,0,0,0.5);
+
+            box-shadow:
+                0 8px 24px rgba(0,0,0,0.5);
         }
 
         #profile-modal h3 {
@@ -601,59 +91,1087 @@
             padding: 11px 18px !important;
         }
 
+
+        /* =========================================================
+           MAIN APP
+           ========================================================= */
+
+        .main-chat-container {
+
+            display: flex;
+
+            flex-direction: column;
+
+            width: 100vw;
+            max-width: none;
+
+            height: 100vh;
+            height: 100dvh;
+
+            min-width: 0;
+            min-height: 0;
+
+            margin: 0;
+            padding: 0;
+
+            overflow: hidden;
+
+            background: #313338;
+        }
+
+
+        /* =========================================================
+           HEADER
+           ========================================================= */
+
+        .chat-header {
+
+            width: 100%;
+            max-width: none;
+
+            height: auto;
+            min-height: 54px;
+
+            flex: 0 0 auto;
+
+            padding:
+                4px
+                5px
+                4px
+                5px;
+
+            display: flex;
+
+            align-items: center;
+
+            background: #313338;
+
+            border-bottom:
+                1px solid #1f2023;
+
+            box-shadow:
+                0 1px 2px rgba(0,0,0,0.2);
+
+            overflow: hidden;
+        }
+
+
+        .header-right-group {
+
+            width: 100%;
+            max-width: none;
+
+            min-width: 0;
+
+            display: flex;
+
+            align-items: center;
+
+            justify-content: flex-end;
+
+            gap: 4px;
+        }
+
+
+        .vertical-controls {
+
+            flex: 1 1 auto;
+
+            width: 100%;
+
+            min-width: 0;
+
+            display: flex;
+
+            flex-direction: column;
+
+            gap: 2px;
+        }
+
+
+        select {
+
+            width: 100%;
+            min-width: 0;
+
+            height: 24px;
+
+            background: #1e1f22;
+
+            color: #dbdee1;
+
+            border:
+                1px solid #1f2023;
+
+            border-radius: 4px;
+
+            outline: none;
+
+            padding:
+                1px
+                5px;
+
+            font-size: 13px;
+        }
+
+
+        #memberBtn,
+        .chat-header button {
+
+            flex: 0 0 auto;
+
+            white-space: nowrap;
+
+            border: none;
+
+            border-radius: 4px;
+
+            cursor: pointer;
+
+            font-size: 13px !important;
+
+            padding:
+                7px
+                7px !important;
+        }
+
+
+        /* =========================================================
+           CHAT BOX
+           ========================================================= */
+
+        #chat-box {
+
+            width: 100%;
+            max-width: none;
+
+            flex: 1 1 0;
+
+            min-width: 0;
+            min-height: 0;
+
+            height: auto;
+
+            overflow-y: auto;
+            overflow-x: hidden;
+
+            padding:
+                4px
+                5px;
+
+            margin: 0;
+
+            background: #313338;
+
+            display: flex;
+
+            flex-direction: column;
+
+            gap: 0;
+
+            -webkit-overflow-scrolling: touch;
+
+            overscroll-behavior: contain;
+        }
+
+
+        /* =========================================================
+           MESSAGE ROW
+           ========================================================= */
+
+        .message-row {
+
+            width: 100%;
+            max-width: none;
+
+            min-width: 0;
+
+            display: grid;
+
+            grid-template-columns:
+                40px
+                minmax(0, 1fr);
+
+            grid-template-rows:
+                auto
+                auto
+                auto;
+
+            column-gap: 7px;
+
+            align-items: start;
+
+            padding:
+                5px
+                1px;
+
+            margin: 0;
+
+            border-radius: 4px;
+
+            position: relative;
+        }
+
+
+        .message-row:hover {
+            background: #2e3035;
+        }
+
+
+        /* =========================================================
+           AVATAR
+           ========================================================= */
+
+        .avatar {
+
+            grid-column: 1;
+            grid-row: 1;
+
+            width: 40px;
+            height: 40px;
+
+            border-radius: 50%;
+
+            object-fit: cover;
+
+            flex-shrink: 0;
+
+            margin-top: 1px;
+        }
+
+
+        /* =========================================================
+           MESSAGE CONTENT
+           ========================================================= */
+
+        .message-content-wrapper {
+
+            grid-column: 2;
+            grid-row: 1;
+
+            width: 100%;
+            max-width: none;
+
+            min-width: 0;
+
+            word-break: break-word;
+
+            overflow-wrap: anywhere;
+
+            margin: 0;
+            padding: 0;
+        }
+
+
+        .message-header {
+
+            display: block;
+
+            width: 100%;
+
+            height: auto;
+
+            margin: 0;
+            padding: 0;
+
+            line-height: 19px;
+        }
+
+
+        .message-username {
+
+            display: block;
+
+            width: 100%;
+
+            font-weight: 600;
+
+            color: white;
+
+            font-size: 16px;
+
+            line-height: 19px;
+
+            margin: 0;
+            padding: 0;
+        }
+
+
+        .message-text {
+
+            display: block;
+
+            width: 100%;
+
+            color: #dbdee1;
+
+            font-size: 16px;
+
+            line-height: 1.4;
+
+            white-space: pre-wrap;
+
+            word-break: break-word;
+
+            overflow-wrap: anywhere;
+
+            margin: 0;
+            padding: 0;
+        }
+
+
+        .translation-text {
+
+            display: block;
+
+            width: 100%;
+
+            color: #23a55a;
+
+            font-size: 13px;
+
+            line-height: 1.35;
+
+            margin:
+                3px
+                0
+                0
+                0;
+
+            padding: 0;
+
+            word-break: break-word;
+
+            overflow-wrap: anywhere;
+        }
+
+
+        .chat-img {
+
+            display: block;
+
+            width: auto;
+
+            max-width: 100%;
+
+            max-height: 300px;
+
+            border-radius: 7px;
+
+            margin:
+                6px
+                0
+                0
+                0;
+        }
+
+
+        /* =========================================================
+           REPLY INDICATOR
+           ========================================================= */
+
+        .reply-indicator {
+
+            display: flex;
+
+            align-items: center;
+
+            gap: 4px;
+
+            width: 100%;
+
+            color: #949ba4;
+
+            font-size: 12px;
+
+            line-height: 17px;
+
+            font-style: italic;
+
+            margin:
+                0
+                0
+                2px
+                0;
+
+            padding: 0;
+
+            overflow: hidden;
+        }
+
+
+        .reply-indicator b {
+            flex-shrink: 0;
+        }
+
+
+        /* =========================================================
+           ACTION BAR
+           ========================================================= */
+
+        .message-actions {
+
+            grid-column: 2;
+            grid-row: 2;
+
+            display: none;
+
+            flex-wrap: wrap;
+
+            align-items: center;
+
+            width: fit-content;
+
+            max-width: 100%;
+
+            gap: 2px;
+
+            margin-top: 4px;
+
+            padding: 3px;
+
+            background: #2b2d31;
+
+            border:
+                1px solid #1f2023;
+
+            border-radius: 5px;
+
+            box-shadow:
+                0 2px 4px rgba(0,0,0,0.3);
+
+            z-index: 100;
+        }
+
+
+        .message-row.show-actions
+        .message-actions {
+
+            display: flex;
+        }
+
+
+        .action-icon-btn {
+
+            background: transparent;
+
+            border: none;
+
+            color: #b5bac1;
+
+            padding:
+                7px
+                8px;
+
+            cursor: pointer;
+
+            font-size: 17px;
+
+            line-height: 1;
+
+            border-radius: 4px;
+
+            min-width: 32px;
+            min-height: 32px;
+        }
+
+
+        .action-icon-btn:hover,
+        .action-icon-btn:active {
+
+            background: #404249;
+
+            color: white;
+        }
+
+
+        /* =========================================================
+           EMOJI PICKER
+           ========================================================= */
+
+        .emoji-picker-dialog {
+
+            grid-column: 2;
+            grid-row: 3;
+
+            display: none;
+
+            width:
+                min(
+                    300px,
+                    calc(100vw - 55px)
+                );
+
+            max-width: 100%;
+
+            max-height: 220px;
+
+            margin-top: 4px;
+
+            padding: 8px;
+
+            background: #313338;
+
+            border:
+                1px solid #1f2023;
+
+            border-radius: 7px;
+
+            box-shadow:
+                0 5px 15px rgba(0,0,0,0.5);
+
+            overflow-y: auto;
+
+            z-index: 200;
+        }
+
+
+        .emoji-picker-dialog.show {
+            display: block;
+        }
+
+
+        .emoji-grid {
+
+            display: flex;
+
+            flex-wrap: wrap;
+
+            gap: 3px;
+        }
+
+
+        .emoji-item {
+
+            width: 36px;
+            height: 36px;
+
+            display: flex;
+
+            align-items: center;
+
+            justify-content: center;
+
+            font-size: 24px;
+
+            cursor: pointer;
+
+            border-radius: 4px;
+
+            user-select: none;
+        }
+
+
+        .emoji-item:hover {
+            background: #404249;
+        }
+
+
+        /* =========================================================
+           REACTION
+           ========================================================= */
+
+        .reaction-container {
+
+            display: flex;
+
+            flex-wrap: wrap;
+
+            gap: 4px;
+
+            width: 100%;
+
+            margin:
+                5px
+                0
+                0
+                0;
+
+            padding: 0;
+        }
+
+
+        .reaction-btn {
+
+            background: #2b2d31;
+
+            border:
+                1px solid transparent;
+
+            border-radius: 16px;
+
+            padding:
+                3px
+                8px;
+
+            font-size: 14px;
+
+            color: #b5bac1;
+
+            cursor: pointer;
+
+            display: flex;
+
+            align-items: center;
+
+            gap: 4px;
+        }
+
+
+        .reaction-btn:hover {
+
+            border-color: #4f545c;
+
+            background: #35373c;
+        }
+
+
+        .reaction-btn.active {
+
+            background: #313338;
+
+            border-color: #5865F2;
+
+            color: white;
+        }
+
+
+        /* =========================================================
+           EDIT
+           ========================================================= */
+
+        .edit-box {
+
+            display: flex;
+
+            flex-wrap: wrap;
+
+            align-items: center;
+
+            gap: 4px;
+
+            margin-top: 5px;
+
+            width: 100%;
+        }
+
+
+        .edit-input {
+
+            flex: 1;
+
+            min-width: 120px;
+
+            background: #1e1f22;
+
+            color: white;
+
+            border:
+                1px solid #5865F2;
+
+            border-radius: 4px;
+
+            outline: none;
+
+            padding: 7px;
+
+            font-size: 16px;
+        }
+
+
+        .edit-save,
+        .edit-cancel {
+
+            border: none;
+
+            border-radius: 4px;
+
+            cursor: pointer;
+
+            font-weight: bold;
+
+            font-size: 13px;
+
+            padding:
+                7px
+                9px;
+        }
+
+
+        .edit-save {
+
+            background: #248046;
+
+            color: white;
+        }
+
+
+        .edit-cancel {
+
+            background: #4e5058;
+
+            color: white;
+        }
+
+
+        /* =========================================================
+           BOTTOM PANEL
+           ========================================================= */
+
+        .bottom-panel {
+
+            width: 100%;
+            max-width: none;
+
+            flex: 0 0 auto;
+
+            padding:
+                0
+                5px
+                5px
+                5px;
+
+            margin: 0;
+
+            background: #313338;
+        }
+
+
+        #typing-indicator {
+
+            width: 100%;
+
+            height: 17px;
+
+            margin:
+                0
+                2px
+                1px;
+
+            color: #949ba4;
+
+            font-size: 12px;
+
+            line-height: 17px;
+
+            font-style: italic;
+
+            overflow: hidden;
+        }
+
+
+        .input-wrapper {
+
+            width: 100%;
+            max-width: none;
+
+            background: #383a40;
+
+            border:
+                1px solid transparent;
+
+            border-radius: 7px;
+
+            padding:
+                4px
+                6px;
+
+            display: flex;
+
+            flex-direction: column;
+        }
+
+
+        .input-wrapper:focus-within {
+
+            border-color: #4e5058;
+        }
+
+
+        .reply-preview-bar {
+
+            display: none;
+
+            width: 100%;
+
+            align-items: center;
+
+            justify-content: space-between;
+
+            background: #2b2d31;
+
+            border-radius: 4px;
+
+            padding:
+                5px
+                7px;
+
+            margin-bottom: 4px;
+
+            font-size: 12px;
+
+            color: #b5bac1;
+        }
+
+
+        .reply-preview-text {
+
+            flex: 1;
+
+            min-width: 0;
+
+            text-align: left;
+
+            margin-right: 7px;
+
+            white-space: nowrap;
+
+            overflow: hidden;
+
+            text-overflow: ellipsis;
+        }
+
+
+        .cancel-reply-btn {
+
+            flex-shrink: 0;
+
+            background: none;
+
+            border: none;
+
+            color: #949ba4;
+
+            cursor: pointer;
+
+            font-size: 20px;
+
+            padding:
+                0
+                4px;
+        }
+
+
+        .input-container {
+
+            width: 100%;
+
+            display: flex;
+
+            flex-direction: column;
+
+            gap: 3px;
+        }
+
+
+        textarea#messageInput {
+
+            display: block;
+
+            width: 100%;
+
+            height: 42px;
+
+            min-height: 42px;
+
+            max-height: 120px;
+
+            background: transparent;
+
+            color: white;
+
+            border: none;
+
+            outline: none;
+
+            resize: none;
+
+            font-family: inherit;
+
+            font-size: 16px;
+
+            line-height: 1.35;
+
+            padding:
+                4px
+                0;
+
+            margin: 0;
+        }
+
+
+        textarea#messageInput::placeholder {
+            color: #949ba4;
+        }
+
+
+        .input-actions-bar {
+
+            width: 100%;
+
+            display: flex;
+
+            justify-content: space-between;
+
+            align-items: center;
+
+            border-top:
+                1px solid #3f4248;
+
+            padding-top: 5px;
+        }
+
+
+        .file-upload-btn {
+
+            display: inline-flex;
+
+            align-items: center;
+
+            gap: 4px;
+
+            background: #4e5058;
+
+            color: white;
+
+            padding:
+                6px
+                8px;
+
+            border-radius: 4px;
+
+            font-size: 12px;
+
+            cursor: pointer;
+
+            font-weight: 500;
+        }
+
+
+        .file-upload-btn:hover {
+            background: #6d6f78;
+        }
+
+
+        .send-btn {
+
+            background: #5865F2;
+
+            color: white;
+
+            border: none;
+
+            border-radius: 4px;
+
+            padding:
+                6px
+                12px;
+
+            font-size: 13px;
+
+            font-weight: 600;
+
+            cursor: pointer;
+        }
+
+
+        .send-btn:hover {
+            background: #4752c4;
+        }
+
+
+        #fileName {
+
+            font-size: 10px !important;
+
+            margin-left: 3px !important;
+        }
+
+
         /* =========================================================
            MEMBER DIALOG
            ========================================================= */
 
         .modal-overlay {
+
             display: none;
+
             position: fixed;
+
             inset: 0;
-            width: 100%;
-            height: 100%;
-            background: rgba(0,0,0,0.7);
+
+            width: 100vw;
+            height: 100vh;
+            height: 100dvh;
+
+            background:
+                rgba(0,0,0,0.7);
+
             z-index: 300;
         }
 
+
         .dialog-box {
-            width: calc(100% - 24px);
+
+            width:
+                calc(100% - 24px);
+
             max-width: 420px;
+
             max-height: 80dvh;
 
             overflow-y: auto;
 
-            margin: 45px auto;
+            margin:
+                45px
+                auto;
+
             padding: 18px;
 
             background: #313338;
-            border: 1px solid #1f2023;
+
+            border:
+                1px solid #1f2023;
+
             border-radius: 9px;
 
             position: relative;
         }
 
+
         .dialog-box h3 {
+
             margin-top: 0 !important;
+
             padding-bottom: 9px !important;
+
             font-size: 22px !important;
         }
 
+
         .close-dialog {
+
             position: absolute;
+
             top: 9px;
             right: 12px;
 
             background: none;
+
             border: none;
 
             color: #949ba4;
+
             font-size: 27px;
+
             cursor: pointer;
         }
+
 
         .close-dialog:hover {
             color: white;
         }
+
 
         /* =========================================================
            INPUT UMUM
@@ -661,116 +1179,384 @@
 
         input[type="text"],
         input[type="file"] {
+
             width: 100%;
 
             background: #1e1f22;
+
             color: white;
 
-            border: 1px solid #1f2023;
+            border:
+                1px solid #1f2023;
+
             border-radius: 4px;
 
             outline: none;
 
             padding: 9px;
+
             font-size: 16px;
         }
 
+
         /* =========================================================
-           HP SANGAT KECIL
+           HP
+           ========================================================= */
+
+        @media (max-width: 600px) {
+
+            html,
+            body {
+
+                width: 100%;
+                height: 100%;
+
+                width: 100vw;
+
+                height: 100vh;
+                height: 100dvh;
+            }
+
+
+            .main-chat-container {
+
+                width: 100vw;
+
+                height: 100vh;
+                height: 100dvh;
+
+                min-width: 0;
+                min-height: 0;
+            }
+
+
+            .chat-header {
+
+                width: 100vw;
+
+                min-height: 52px;
+
+                padding:
+                    3px
+                    4px;
+            }
+
+
+            .header-right-group {
+
+                width: 100%;
+
+                gap: 3px;
+            }
+
+
+            .vertical-controls {
+
+                min-width: 0;
+
+                gap: 2px;
+            }
+
+
+            select {
+
+                height: 23px;
+
+                font-size: 12px;
+
+                padding:
+                    1px
+                    4px;
+            }
+
+
+            #memberBtn,
+            .chat-header button {
+
+                font-size: 12px !important;
+
+                padding:
+                    6px !important;
+            }
+
+
+            #chat-box {
+
+                width: 100vw;
+
+                flex:
+                    1
+                    1
+                    0;
+
+                min-height: 0;
+
+                padding:
+                    3px
+                    4px;
+            }
+
+
+            .message-row {
+
+                width: 100%;
+
+                grid-template-columns:
+                    40px
+                    minmax(0,1fr);
+
+                column-gap: 7px;
+
+                padding:
+                    5px
+                    1px;
+            }
+
+
+            .message-content-wrapper {
+
+                width: 100%;
+
+                min-width: 0;
+            }
+
+
+            .message-username {
+
+                font-size: 15px;
+
+                line-height: 19px;
+            }
+
+
+            .message-text {
+
+                font-size: 15px;
+
+                line-height: 1.4;
+            }
+
+
+            .translation-text {
+
+                font-size: 12px;
+            }
+
+
+            .avatar {
+
+                width: 40px;
+                height: 40px;
+            }
+
+
+            .message-actions {
+
+                max-width:
+                    calc(100vw - 50px);
+            }
+
+
+            .action-icon-btn {
+
+                font-size: 16px;
+
+                min-width: 30px;
+                min-height: 30px;
+
+                padding:
+                    6px
+                    7px;
+            }
+
+
+            .emoji-picker-dialog {
+
+                width:
+                    min(
+                        300px,
+                        calc(100vw - 50px)
+                    );
+            }
+
+
+            .bottom-panel {
+
+                width: 100vw;
+
+                padding:
+                    0
+                    4px
+                    4px;
+            }
+
+
+            textarea#messageInput {
+
+                height: 40px;
+
+                min-height: 40px;
+
+                font-size: 15px;
+            }
+
+
+            .file-upload-btn {
+
+                font-size: 11px;
+
+                padding:
+                    6px
+                    7px;
+            }
+
+
+            .send-btn {
+
+                font-size: 12px;
+
+                padding:
+                    6px
+                    10px;
+            }
+        }
+
+
+        /* =========================================================
+           HP KECIL
            ========================================================= */
 
         @media (max-width: 380px) {
 
             .chat-header {
-                min-height: 55px;
-                padding: 4px 5px;
+
+                min-height: 50px;
+
+                padding:
+                    3px;
             }
+
 
             .header-right-group {
-                gap: 3px;
-            }
 
-            .vertical-controls {
                 gap: 2px;
             }
 
+
             select {
-                height: 24px;
-                font-size: 12px;
-                padding: 1px 4px;
+
+                height: 22px;
+
+                font-size: 11px;
             }
+
 
             #memberBtn,
             .chat-header button {
-                font-size: 12px !important;
-                padding: 6px !important;
+
+                font-size: 11px !important;
+
+                padding:
+                    5px !important;
             }
+
 
             #chat-box {
-                padding: 4px 5px;
+
+                padding:
+                    2px
+                    3px;
             }
+
 
             .message-row {
-                grid-template-columns: 38px minmax(0, 1fr);
-                column-gap: 7px;
-                padding: 5px 1px;
+
+                grid-template-columns:
+                    37px
+                    minmax(0,1fr);
+
+                column-gap: 6px;
+
+                padding:
+                    4px
+                    1px;
             }
+
 
             .avatar {
-                width: 38px;
-                height: 38px;
+
+                width: 37px;
+                height: 37px;
             }
+
 
             .message-username {
-                font-size: 15px;
-                line-height: 19px;
+
+                font-size: 14px;
+
+                line-height: 18px;
             }
+
 
             .message-text {
-                font-size: 15px;
+
+                font-size: 14px;
             }
+
 
             .translation-text {
-                font-size: 12px;
+
+                font-size: 11px;
             }
 
-            .message-actions {
-                max-width: calc(100vw - 50px);
-            }
-
-            .action-icon-btn {
-                font-size: 16px;
-                min-width: 29px;
-                min-height: 29px;
-                padding: 6px 7px;
-            }
 
             .bottom-panel {
-                padding: 0 5px 5px;
+
+                padding:
+                    0
+                    3px
+                    3px;
             }
+
 
             textarea#messageInput {
-                height: 40px;
-                min-height: 40px;
-                font-size: 15px;
-            }
 
-            .file-upload-btn {
-                font-size: 11px;
-                padding: 6px 7px;
-            }
+                height: 38px;
 
-            .send-btn {
-                font-size: 12px;
-                padding: 6px 10px;
+                min-height: 38px;
+
+                font-size: 14px;
             }
         }
+
+
+        /* =========================================================
+           SAFE AREA IPHONE / HP MODERN
+           ========================================================= */
+
+        @supports (padding-bottom: env(safe-area-inset-bottom)) {
+
+            .bottom-panel {
+
+                padding-bottom:
+                    max(
+                        4px,
+                        env(safe-area-inset-bottom)
+                    );
+            }
+        }
+
     </style>
 </head>
 
+
 <body>
 
-    <!-- PROFIL -->
+
+    <!-- =========================================================
+         PROFIL
+         ========================================================= -->
+
     <div id="profile-modal">
 
         <h3 style="color:white;margin-top:0;">
@@ -787,7 +1573,12 @@
         <br>
 
         <label
-            style="display:block;margin-bottom:6px;color:#b5bac1;text-align:left;"
+            style="
+                display:block;
+                margin-bottom:6px;
+                color:#b5bac1;
+                text-align:left;
+            "
         >
             Pilih Foto Profil:
         </label>
@@ -803,7 +1594,15 @@
 
         <button
             onclick="joinChat()"
-            style="background:#5865F2;color:white;border:none;border-radius:4px;font-weight:bold;cursor:pointer;width:100%;"
+            style="
+                background:#5865F2;
+                color:white;
+                border:none;
+                border-radius:4px;
+                font-weight:bold;
+                cursor:pointer;
+                width:100%;
+            "
         >
             Gabung Chat
         </button>
@@ -811,8 +1610,14 @@
     </div>
 
 
-    <!-- MEMBER DIALOG -->
-    <div id="memberDialog" class="modal-overlay">
+    <!-- =========================================================
+         MEMBER DIALOG
+         ========================================================= -->
+
+    <div
+        id="memberDialog"
+        class="modal-overlay"
+    >
 
         <div class="dialog-box">
 
@@ -824,7 +1629,11 @@
             </button>
 
             <h3
-                style="margin-top:0;color:white;border-bottom:1px solid #3f4248;"
+                style="
+                    margin-top:0;
+                    color:white;
+                    border-bottom:1px solid #3f4248;
+                "
             >
                 Anggota Online
             </h3>
@@ -839,12 +1648,18 @@
     </div>
 
 
-    <!-- CHAT -->
+    <!-- =========================================================
+         CHAT APP
+         ========================================================= -->
+
     <div
         id="app-container"
         style="display:none;"
         class="main-chat-container"
     >
+
+
+        <!-- HEADER -->
 
         <div class="chat-header">
 
@@ -856,41 +1671,97 @@
                         id="channelSelect"
                         onchange="changeChannelHeader()"
                     >
-                        <option value="umum"># umum</option>
-                        <option value="gaming"># gaming</option>
-                        <option value="musik"># musik</option>
+
+                        <option value="umum">
+                            # umum
+                        </option>
+
+                        <option value="gaming">
+                            # gaming
+                        </option>
+
+                        <option value="musik">
+                            # musik
+                        </option>
+
                     </select>
+
 
                     <select
                         id="targetLang"
                         onchange="changeLanguage()"
                         title="Pilih Bahasa Terjemahan"
                     >
-                        <option value="id">🇮🇩 Indonesia</option>
-                        <option value="en">🇬🇧 English</option>
-                        <option value="ms">🇲🇾 Melayu</option>
-                        <option value="jv">Jawa</option>
-                        <option value="su">Sunda</option>
-                        <option value="zh-CN">🇨🇳 Mandarin</option>
-                        <option value="ja">🇯🇵 Japanese</option>
-                        <option value="ko">🇰🇷 Korean</option>
-                        <option value="ar">🇸🇦 Arabic</option>
-                        <option value="es">🇪🇸 Spanish</option>
+
+                        <option value="id">
+                            🇮🇩 Indonesia
+                        </option>
+
+                        <option value="en">
+                            🇬🇧 English
+                        </option>
+
+                        <option value="ms">
+                            🇲🇾 Melayu
+                        </option>
+
+                        <option value="jv">
+                            Jawa
+                        </option>
+
+                        <option value="su">
+                            Sunda
+                        </option>
+
+                        <option value="zh-CN">
+                            🇨🇳 Mandarin
+                        </option>
+
+                        <option value="ja">
+                            🇯🇵 Japanese
+                        </option>
+
+                        <option value="ko">
+                            🇰🇷 Korean
+                        </option>
+
+                        <option value="ar">
+                            🇸🇦 Arabic
+                        </option>
+
+                        <option value="es">
+                            🇪🇸 Spanish
+                        </option>
+
                     </select>
 
                 </div>
 
+
                 <button
                     onclick="toggleMemberDialog()"
                     id="memberBtn"
-                    style="background:#35373c;color:#dbdee1;border:none;border-radius:4px;cursor:pointer;"
+                    style="
+                        background:#35373c;
+                        color:#dbdee1;
+                        border:none;
+                        border-radius:4px;
+                        cursor:pointer;
+                    "
                 >
                     👥 (0)
                 </button>
 
+
                 <button
                     onclick="clearAllChat()"
-                    style="background:#da373c;color:white;border:none;border-radius:4px;cursor:pointer;"
+                    style="
+                        background:#da373c;
+                        color:white;
+                        border:none;
+                        border-radius:4px;
+                        cursor:pointer;
+                    "
                 >
                     🗑️ Hapus
                 </button>
@@ -900,15 +1771,20 @@
         </div>
 
 
+        <!-- CHAT -->
+
         <div id="chat-box"></div>
 
 
         <!-- INPUT -->
+
         <div class="bottom-panel">
 
             <div id="typing-indicator"></div>
 
+
             <div class="input-wrapper">
+
 
                 <div
                     id="replyPreviewBar"
@@ -922,6 +1798,7 @@
                         Membalas ke...
                     </span>
 
+
                     <button
                         class="cancel-reply-btn"
                         onclick="cancelReply()"
@@ -933,6 +1810,7 @@
 
 
                 <div class="input-container">
+
 
                     <textarea
                         id="messageInput"
@@ -954,6 +1832,7 @@
                                 onchange="updateFileLabel()"
                             >
 
+
                             <label
                                 for="imageInput"
                                 id="fileBtn"
@@ -961,6 +1840,7 @@
                             >
                                 📎 Unggah Gambar
                             </label>
+
 
                             <span
                                 id="fileName"
@@ -990,6 +1870,10 @@
     </div>
 
 
+    <!-- =========================================================
+         JAVASCRIPT
+         ========================================================= -->
+
     <script>
 
         /* =========================
@@ -998,11 +1882,18 @@
 
         const socket = io();
 
+
         let username = '';
-        let userAvatar = 'https://via.placeholder.com/64';
+
+        let userAvatar =
+            'https://via.placeholder.com/64';
+
         let myTargetLang = 'id';
+
         let messageHistory = [];
+
         let typingTimeout = null;
+
         let replyingToId = null;
 
 
@@ -1010,24 +1901,31 @@
            SOCKET CONNECTION
            ========================= */
 
-        socket.on('connect', function() {
+        socket.on(
+            'connect',
+            function() {
 
-            console.log(
-                'Socket terhubung:',
-                socket.id
-            );
-
-            if (username) {
-
-                socket.emit(
-                    'set_user_profile',
-                    {
-                        username: username,
-                        avatar: userAvatar
-                    }
+                console.log(
+                    'Socket terhubung:',
+                    socket.id
                 );
+
+                if (username) {
+
+                    socket.emit(
+                        'set_user_profile',
+                        {
+                            username:
+                                username,
+
+                            avatar:
+                                userAvatar
+                        }
+                    );
+                }
+
             }
-        });
+        );
 
 
         socket.on(
@@ -1047,30 +1945,35 @@
            LOAD PROFIL
            ========================= */
 
-        window.onload = function() {
+        window.onload =
+            function() {
 
-            const savedName =
-                localStorage.getItem(
-                    'chat_username'
-                );
+                const savedName =
+                    localStorage.getItem(
+                        'chat_username'
+                    );
 
-            const savedAvatar =
-                localStorage.getItem(
-                    'chat_avatar'
-                );
+                const savedAvatar =
+                    localStorage.getItem(
+                        'chat_avatar'
+                    );
 
-            if (savedName) {
 
-                username = savedName;
+                if (savedName) {
 
-                if (savedAvatar) {
-                    userAvatar =
-                        savedAvatar;
+                    username =
+                        savedName;
+
+                    if (savedAvatar) {
+
+                        userAvatar =
+                            savedAvatar;
+                    }
+
+                    registerAndEnter();
                 }
 
-                registerAndEnter();
-            }
-        };
+            };
 
 
         /* =========================
@@ -1083,6 +1986,7 @@
                 document.getElementById(
                     'memberDialog'
                 );
+
 
             modal.style.display =
                 modal.style.display === 'block'
@@ -1105,6 +2009,7 @@
                     .value
                     .trim();
 
+
             if (!nameVal) {
 
                 alert(
@@ -1114,12 +2019,16 @@
                 return;
             }
 
-            username = nameVal;
+
+            username =
+                nameVal;
+
 
             localStorage.setItem(
                 'chat_username',
                 username
             );
+
 
             const avatarFile =
                 document
@@ -1128,10 +2037,12 @@
                     )
                     .files[0];
 
+
             if (avatarFile) {
 
                 const reader =
                     new FileReader();
+
 
                 reader.onload =
                     function(e) {
@@ -1139,13 +2050,17 @@
                         userAvatar =
                             e.target.result;
 
+
                         localStorage.setItem(
                             'chat_avatar',
                             userAvatar
                         );
 
+
                         registerAndEnter();
+
                     };
+
 
                 reader.readAsDataURL(
                     avatarFile
@@ -1158,8 +2073,10 @@
                     userAvatar
                 );
 
+
                 registerAndEnter();
             }
+
         }
 
 
@@ -1170,19 +2087,26 @@
                 socket.emit(
                     'set_user_profile',
                     {
-                        username: username,
-                        avatar: userAvatar
+                        username:
+                            username,
+
+                        avatar:
+                            userAvatar
                     }
                 );
             }
 
+
             document.getElementById(
                 'profile-modal'
-            ).style.display = 'none';
+            ).style.display =
+                'none';
+
 
             document.getElementById(
                 'app-container'
-            ).style.display = 'flex';
+            ).style.display =
+                'flex';
         }
 
 
@@ -1197,14 +2121,17 @@
                     'channelSelect'
                 ).value;
 
+
             document.getElementById(
                 'messageInput'
             ).placeholder =
                 `Kirim pesan ke #${channelName}...`;
 
+
             closeAllMessageActions();
 
             cancelReply();
+
 
             socket.emit(
                 'switch_channel',
@@ -1224,10 +2151,12 @@
                     'imageInput'
                 );
 
+
             const fileNameSpan =
                 document.getElementById(
                     'fileName'
                 );
+
 
             if (
                 imageInput.files.length > 0
@@ -1258,11 +2187,13 @@
                 function(ch) {
 
                     return {
+
                         '&': '&amp;',
                         '<': '&lt;',
                         '>': '&gt;',
                         '"': '&quot;',
                         "'": '&#39;'
+
                     }[ch];
 
                 }
@@ -1278,6 +2209,7 @@
 
             const escaped =
                 escapeHtml(text);
+
 
             return escaped.replace(
                 /(\b(https?|ftp|file):\/\/[-A-Z0-9+&@#\/%?=~_|!:,.;]*[-A-Z0-9+&@#\/%=~_|])/ig,
@@ -1300,6 +2232,7 @@
                 return '';
             }
 
+
             try {
 
                 const res =
@@ -1307,14 +2240,18 @@
                         `https://translate.googleapis.com/translate_a/single?client=gtx&sl=auto&tl=${targetLang}&dt=t&q=${encodeURIComponent(text)}`
                     );
 
+
                 const data =
                     await res.json();
 
+
                 return data[0]
                     .map(
-                        item => item[0]
+                        item =>
+                            item[0]
                     )
                     .join('');
+
 
             } catch (err) {
 
@@ -1337,39 +2274,52 @@
                         window.webkitAudioContext
                     )();
 
+
                 const osc =
                     audioCtx.createOscillator();
+
 
                 const gain =
                     audioCtx.createGain();
 
-                osc.type = 'sine';
+
+                osc.type =
+                    'sine';
+
 
                 osc.frequency.value =
                     587.33;
+
 
                 gain.gain.setValueAtTime(
                     0.1,
                     audioCtx.currentTime
                 );
 
+
                 gain.gain.exponentialRampToValueAtTime(
                     0.001,
                     audioCtx.currentTime + 0.15
                 );
 
+
                 osc.connect(gain);
+
                 gain.connect(
                     audioCtx.destination
                 );
 
+
                 osc.start();
+
 
                 osc.stop(
                     audioCtx.currentTime + 0.15
                 );
 
+
             } catch (e) {}
+
         }
 
 
@@ -1383,30 +2333,41 @@
         ) {
 
             if (event) {
+
                 event.preventDefault();
+
                 event.stopPropagation();
             }
 
+
             const msg =
                 messageHistory.find(
-                    m => String(m.id) === String(id)
+                    m =>
+                        String(m.id) ===
+                        String(id)
                 );
+
 
             if (!msg) {
                 return;
             }
 
-            replyingToId = id;
+
+            replyingToId =
+                id;
+
 
             const previewBar =
                 document.getElementById(
                     'replyPreviewBar'
                 );
 
+
             const previewText =
                 document.getElementById(
                     'replyPreviewText'
                 );
+
 
             if (
                 previewBar &&
@@ -1416,31 +2377,39 @@
                 previewText.textContent =
                     `Membalas ke ${msg.sender}: ${msg.original || '[Gambar]'}`;
 
+
                 previewBar.style.display =
                     'flex';
             }
 
+
             closeAllMessageActions();
+
 
             document.getElementById(
                 'messageInput'
             ).focus();
+
         }
 
 
         function cancelReply() {
 
-            replyingToId = null;
+            replyingToId =
+                null;
+
 
             const previewBar =
                 document.getElementById(
                     'replyPreviewBar'
                 );
 
+
             const previewText =
                 document.getElementById(
                     'replyPreviewText'
                 );
+
 
             if (previewBar) {
 
@@ -1448,11 +2417,13 @@
                     'none';
             }
 
+
             if (previewText) {
 
                 previewText.textContent =
                     '';
             }
+
         }
 
 
@@ -1466,25 +2437,32 @@
         ) {
 
             if (event) {
+
                 event.preventDefault();
+
                 event.stopPropagation();
             }
+
 
             const row =
                 document.getElementById(
                     `message-container-${id}`
                 );
 
+
             if (!row) {
                 return;
             }
+
 
             const wasOpen =
                 row.classList.contains(
                     'show-actions'
                 );
 
+
             closeAllMessageActions();
+
 
             if (!wasOpen) {
 
@@ -1492,6 +2470,7 @@
                     'show-actions'
                 );
             }
+
         }
 
 
@@ -1507,8 +2486,10 @@
                         el.classList.remove(
                             'show-actions'
                         );
+
                     }
                 );
+
 
             document
                 .querySelectorAll(
@@ -1520,6 +2501,7 @@
                         el.classList.remove(
                             'show'
                         );
+
                     }
                 );
         }
@@ -1535,30 +2517,38 @@
         ) {
 
             if (event) {
+
                 event.preventDefault();
+
                 event.stopPropagation();
             }
+
 
             const row =
                 document.getElementById(
                     `message-container-${id}`
                 );
 
+
             const picker =
                 document.getElementById(
                     `emoji-picker-${id}`
                 );
 
+
             if (!row || !picker) {
                 return;
             }
+
 
             const wasOpen =
                 picker.classList.contains(
                     'show'
                 );
 
+
             closeAllMessageActions();
+
 
             if (!wasOpen) {
 
@@ -1566,10 +2556,12 @@
                     'show-actions'
                 );
 
+
                 picker.classList.add(
                     'show'
                 );
             }
+
         }
 
 
@@ -1586,32 +2578,45 @@
             if (event) {
 
                 event.preventDefault();
+
                 event.stopPropagation();
             }
 
-            id = String(id);
-            emoji = String(emoji);
+
+            id =
+                String(id);
+
+            emoji =
+                String(emoji);
+
 
             if (!socket.connected) {
                 return;
             }
 
+
             if (!id || !emoji) {
                 return;
             }
 
+
             socket.emit(
                 'add_reaction',
                 {
-                    id: id,
-                    emoji: emoji
+                    id:
+                        id,
+
+                    emoji:
+                        emoji
                 }
             );
+
 
             const picker =
                 document.getElementById(
                     `emoji-picker-${id}`
                 );
+
 
             if (picker) {
 
@@ -1619,11 +2624,12 @@
                     'show'
                 );
             }
+
         }
 
 
         /* =========================
-           CLOSE ACTION
+           OUTSIDE CLICK
            ========================= */
 
         window.addEventListener(
@@ -1635,10 +2641,13 @@
                         '.message-row'
                     )
                 ) {
+
                     return;
                 }
 
+
                 closeAllMessageActions();
+
             }
         );
 
@@ -1654,11 +2663,15 @@
                     'chat-box'
                 );
 
+
             if (!chatBox) {
                 return;
             }
 
-            chatBox.innerHTML = '';
+
+            chatBox.innerHTML =
+                '';
+
 
             for (
                 const data
@@ -1668,7 +2681,9 @@
                 const id =
                     String(data.id);
 
-                let contentHtml = '';
+
+                let contentHtml =
+                    '';
 
 
                 /* =========================
@@ -1679,18 +2694,31 @@
                     data.replyTo
                         ? messageHistory.find(
                             m =>
-                                String(m.id) === String(data.replyTo)
+                                String(m.id) ===
+                                String(data.replyTo)
                         )
                         : null;
+
 
                 if (parentMsg) {
 
                     contentHtml += `
+
                         <div class="reply-indicator">
+
                             ↪️
-                            <b>${escapeHtml(parentMsg.sender)}</b>:
-                            ${escapeHtml(parentMsg.original || '[Gambar]')}
+
+                            <b>
+                                ${escapeHtml(parentMsg.sender)}
+                            </b>:
+
+                            ${escapeHtml(
+                                parentMsg.original ||
+                                '[Gambar]'
+                            )}
+
                         </div>
+
                     `;
                 }
 
@@ -1707,26 +2735,43 @@
                             myTargetLang
                         );
 
+
                     contentHtml += `
+
                         <div
                             class="message-text"
                             id="msg-text-${escapeHtml(id)}"
-                        >${linkify(data.original)}${data.edited ? ' <small>(diedit)</small>' : ''}</div>
+                        >
+                            ${linkify(data.original)}
+                            ${data.edited
+                                ? ' <small>(diedit)</small>'
+                                : ''
+                            }
+                        </div>
+
                     `;
+
 
                     if (
                         translated &&
-                        translated !== data.original
+                        translated !==
+                        data.original
                     ) {
 
                         contentHtml += `
-                            <small class="translation-text">
+
+                            <small
+                                class="translation-text"
+                            >
                                 🌐
-                                (Terjemahan [${escapeHtml(myTargetLang)}]:
+                                (Terjemahan
+                                [${escapeHtml(myTargetLang)}]:
                                 ${linkify(translated)})
                             </small>
+
                         `;
                     }
+
                 }
 
 
@@ -1737,10 +2782,12 @@
                 if (data.image) {
 
                     contentHtml += `
+
                         <img
                             src="${escapeHtml(data.image)}"
                             class="chat-img"
                         >
+
                     `;
                 }
 
@@ -1749,7 +2796,9 @@
                    REACTION
                    ========================= */
 
-                let reactionsHtml = '';
+                let reactionsHtml =
+                    '';
+
 
                 if (
                     data.reactions &&
@@ -1760,6 +2809,7 @@
 
                     reactionsHtml =
                         '<div class="reaction-container">';
+
 
                     for (
                         const [
@@ -1779,25 +2829,44 @@
                                 username
                             );
 
+
                         const safeId =
                             JSON.stringify(id);
 
+
                         const safeEmoji =
-                            JSON.stringify(emoji);
+                            JSON.stringify(
+                                emoji
+                            );
+
 
                         reactionsHtml += `
+
                             <button
                                 type="button"
                                 class="reaction-btn ${hasReacted ? 'active' : ''}"
                                 onclick='addReaction(${safeId}, ${safeEmoji}, event)'
                             >
+
                                 ${escapeHtml(emoji)}
-                                <span class="reaction-count">
-                                    ${Array.isArray(usersList) ? usersList.length : 0}
+
+                                <span
+                                    class="reaction-count"
+                                >
+                                    ${
+                                        Array.isArray(
+                                            usersList
+                                        )
+                                            ? usersList.length
+                                            : 0
+                                    }
                                 </span>
+
                             </button>
+
                         `;
                     }
+
 
                     reactionsHtml +=
                         '</div>';
@@ -1805,10 +2874,11 @@
 
 
                 /* =========================
-                   ACTION BUTTON
+                   ACTION BUTTONS
                    ========================= */
 
                 let actionButtonsHtml = `
+
                     <button
                         type="button"
                         class="action-icon-btn"
@@ -1817,9 +2887,12 @@
                     >
                         ↩️
                     </button>
+
                 `;
 
+
                 actionButtonsHtml += `
+
                     <button
                         type="button"
                         class="action-icon-btn"
@@ -1828,9 +2901,12 @@
                     >
                         😀
                     </button>
+
                 `;
 
+
                 actionButtonsHtml += `
+
                     <button
                         type="button"
                         class="action-icon-btn"
@@ -1839,7 +2915,9 @@
                     >
                         📋
                     </button>
+
                 `;
+
 
                 if (
                     data.sender === username &&
@@ -1847,6 +2925,7 @@
                 ) {
 
                     actionButtonsHtml += `
+
                         <button
                             type="button"
                             class="action-icon-btn"
@@ -1855,14 +2934,17 @@
                         >
                             ✏️
                         </button>
+
                     `;
                 }
+
 
                 if (
                     data.sender === username
                 ) {
 
                     actionButtonsHtml += `
+
                         <button
                             type="button"
                             class="action-icon-btn"
@@ -1871,15 +2953,17 @@
                         >
                             🗑️
                         </button>
+
                     `;
                 }
 
 
                 /* =========================
-                   EMOJI PICKER
+                   EMOJI
                    ========================= */
 
                 const emojiList = [
+
                     '👍',
                     '❤️',
                     '😂',
@@ -1888,9 +2972,13 @@
                     '🔥',
                     '🎉',
                     '🙏'
+
                 ];
 
-                let emojiHtml = '';
+
+                let emojiHtml =
+                    '';
+
 
                 for (
                     const emoji
@@ -1898,18 +2986,20 @@
                 ) {
 
                     emojiHtml += `
+
                         <div
                             class="emoji-item"
                             onclick='addReaction(${JSON.stringify(id)}, ${JSON.stringify(emoji)}, event)'
                         >
                             ${emoji}
                         </div>
+
                     `;
                 }
 
 
                 /* =========================
-                   STRUKTUR PESAN
+                   MESSAGE HTML
                    ========================= */
 
                 chatBox.innerHTML += `
@@ -1920,20 +3010,34 @@
                         onclick='toggleMessageActions(${JSON.stringify(id)}, event)'
                     >
 
+
                         <img
-                            src="${escapeHtml(data.avatar || 'https://via.placeholder.com/64')}"
+                            src="${escapeHtml(
+                                data.avatar ||
+                                'https://via.placeholder.com/64'
+                            )}"
                             class="avatar"
                         >
 
-                        <div class="message-content-wrapper">
 
-                            <div class="message-header">
+                        <div
+                            class="message-content-wrapper"
+                        >
 
-                                <span class="message-username">
-                                    ${escapeHtml(data.sender)}
+                            <div
+                                class="message-header"
+                            >
+
+                                <span
+                                    class="message-username"
+                                >
+                                    ${escapeHtml(
+                                        data.sender
+                                    )}
                                 </span>
 
                             </div>
+
 
                             ${contentHtml}
 
@@ -1946,7 +3050,9 @@
                             class="message-actions"
                             onclick="event.stopPropagation()"
                         >
+
                             ${actionButtonsHtml}
+
                         </div>
 
 
@@ -1957,14 +3063,19 @@
                         >
 
                             <div class="emoji-grid">
+
                                 ${emojiHtml}
+
                             </div>
 
                         </div>
 
+
                     </div>
+
                 `;
             }
+
 
             chatBox.scrollTop =
                 chatBox.scrollHeight;
@@ -1981,42 +3092,55 @@
         ) {
 
             if (event) {
+
                 event.preventDefault();
+
                 event.stopPropagation();
             }
+
 
             const textEl =
                 document.getElementById(
                     `msg-text-${id}`
                 );
 
+
             const msg =
                 messageHistory.find(
-                    m => String(m.id) === String(id)
+                    m =>
+                        String(m.id) ===
+                        String(id)
                 );
+
 
             if (!textEl || !msg) {
                 return;
             }
+
 
             if (
                 document.getElementById(
                     `edit-box-${id}`
                 )
             ) {
+
                 return;
             }
+
 
             const editDiv =
                 document.createElement(
                     'div'
                 );
 
+
             editDiv.id =
                 `edit-box-${id}`;
 
+
             editDiv.className =
                 'edit-box';
+
 
             editDiv.innerHTML = `
 
@@ -2026,6 +3150,7 @@
                     class="edit-input"
                 >
 
+
                 <button
                     type="button"
                     class="edit-save"
@@ -2034,6 +3159,7 @@
                     Simpan
                 </button>
 
+
                 <button
                     type="button"
                     class="edit-cancel"
@@ -2041,30 +3167,39 @@
                 >
                     Batal
                 </button>
+
             `;
+
 
             textEl.style.display =
                 'none';
+
 
             textEl.parentNode.insertBefore(
                 editDiv,
                 textEl.nextSibling
             );
 
+
             const input =
                 document.getElementById(
                     `edit-input-${id}`
                 );
 
+
             if (!input) {
                 return;
             }
 
+
             input.value =
                 msg.original || '';
 
+
             input.focus();
+
             input.select();
+
         }
 
 
@@ -2074,28 +3209,37 @@
         ) {
 
             if (event) {
+
                 event.preventDefault();
+
                 event.stopPropagation();
             }
+
 
             const editBox =
                 document.getElementById(
                     `edit-box-${id}`
                 );
 
+
             const textEl =
                 document.getElementById(
                     `msg-text-${id}`
                 );
 
+
             if (editBox) {
+
                 editBox.remove();
             }
 
+
             if (textEl) {
+
                 textEl.style.display =
                     '';
             }
+
         }
 
 
@@ -2105,52 +3249,69 @@
         ) {
 
             if (event) {
+
                 event.preventDefault();
+
                 event.stopPropagation();
             }
+
 
             const inputEl =
                 document.getElementById(
                     `edit-input-${id}`
                 );
 
+
             if (!inputEl) {
                 return;
             }
 
+
             const newText =
                 inputEl.value.trim();
+
 
             if (!newText) {
                 return;
             }
 
+
             socket.emit(
                 'edit_message',
                 {
-                    id: id,
-                    newText: newText
+                    id:
+                        id,
+
+                    newText:
+                        newText
                 }
             );
+
 
             const editBox =
                 document.getElementById(
                     `edit-box-${id}`
                 );
 
+
             const textEl =
                 document.getElementById(
                     `msg-text-${id}`
                 );
 
+
             if (editBox) {
+
                 editBox.remove();
             }
 
+
             if (textEl) {
+
                 textEl.style.display =
                     '';
             }
+
 
             closeAllMessageActions();
         }
@@ -2178,8 +3339,10 @@
                             const orig =
                                 btnElement.innerHTML;
 
+
                             btnElement.innerHTML =
                                 '✅';
+
 
                             setTimeout(
                                 function() {
@@ -2190,6 +3353,7 @@
                                 },
                                 1500
                             );
+
                         }
                     )
                     .catch(
@@ -2203,19 +3367,27 @@
                         'textarea'
                     );
 
-                temp.value = text;
+
+                temp.value =
+                    text;
+
 
                 document.body.appendChild(
                     temp
                 );
 
+
                 temp.select();
 
+
                 try {
+
                     document.execCommand(
                         'copy'
                     );
+
                 } catch (e) {}
+
 
                 temp.remove();
             }
@@ -2233,6 +3405,7 @@
                     'targetLang'
                 ).value;
 
+
             await renderChat();
         }
 
@@ -2247,14 +3420,18 @@
         ) {
 
             if (event) {
+
                 event.preventDefault();
+
                 event.stopPropagation();
             }
+
 
             socket.emit(
                 'delete_message',
                 String(id)
             );
+
 
             closeAllMessageActions();
         }
@@ -2308,9 +3485,11 @@
                 username
             );
 
+
             clearTimeout(
                 typingTimeout
             );
+
 
             typingTimeout =
                 setTimeout(
@@ -2337,13 +3516,16 @@
                     'messageInput'
                 );
 
+
             const imageInput =
                 document.getElementById(
                     'imageInput'
                 );
 
+
             const message =
                 messageInput.value.trim();
+
 
             if (
                 !message &&
@@ -2353,21 +3535,29 @@
                 return;
             }
 
+
             socket.emit(
                 'stop_typing'
             );
 
+
             const messageData = {
 
-                sender: username,
+                sender:
+                    username,
 
-                avatar: userAvatar,
+                avatar:
+                    userAvatar,
 
-                original: message,
+                original:
+                    message,
 
-                image: null,
+                image:
+                    null,
 
-                replyTo: replyingToId
+                replyTo:
+                    replyingToId
+
             };
 
 
@@ -2378,19 +3568,23 @@
                 const reader =
                     new FileReader();
 
+
                 reader.onload =
                     function(e) {
 
                         messageData.image =
                             e.target.result;
 
+
                         socket.emit(
                             'send_message',
                             messageData
                         );
 
+
                         resetForm();
                     };
+
 
                 reader.readAsDataURL(
                     imageInput.files[0]
@@ -2403,8 +3597,10 @@
                     messageData
                 );
 
+
                 resetForm();
             }
+
         }
 
 
@@ -2416,15 +3612,21 @@
 
             document.getElementById(
                 'messageInput'
-            ).value = '';
+            ).value =
+                '';
+
 
             document.getElementById(
                 'imageInput'
-            ).value = '';
+            ).value =
+                '';
+
 
             document.getElementById(
                 'fileName'
-            ).innerText = '';
+            ).innerText =
+                '';
+
 
             cancelReply();
         }
@@ -2449,6 +3651,7 @@
                             history.length - 1
                         ];
 
+
                     if (
                         latestMsg &&
                         latestMsg.sender !==
@@ -2459,10 +3662,12 @@
                     }
                 }
 
+
                 messageHistory =
                     Array.isArray(history)
                         ? history
                         : [];
+
 
                 await renderChat();
             }
@@ -2478,6 +3683,7 @@
                         ? history
                         : [];
 
+
                 await renderChat();
             }
         );
@@ -2492,6 +3698,7 @@
                         ? history
                         : [];
 
+
                 await renderChat();
             }
         );
@@ -2505,6 +3712,7 @@
                     Array.isArray(history)
                         ? history
                         : [];
+
 
                 await renderChat();
             }
@@ -2523,6 +3731,7 @@
                     'typing-indicator'
                 ).innerText =
                     `${typingUser} sedang mengetik...`;
+
             }
         );
 
@@ -2535,6 +3744,7 @@
                     'typing-indicator'
                 ).innerText =
                     '';
+
             }
         );
 
@@ -2552,8 +3762,10 @@
                         ? users
                         : [];
 
+
                 const onlineCount =
                     users.length;
+
 
                 document.getElementById(
                     'memberBtn'
@@ -2566,6 +3778,7 @@
                         'member-list'
                     );
 
+
                 memberList.innerHTML =
                     '';
 
@@ -2576,29 +3789,56 @@
                         memberList.innerHTML += `
 
                             <div
-                                style="display:flex;align-items:center;margin-bottom:10px;gap:8px;"
+                                style="
+                                    display:flex;
+                                    align-items:center;
+                                    margin-bottom:10px;
+                                    gap:8px;
+                                "
                             >
 
                                 <span
-                                    style="width:8px;height:8px;background-color:#23a55a;border-radius:50%;"
+                                    style="
+                                        width:8px;
+                                        height:8px;
+                                        background-color:#23a55a;
+                                        border-radius:50%;
+                                    "
                                 ></span>
 
+
                                 <img
-                                    src="${escapeHtml(user.avatar || 'https://via.placeholder.com/64')}"
+                                    src="${escapeHtml(
+                                        user.avatar ||
+                                        'https://via.placeholder.com/64'
+                                    )}"
                                     class="avatar"
-                                    style="width:38px;height:38px;margin-top:0;"
+                                    style="
+                                        width:38px;
+                                        height:38px;
+                                        margin-top:0;
+                                    "
                                 >
 
+
                                 <span
-                                    style="color:white;font-size:16px;font-weight:500;"
+                                    style="
+                                        color:white;
+                                        font-size:16px;
+                                        font-weight:500;
+                                    "
                                 >
-                                    ${escapeHtml(user.username)}
+                                    ${escapeHtml(
+                                        user.username
+                                    )}
                                 </span>
 
                             </div>
+
                         `;
                     }
                 );
+
             }
         );
 
