@@ -44,7 +44,9 @@ app.get('/', (req, res) => {
 
 app.get('/test-version', (req, res) => {
     res.setHeader('Cache-Control', 'no-store');
-    res.send('RAILWAY-TEST-123 - index.js versi terbaru aktif');
+    res.status(200).type('text').send(
+        'RAILWAY-TEST-999 - DEPLOY TERBARU'
+    );
 });
 
 // ============================================================
@@ -77,28 +79,48 @@ function loadChannels() {
 
             console.log('chat-data.json dibuat.');
 
-            return JSON.parse(JSON.stringify(DEFAULT_CHANNELS));
+            return JSON.parse(
+                JSON.stringify(DEFAULT_CHANNELS)
+            );
         }
 
-        const data = fs.readFileSync(DATA_FILE, 'utf8');
+        const data = fs.readFileSync(
+            DATA_FILE,
+            'utf8'
+        );
 
         if (!data.trim()) {
-            return JSON.parse(JSON.stringify(DEFAULT_CHANNELS));
+            return JSON.parse(
+                JSON.stringify(DEFAULT_CHANNELS)
+            );
         }
 
         const parsed = JSON.parse(data);
 
         // Pastikan channel default tetap ada
-        if (!parsed.umum) parsed.umum = [];
-        if (!parsed.gaming) parsed.gaming = [];
-        if (!parsed.musik) parsed.musik = [];
+        if (!parsed.umum) {
+            parsed.umum = [];
+        }
+
+        if (!parsed.gaming) {
+            parsed.gaming = [];
+        }
+
+        if (!parsed.musik) {
+            parsed.musik = [];
+        }
 
         return parsed;
 
     } catch (error) {
-        console.error('Gagal membaca chat-data.json:', error);
+        console.error(
+            'Gagal membaca chat-data.json:',
+            error
+        );
 
-        return JSON.parse(JSON.stringify(DEFAULT_CHANNELS));
+        return JSON.parse(
+            JSON.stringify(DEFAULT_CHANNELS)
+        );
     }
 }
 
@@ -115,10 +137,16 @@ function saveChannels() {
             JSON.stringify(channels, null, 2)
         );
 
-        fs.renameSync(tempFile, DATA_FILE);
+        fs.renameSync(
+            tempFile,
+            DATA_FILE
+        );
 
     } catch (error) {
-        console.error('Gagal menyimpan chat-data.json:', error);
+        console.error(
+            'Gagal menyimpan chat-data.json:',
+            error
+        );
     }
 }
 
@@ -145,7 +173,10 @@ const ADMIN_USERNAME = 'Admin';
 // ============================================================
 
 function validChannel(channel) {
-    return Object.prototype.hasOwnProperty.call(channels, channel);
+    return Object.prototype.hasOwnProperty.call(
+        channels,
+        channel
+    );
 }
 
 // ============================================================
@@ -153,7 +184,9 @@ function validChannel(channel) {
 // ============================================================
 
 function broadcastChannel(channel) {
-    if (!validChannel(channel)) return;
+    if (!validChannel(channel)) {
+        return;
+    }
 
     io.to(`channel:${channel}`).emit(
         'receive_history',
@@ -167,20 +200,26 @@ function broadcastChannel(channel) {
 
 io.on('connection', (socket) => {
 
-    console.log('User terhubung:', socket.id);
+    console.log(
+        'User terhubung:',
+        socket.id
+    );
 
     // --------------------------------------------------------
     // DATA USER
     // --------------------------------------------------------
 
     let currentChannel = 'umum';
+
     const userId = socket.id;
 
     // --------------------------------------------------------
     // MASUK CHANNEL DEFAULT
     // --------------------------------------------------------
 
-    socket.join(`channel:${currentChannel}`);
+    socket.join(
+        `channel:${currentChannel}`
+    );
 
     socket.emit(
         'receive_history',
@@ -191,426 +230,556 @@ io.on('connection', (socket) => {
     // PROFILE DEFAULT
     // --------------------------------------------------------
 
-    socket.emit('set_user_profile', {
-        id: userId
-    });
+    socket.emit(
+        'set_user_profile',
+        {
+            id: userId
+        }
+    );
 
     // ========================================================
     // SWITCH CHANNEL
     // ========================================================
 
-    socket.on('switch_channel', (channel) => {
+    socket.on(
+        'switch_channel',
+        (channel) => {
 
-        if (!validChannel(channel)) return;
+            if (!validChannel(channel)) {
+                return;
+            }
 
-        // keluar dari channel lama
-        socket.leave(`channel:${currentChannel}`);
+            // keluar dari channel lama
+            socket.leave(
+                `channel:${currentChannel}`
+            );
 
-        // ganti channel
-        currentChannel = channel;
+            // ganti channel
+            currentChannel = channel;
 
-        // masuk channel baru
-        socket.join(`channel:${currentChannel}`);
+            // masuk channel baru
+            socket.join(
+                `channel:${currentChannel}`
+            );
 
-        // kirim history channel
-        socket.emit(
-            'receive_history',
-            channels[currentChannel]
-        );
+            // kirim history channel
+            socket.emit(
+                'receive_history',
+                channels[currentChannel]
+            );
 
-        console.log(
-            'User',
-            socket.id,
-            'pindah ke channel',
-            currentChannel
-        );
-    });
+            console.log(
+                'User',
+                socket.id,
+                'pindah ke channel',
+                currentChannel
+            );
+        }
+    );
 
     // ========================================================
     // USER PROFILE
     // ========================================================
 
-    socket.on('set_user_profile', (profile) => {
+    socket.on(
+        'set_user_profile',
+        (profile) => {
 
-        if (!profile) return;
+            if (!profile) {
+                return;
+            }
 
-        const username =
-            typeof profile.username === 'string'
-                ? profile.username.trim()
-                : '';
+            const username =
+                typeof profile.username === 'string'
+                    ? profile.username.trim()
+                    : '';
 
-        const avatar =
-            typeof profile.avatar === 'string'
-                ? profile.avatar
-                : '';
+            const avatar =
+                typeof profile.avatar === 'string'
+                    ? profile.avatar
+                    : '';
 
-        onlineUsers[socket.id] = {
-            username: username || 'User',
-            avatar: avatar || ''
-        };
+            onlineUsers[socket.id] = {
+                username: username || 'User',
+                avatar: avatar || ''
+            };
 
-        socket.username = username || 'User';
-        socket.avatar = avatar || '';
+            socket.username =
+                username || 'User';
 
-        io.emit('update_users', onlineUsers);
-    });
+            socket.avatar =
+                avatar || '';
+
+            io.emit(
+                'update_users',
+                onlineUsers
+            );
+        }
+    );
 
     // ========================================================
     // REGISTER USER
     // ========================================================
 
-    socket.on('register_user', (profile) => {
+    socket.on(
+        'register_user',
+        (profile) => {
 
-        if (!profile) return;
+            if (!profile) {
+                return;
+            }
 
-        const username =
-            typeof profile.username === 'string'
-                ? profile.username.trim()
-                : '';
+            const username =
+                typeof profile.username === 'string'
+                    ? profile.username.trim()
+                    : '';
 
-        const avatar =
-            typeof profile.avatar === 'string'
-                ? profile.avatar
-                : '';
+            const avatar =
+                typeof profile.avatar === 'string'
+                    ? profile.avatar
+                    : '';
 
-        socket.username = username || 'User';
-        socket.avatar = avatar || '';
+            socket.username =
+                username || 'User';
 
-        onlineUsers[socket.id] = {
-            username: socket.username,
-            avatar: socket.avatar
-        };
+            socket.avatar =
+                avatar || '';
 
-        io.emit('update_users', onlineUsers);
-    });
+            onlineUsers[socket.id] = {
+                username: socket.username,
+                avatar: socket.avatar
+            };
+
+            io.emit(
+                'update_users',
+                onlineUsers
+            );
+        }
+    );
 
     // ========================================================
     // SEND MESSAGE
     // ========================================================
 
-    socket.on('send_message', (message) => {
+    socket.on(
+        'send_message',
+        (message) => {
 
-        if (!message) return;
+            if (!message) {
+                return;
+            }
 
-        if (!validChannel(currentChannel)) return;
+            if (!validChannel(currentChannel)) {
+                return;
+            }
 
-        // Pastikan object
-        if (typeof message !== 'object') return;
+            // Pastikan object
+            if (typeof message !== 'object') {
+                return;
+            }
 
-        // ----------------------------------------------------
-        // ID
-        // ----------------------------------------------------
+            // ------------------------------------------------
+            // ID
+            // ------------------------------------------------
 
-        if (!message.id) {
-            message.id =
-                Date.now().toString() +
-                '-' +
-                Math.random().toString(36).substring(2, 9);
+            if (!message.id) {
+                message.id =
+                    Date.now().toString() +
+                    '-' +
+                    Math.random()
+                        .toString(36)
+                        .substring(2, 9);
+            }
+
+            // ------------------------------------------------
+            // DATA USER
+            // ------------------------------------------------
+
+            if (!message.username) {
+                message.username =
+                    socket.username || 'User';
+            }
+
+            if (!message.avatar) {
+                message.avatar =
+                    socket.avatar || '';
+            }
+
+            // ------------------------------------------------
+            // TIMESTAMP
+            // ------------------------------------------------
+
+            if (!message.timestamp) {
+                message.timestamp =
+                    Date.now();
+            }
+
+            // ------------------------------------------------
+            // CHANNEL
+            // ------------------------------------------------
+
+            message.channel =
+                currentChannel;
+
+            // ------------------------------------------------
+            // SIMPAN
+            // ------------------------------------------------
+
+            channels[currentChannel].push(
+                message
+            );
+
+            saveChannels();
+
+            // ------------------------------------------------
+            // KIRIM KE CHANNEL
+            // ------------------------------------------------
+
+            io.to(
+                `channel:${currentChannel}`
+            ).emit(
+                'receive_message',
+                message
+            );
         }
-
-        // ----------------------------------------------------
-        // DATA USER
-        // ----------------------------------------------------
-
-        if (!message.username) {
-            message.username = socket.username || 'User';
-        }
-
-        if (!message.avatar) {
-            message.avatar = socket.avatar || '';
-        }
-
-        // ----------------------------------------------------
-        // TIMESTAMP
-        // ----------------------------------------------------
-
-        if (!message.timestamp) {
-            message.timestamp = Date.now();
-        }
-
-        // ----------------------------------------------------
-        // CHANNEL
-        // ----------------------------------------------------
-
-        message.channel = currentChannel;
-
-        // ----------------------------------------------------
-        // SIMPAN
-        // ----------------------------------------------------
-
-        channels[currentChannel].push(message);
-
-        saveChannels();
-
-        // ----------------------------------------------------
-        // KIRIM KE CHANNEL
-        // ----------------------------------------------------
-
-        io.to(`channel:${currentChannel}`).emit(
-            'receive_message',
-            message
-        );
-    });
+    );
 
     // ========================================================
     // EDIT MESSAGE
     // ========================================================
 
-    socket.on('edit_message', (data) => {
+    socket.on(
+        'edit_message',
+        (data) => {
 
-        if (!data) return;
-
-        const {
-            messageId,
-            newText
-        } = data;
-
-        if (!messageId) return;
-
-        if (typeof newText !== 'string') return;
-
-        if (!validChannel(currentChannel)) return;
-
-        const message =
-            channels[currentChannel].find(
-                msg => msg.id === messageId
-            );
-
-        if (!message) return;
-
-        // ----------------------------------------------------
-        // Hanya pemilik pesan yang boleh edit
-        // ----------------------------------------------------
-
-        if (
-            message.username !==
-            (socket.username || 'User')
-        ) {
-            return;
-        }
-
-        message.text = newText;
-        message.edited = true;
-
-        saveChannels();
-
-        io.to(`channel:${currentChannel}`).emit(
-            'message_edited',
-            {
-                messageId: messageId,
-                newText: newText
+            if (!data) {
+                return;
             }
-        );
-    });
+
+            const {
+                messageId,
+                newText
+            } = data;
+
+            if (!messageId) {
+                return;
+            }
+
+            if (typeof newText !== 'string') {
+                return;
+            }
+
+            if (!validChannel(currentChannel)) {
+                return;
+            }
+
+            const message =
+                channels[currentChannel].find(
+                    msg => msg.id === messageId
+                );
+
+            if (!message) {
+                return;
+            }
+
+            // ------------------------------------------------
+            // Hanya pemilik pesan yang boleh edit
+            // ------------------------------------------------
+
+            if (
+                message.username !==
+                (socket.username || 'User')
+            ) {
+                return;
+            }
+
+            message.text = newText;
+            message.edited = true;
+
+            saveChannels();
+
+            io.to(
+                `channel:${currentChannel}`
+            ).emit(
+                'message_edited',
+                {
+                    messageId: messageId,
+                    newText: newText
+                }
+            );
+        }
+    );
 
     // ========================================================
     // DELETE MESSAGE
     // ========================================================
 
-    socket.on('delete_message', (messageId) => {
+    socket.on(
+        'delete_message',
+        (messageId) => {
 
-        if (!messageId) return;
+            if (!messageId) {
+                return;
+            }
 
-        if (!validChannel(currentChannel)) return;
+            if (!validChannel(currentChannel)) {
+                return;
+            }
 
-        const index =
-            channels[currentChannel].findIndex(
-                msg => msg.id === messageId
+            const index =
+                channels[currentChannel].findIndex(
+                    msg => msg.id === messageId
+                );
+
+            if (index === -1) {
+                return;
+            }
+
+            const message =
+                channels[currentChannel][index];
+
+            // ------------------------------------------------
+            // Pemilik pesan atau Admin
+            // ------------------------------------------------
+
+            const currentUsername =
+                socket.username || 'User';
+
+            if (
+                message.username !==
+                    currentUsername &&
+                currentUsername !==
+                    ADMIN_USERNAME
+            ) {
+                return;
+            }
+
+            channels[currentChannel].splice(
+                index,
+                1
             );
 
-        if (index === -1) return;
+            saveChannels();
 
-        const message =
-            channels[currentChannel][index];
-
-        // ----------------------------------------------------
-        // Pemilik pesan atau Admin
-        // ----------------------------------------------------
-
-        const currentUsername =
-            socket.username || 'User';
-
-        if (
-            message.username !== currentUsername &&
-            currentUsername !== ADMIN_USERNAME
-        ) {
-            return;
+            io.to(
+                `channel:${currentChannel}`
+            ).emit(
+                'message_deleted',
+                messageId
+            );
         }
-
-        channels[currentChannel].splice(index, 1);
-
-        saveChannels();
-
-        io.to(`channel:${currentChannel}`).emit(
-            'message_deleted',
-            messageId
-        );
-    });
+    );
 
     // ========================================================
     // CLEAR ALL CHAT
     // ========================================================
 
-    socket.on('clear_all_chat', () => {
+    socket.on(
+        'clear_all_chat',
+        () => {
 
-        const currentUsername =
-            socket.username || 'User';
+            const currentUsername =
+                socket.username || 'User';
 
-        // Hanya Admin
-        if (currentUsername !== ADMIN_USERNAME) {
-            return;
+            // Hanya Admin
+            if (
+                currentUsername !==
+                ADMIN_USERNAME
+            ) {
+                return;
+            }
+
+            if (!validChannel(currentChannel)) {
+                return;
+            }
+
+            channels[currentChannel] = [];
+
+            saveChannels();
+
+            io.to(
+                `channel:${currentChannel}`
+            ).emit(
+                'receive_history',
+                []
+            );
         }
-
-        if (!validChannel(currentChannel)) return;
-
-        channels[currentChannel] = [];
-
-        saveChannels();
-
-        io.to(`channel:${currentChannel}`).emit(
-            'receive_history',
-            []
-        );
-    });
+    );
 
     // ========================================================
     // REACTION
     // ========================================================
 
-    socket.on('add_reaction', (data) => {
+    socket.on(
+        'add_reaction',
+        (data) => {
 
-        if (!data) return;
-
-        const {
-            messageId,
-            emoji
-        } = data;
-
-        if (!messageId || !emoji) return;
-
-        if (!validChannel(currentChannel)) return;
-
-        const message =
-            channels[currentChannel].find(
-                msg => msg.id === messageId
-            );
-
-        if (!message) return;
-
-        // ----------------------------------------------------
-        // Buat reactions jika belum ada
-        // ----------------------------------------------------
-
-        if (!message.reactions) {
-            message.reactions = {};
-        }
-
-        if (!message.reactions[emoji]) {
-            message.reactions[emoji] = [];
-        }
-
-        const username =
-            socket.username || 'User';
-
-        const users =
-            message.reactions[emoji];
-
-        // ----------------------------------------------------
-        // Toggle reaction
-        // ----------------------------------------------------
-
-        const existingIndex =
-            users.indexOf(username);
-
-        if (existingIndex !== -1) {
-
-            users.splice(existingIndex, 1);
-
-        } else {
-
-            users.push(username);
-        }
-
-        // ----------------------------------------------------
-        // Hapus emoji kalau kosong
-        // ----------------------------------------------------
-
-        if (users.length === 0) {
-            delete message.reactions[emoji];
-        }
-
-        saveChannels();
-
-        io.to(`channel:${currentChannel}`).emit(
-            'reaction_updated',
-            {
-                messageId: messageId,
-                reactions: message.reactions || {}
+            if (!data) {
+                return;
             }
-        );
-    });
+
+            const {
+                messageId,
+                emoji
+            } = data;
+
+            if (!messageId || !emoji) {
+                return;
+            }
+
+            if (!validChannel(currentChannel)) {
+                return;
+            }
+
+            const message =
+                channels[currentChannel].find(
+                    msg => msg.id === messageId
+                );
+
+            if (!message) {
+                return;
+            }
+
+            // ------------------------------------------------
+            // Buat reactions jika belum ada
+            // ------------------------------------------------
+
+            if (!message.reactions) {
+                message.reactions = {};
+            }
+
+            if (!message.reactions[emoji]) {
+                message.reactions[emoji] = [];
+            }
+
+            const username =
+                socket.username || 'User';
+
+            const users =
+                message.reactions[emoji];
+
+            // ------------------------------------------------
+            // Toggle reaction
+            // ------------------------------------------------
+
+            const existingIndex =
+                users.indexOf(username);
+
+            if (existingIndex !== -1) {
+
+                users.splice(
+                    existingIndex,
+                    1
+                );
+
+            } else {
+
+                users.push(username);
+            }
+
+            // ------------------------------------------------
+            // Hapus emoji kalau kosong
+            // ------------------------------------------------
+
+            if (users.length === 0) {
+                delete message.reactions[emoji];
+            }
+
+            saveChannels();
+
+            io.to(
+                `channel:${currentChannel}`
+            ).emit(
+                'reaction_updated',
+                {
+                    messageId: messageId,
+                    reactions:
+                        message.reactions || {}
+                }
+            );
+        }
+    );
 
     // ========================================================
     // TYPING
     // ========================================================
 
-    socket.on('typing', () => {
+    socket.on(
+        'typing',
+        () => {
 
-        socket.to(`channel:${currentChannel}`).emit(
-            'display_typing',
-            {
-                username: socket.username || 'User'
-            }
-        );
-    });
+            socket.to(
+                `channel:${currentChannel}`
+            ).emit(
+                'display_typing',
+                {
+                    username:
+                        socket.username || 'User'
+                }
+            );
+        }
+    );
 
     // ========================================================
     // STOP TYPING
     // ========================================================
 
-    socket.on('stop_typing', () => {
+    socket.on(
+        'stop_typing',
+        () => {
 
-        socket.to(`channel:${currentChannel}`).emit(
-            'hide_typing',
-            {
-                username: socket.username || 'User'
-            }
-        );
-    });
+            socket.to(
+                `channel:${currentChannel}`
+            ).emit(
+                'hide_typing',
+                {
+                    username:
+                        socket.username || 'User'
+                }
+            );
+        }
+    );
 
     // ========================================================
     // DISCONNECT
     // ========================================================
 
-    socket.on('disconnect', () => {
+    socket.on(
+        'disconnect',
+        () => {
 
-        console.log(
-            'User terputus:',
-            socket.id
-        );
+            console.log(
+                'User terputus:',
+                socket.id
+            );
 
-        delete onlineUsers[socket.id];
+            delete onlineUsers[socket.id];
 
-        io.emit(
-            'update_users',
-            onlineUsers
-        );
-    });
+            io.emit(
+                'update_users',
+                onlineUsers
+            );
+        }
+    );
 });
 
 // ============================================================
 // SERVER
 // ============================================================
 
-const PORT = process.env.PORT || 3000;
+const PORT =
+    process.env.PORT || 3000;
 
-http.listen(PORT, () => {
+http.listen(
+    PORT,
+    () => {
 
-    console.log(
-        `Server Node.js berjalan di port ${PORT}`
-    );
+        console.log(
+            `Server Node.js berjalan di port ${PORT}`
+        );
 
-    console.log(
-        `Database chat: ${DATA_FILE}`
-    );
-});
+        console.log(
+            `Database chat: ${DATA_FILE}`
+        );
+    }
+);
