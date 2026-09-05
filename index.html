@@ -832,6 +832,28 @@
         let typingTimeout = null;
         let replyingToId = null;
 
+        /*
+         * clientId permanen, disimpan di localStorage.
+         * Ini identitas pemilik pesan yang tidak berubah
+         * walau socket reconnect (beda dari socket.id yang
+         * berganti setiap koneksi baru).
+         */
+        let clientId =
+            localStorage.getItem('chat_client_id');
+
+        if (!clientId) {
+
+            clientId =
+                (crypto.randomUUID
+                    ? crypto.randomUUID()
+                    : `${Date.now()}-${Math.random().toString(36).slice(2, 10)}`);
+
+            localStorage.setItem(
+                'chat_client_id',
+                clientId
+            );
+        }
+
 
         /* =========================
            SOCKET CONNECTION
@@ -856,8 +878,22 @@
                     'set_user_profile',
                     {
                         username: username,
-                        avatar: userAvatar
+                        avatar: userAvatar,
+                        clientId: clientId
                     }
+                );
+
+                // Pastikan tetap berada di channel yang sedang
+                // dibuka, karena server mereset ke #umum
+                // setiap ada koneksi baru.
+                const currentChannel =
+                    document.getElementById(
+                        'channelSelect'
+                    )?.value || 'umum';
+
+                socket.emit(
+                    'switch_channel',
+                    currentChannel
                 );
             }
         });
@@ -1004,7 +1040,8 @@
                     'set_user_profile',
                     {
                         username: username,
-                        avatar: userAvatar
+                        avatar: userAvatar,
+                        clientId: clientId
                     }
                 );
             }
@@ -1124,33 +1161,73 @@
            TRANSLATE
            ========================= */
 
+        // Cache terjemahan: key = "id|lang|teks",
+        // supaya pesan yang sudah pernah diterjemahkan
+        // tidak dipanggil ulang ke API setiap render.
+        const translationCache = new Map();
+
         async function translateText(
             text,
-            targetLang
+            targetLang,
+            cacheKey
         ) {
 
             if (!text) {
                 return '';
             }
 
+            const key =
+                `${cacheKey}|${targetLang}|${text}`;
+
+            if (
+                translationCache.has(key)
+            ) {
+
+                return translationCache.get(key);
+            }
+
             try {
+
+                const controller =
+                    new AbortController();
+
+                // Batas waktu 4 detik. Kalau API lambat/macet,
+                // jangan sampai seluruh render ikut macet.
+                const timeoutId =
+                    setTimeout(
+                        () => controller.abort(),
+                        4000
+                    );
 
                 const res =
                     await fetch(
-                        `https://translate.googleapis.com/translate_a/single?client=gtx&sl=auto&tl=${targetLang}&dt=t&q=${encodeURIComponent(text)}`
+                        `https://translate.googleapis.com/translate_a/single?client=gtx&sl=auto&tl=${targetLang}&dt=t&q=${encodeURIComponent(text)}`,
+                        { signal: controller.signal }
                     );
+
+                clearTimeout(timeoutId);
 
                 const data =
                     await res.json();
 
-                return data[0]
-                    .map(
-                        item => item[0]
-                    )
-                    .join('');
+                const result =
+                    data[0]
+                        .map(
+                            item => item[0]
+                        )
+                        .join('');
+
+                translationCache.set(
+                    key,
+                    result
+                );
+
+                return result;
 
             } catch (err) {
 
+                // Gagal/timeout: jangan macetkan render,
+                // tampilkan teks asli saja.
                 return text;
             }
         }
@@ -1505,6 +1582,12 @@
            RENDER CHAT
            ========================= */
 
+        // Penanda versi render, supaya kalau ada render baru
+        // yang mulai sebelum render lama selesai (karena
+        // menunggu terjemahan), hasil render lama yang basi
+        // tidak menimpa balik hasil yang lebih baru.
+        let renderVersion = 0;
+
         async function renderChat() {
 
             const chatBox =
@@ -1516,7 +1599,10 @@
                 return;
             }
 
-            chatBox.innerHTML = '';
+            const myVersion =
+                ++renderVersion;
+
+            let html = '';
 
 
             for (
@@ -1563,7 +1649,8 @@
                     const translated =
                         await translateText(
                             data.original,
-                            myTargetLang
+                            myTargetLang,
+                            id
                         );
 
                     contentHtml += `
@@ -1778,7 +1865,7 @@
                    STRUKTUR PESAN
                    ========================= */
 
-                chatBox.innerHTML += `
+                html += `
 
                     <div
                         class="message-row"
@@ -1836,6 +1923,17 @@
                 `;
             }
 
+
+            // Kalau ada render lain yang sudah mulai duluan
+            // setelah render ini (misal reaksi/pesan baru
+            // masuk saat masih menunggu terjemahan), buang
+            // hasil render yang basi ini - jangan menimpa
+            // tampilan yang lebih baru.
+            if (myVersion !== renderVersion) {
+                return;
+            }
+
+            chatBox.innerHTML = html;
 
             chatBox.scrollTop =
                 chatBox.scrollHeight;
