@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Discord Clone - Larger Font</title>
+    <title>Discord Clone - Extra Large Font</title>
     <script src="/socket.io/socket.io.js"></script>
 
     <style>
@@ -21,7 +21,7 @@
             font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
             background: #313338;
             color: #dbdee1;
-            font-size: 16px; /* Memperbesar base font standar */
+            font-size: 18px; /* Font dasar dibuat lebih besar */
         }
 
         .main-chat-container {
@@ -35,9 +35,9 @@
         }
 
         .chat-header {
-            height: 60px;
-            min-height: 60px;
-            font-size: 15px;
+            height: 65px;
+            min-height: 65px;
+            font-size: 16px;
             font-weight: bold;
             border-bottom: 2px solid #1f2023;
             padding: 0 14px;
@@ -72,7 +72,7 @@
             padding: 4px 6px;
             border-radius: 4px;
             outline: none;
-            font-size: 13px; /* Diperbesar */
+            font-size: 14px;
             max-width: 150px;
         }
 
@@ -84,7 +84,7 @@
             background: #313338;
             display: flex;
             flex-direction: column;
-            gap: 6px;
+            gap: 8px;
             min-height: 0;
         }
 
@@ -107,8 +107,8 @@
         }
 
         .avatar {
-            width: 40px; /* Diperbesar */
-            height: 40px; /* Diperbesar */
+            width: 44px;
+            height: 44px;
             border-radius: 50%;
             object-fit: cover;
             flex-shrink: 0;
@@ -128,23 +128,23 @@
             display: block;
             margin: 0;
             padding: 0;
-            line-height: 22px;
+            line-height: 24px;
         }
 
         .message-username {
             display: block;
             font-weight: 600;
             color: white;
-            font-size: 15px; /* Diperbesar (nama pengirim) */
+            font-size: 17px; /* Diperbesar khusus nama pengirim */
             margin: 0;
             padding: 0;
-            line-height: 22px;
+            line-height: 24px;
         }
 
         .message-text {
             display: block;
             color: #dbdee1;
-            font-size: 15px; /* Diperbesar (isi pesan utama) */
+            font-size: 17px; /* Diperbesar khusus isi teks chat */
             line-height: 1.5;
             white-space: pre-wrap;
             word-break: break-word;
@@ -154,7 +154,7 @@
 
         .translation-text {
             color: #23a55a;
-            font-size: 13px; /* Diperbesar */
+            font-size: 14px;
             margin: 4px 0 0 0;
             padding: 0;
             display: block;
@@ -162,14 +162,14 @@
 
         .chat-img {
             max-width: 100%;
-            max-height: 240px;
+            max-height: 260px;
             border-radius: 8px;
             margin: 8px 0 0 0;
             display: block;
         }
 
         .reply-indicator {
-            font-size: 13px; /* Diperbesar */
+            font-size: 14px;
             color: #949ba4;
             margin: 0 0 4px 0;
             padding: 0;
@@ -195,7 +195,7 @@
             flex-shrink: 0;
 
             position: absolute;
-            left: 52px;
+            left: 56px;
             top: calc(100% - 2px);
             z-index: 100;
         }
@@ -210,7 +210,7 @@
             color: #b5bac1;
             padding: 8px 10px;
             cursor: pointer;
-            font-size: 15px; /* Diperbesar */
+            font-size: 16px;
             line-height: 1;
         }
 
@@ -237,7 +237,7 @@
             border: 1px solid transparent;
             border-radius: 16px;
             padding: 4px 8px;
-            font-size: 13px; /* Diperbesar */
+            font-size: 14px;
             color: #b5bac1;
             cursor: pointer;
             display: flex;
@@ -257,7 +257,7 @@
 
         .emoji-picker-dialog {
             position: absolute;
-            left: 52px;
+            left: 56px;
             top: calc(100% + 40px);
             background: #313338;
             border: 1px solid #1f2023;
@@ -266,8 +266,8 @@
             padding: 10px;
             display: none;
             z-index: 200;
-            width: 240px;
-            max-height: 180px;
+            width: 250px;
+            max-height: 190px;
             overflow-y: auto;
         }
 
@@ -282,9 +282,9 @@
         }
 
         .emoji-item {
-            font-size: 22px; /* Diperbesar */
-            width: 32px;
-            height: 32px;
+            font-size: 24px;
+            width: 34px;
+            height: 34px;
             display: flex;
             align-items: center;
             justify-content: center;
@@ -318,7 +318,7 @@
             padding: 8px;
             border-radius: 4px;
             outline: none;
-            font-size: 15px; /* Diperbesar */
+            font-size: 17px;
         }
 
         .edit-save, .edit-cancel {
@@ -328,7 +328,7 @@
             border-radius: 4px;
             cursor: pointer;
             font-weight: bold;
-            font-size: 13px; /* Diperbesar */
+            font-size: 14px;
         }
         .edit-save { background: #248046; }
         .edit-cancel { background: #4e5058; }
@@ -361,7 +361,7 @@
             background: #2b2d31;
             padding: 6px 10px;
             border-radius: 4px;
-            font-size: 13px; /* Diperbesar */
+            font-size: 14px;
             color: #b5bac1;
             margin-bottom: 6px;
             justify-content: space-between;
@@ -383,7 +383,7 @@
             border: none;
             color: #949ba4;
             cursor: pointer;
-            font-size: 16px; /* Diperbesar */
+            font-size: 18px;
             padding: 0 4px;
             flex-shrink: 0;
         }
@@ -405,10 +405,10 @@
             color: white;
             border: none;
             outline: none;
-            font-size: 15px; /* Diperbesar (kotak ketik pesan) */
+            font-size: 17px; /* Diperbesar khusus kotak ketik pesan */
             resize: none;
-            height: 38px;
-            padding: 4px 0;
+            height: 42px;
+            padding: 6px 0;
             font-family: inherit;
         }
 
@@ -424,9 +424,9 @@
         .file-upload-btn {
             background: #4e5058;
             color: white;
-            padding: 6px 10px;
+            padding: 6px 12px;
             border-radius: 4px;
-            font-size: 13px; /* Diperbesar */
+            font-size: 14px;
             cursor: pointer;
             font-weight: 500;
             display: inline-flex;
@@ -437,9 +437,9 @@
         .send-btn {
             background: #5865F2;
             color: white;
-            padding: 6px 16px;
+            padding: 6px 18px;
             border-radius: 4px;
-            font-size: 13px; /* Diperbesar */
+            font-size: 14px;
             font-weight: 600;
             border: none;
             cursor: pointer;
@@ -493,14 +493,14 @@
             background: none;
             border: none;
             color: #949ba4;
-            font-size: 22px;
+            font-size: 24px;
             cursor: pointer;
         }
 
         #typing-indicator {
-            font-size: 13px; /* Diperbesar */
+            font-size: 14px;
             color: #949ba4;
-            height: 16px;
+            height: 18px;
             margin-bottom: 4px;
             font-style: italic;
         }
@@ -514,7 +514,7 @@
             border-radius: 4px;
             width: 100%;
             outline: none;
-            font-size: 15px; /* Diperbesar */
+            font-size: 17px;
         }
     </style>
 </head>
@@ -524,11 +524,11 @@
     <!-- PROFIL -->
     <div style="display:flex;align-items:center;justify-content:center;height:100%;width:100%;">
         <div id="profile-modal" style="display:block;">
-            <h3 style="color:white;margin-top:0;font-size:18px;">Atur Profil Anda</h3>
+            <h3 style="color:white;margin-top:0;font-size:20px;">Atur Profil Anda</h3>
             <input type="text" id="usernameInput" placeholder="Masukkan nama..." style="margin-bottom:12px;">
-            <label style="font-size:13px;display:block;margin-bottom:6px;color:#b5bac1;text-align:left;">Pilih Foto Profil:</label>
+            <label style="font-size:14px;display:block;margin-bottom:6px;color:#b5bac1;text-align:left;">Pilih Foto Profil:</label>
             <input type="file" id="avatarInput" accept="image/*" style="margin-bottom:16px;">
-            <button onclick="joinChat()" style="background:#5865F2;color:white;border:none;padding:10px 16px;border-radius:4px;font-weight:bold;cursor:pointer;width:100%;font-size:15px;">Gabung Chat</button>
+            <button onclick="joinChat()" style="background:#5865F2;color:white;border:none;padding:10px 16px;border-radius:4px;font-weight:bold;cursor:pointer;width:100%;font-size:16px;">Gabung Chat</button>
         </div>
     </div>
 
@@ -536,7 +536,7 @@
     <div id="memberDialog" class="modal-overlay">
         <div class="dialog-box">
             <button class="close-dialog" onclick="toggleMemberDialog()">&times;</button>
-            <h3 style="margin-top:0;color:white;border-bottom:1px solid #3f4248;padding-bottom:8px;font-size:16px;">Anggota Online</h3>
+            <h3 style="margin-top:0;color:white;border-bottom:1px solid #3f4248;padding-bottom:8px;font-size:18px;">Anggota Online</h3>
             <div id="member-list" style="margin-top:12px;"></div>
         </div>
     </div>
@@ -564,8 +564,8 @@
                         <option value="es">🇪🇸 Spanish</option>
                     </select>
                 </div>
-                <button onclick="toggleMemberDialog()" id="memberBtn" style="background:#35373c;color:#dbdee1;border:none;padding:8px 10px;border-radius:4px;font-size:13px;cursor:pointer;">👥 (0)</button>
-                <button onclick="clearAllChat()" style="background:#da373c;color:white;border:none;padding:8px 10px;border-radius:4px;font-size:13px;cursor:pointer;">🗑️ Hapus</button>
+                <button onclick="toggleMemberDialog()" id="memberBtn" style="background:#35373c;color:#dbdee1;border:none;padding:8px 12px;border-radius:4px;font-size:14px;cursor:pointer;">👥 (0)</button>
+                <button onclick="clearAllChat()" style="background:#da373c;color:white;border:none;padding:8px 12px;border-radius:4px;font-size:14px;cursor:pointer;">🗑️ Hapus</button>
             </div>
         </div>
 
@@ -585,7 +585,7 @@
                         <div style="display:flex; align-items:center; min-width:0; overflow:hidden;">
                             <input type="file" id="imageInput" accept="image/*" style="display:none;" onchange="updateFileLabel()">
                             <label for="imageInput" id="fileBtn" class="file-upload-btn">📎 Unggah</label>
-                            <span id="fileName" style="font-size:12px;color:#23a55a;margin-left:6px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;"></span>
+                            <span id="fileName" style="font-size:13px;color:#23a55a;margin-left:6px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;"></span>
                         </div>
                         <button id="sendBtn" class="send-btn" type="button" onclick="sendMessage()">Kirim</button>
                     </div>
@@ -1001,8 +1001,8 @@
                 memberList.innerHTML += `
                     <div style="display:flex;align-items:center;margin-bottom:12px;gap:10px;">
                         <span style="width:10px;height:10px;background-color:#23a55a;border-radius:50%;flex-shrink:0;"></span>
-                        <img src="${escapeHtml(user.avatar || 'https://via.placeholder.com/40')}" class="avatar" style="width:32px;height:32px;margin-top:0;">
-                        <span style="color:white;font-size:15px;font-weight:500;word-break:break-word;">${escapeHtml(user.username)}</span>
+                        <img src="${escapeHtml(user.avatar || 'https://via.placeholder.com/40')}" class="avatar" style="width:34px;height:34px;margin-top:0;">
+                        <span style="color:white;font-size:17px;font-weight:500;word-break:break-word;">${escapeHtml(user.username)}</span>
                     </div>
                 `;
             });
