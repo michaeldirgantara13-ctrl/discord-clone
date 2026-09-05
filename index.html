@@ -1,0 +1,2419 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <title>Discord Clone - Fixed</title>
+    <script src="/socket.io/socket.io.js"></script>
+
+    <style>
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
+            background: #313338;
+            color: #dbdee1;
+            margin: 0;
+            display: flex;
+            height: 100vh;
+            overflow: hidden;
+        }
+
+        .main-chat-container {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            background: #313338;
+            width: 100%;
+            height: 100vh;
+            overflow: hidden;
+        }
+
+        .chat-header {
+            height: 65px;
+            font-size: 15px;
+            font-weight: bold;
+            border-bottom: 2px solid #1f2023;
+            padding: 0 24px;
+            display: flex;
+            justify-content: flex-end;
+            align-items: center;
+            background: #313338;
+            color: white;
+            box-shadow: 0 1px 2px rgba(0,0,0,0.2);
+            flex-shrink: 0;
+        }
+
+        .header-right-group {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .vertical-controls {
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+            align-items: flex-end;
+        }
+
+        select {
+            background: #1e1f22;
+            color: #dbdee1;
+            border: 1px solid #1f2023;
+            padding: 4px 8px;
+            border-radius: 4px;
+            outline: none;
+            font-size: 12px;
+            width: 180px;
+        }
+
+        #chat-box {
+            flex: 1;
+            overflow-y: scroll;
+            padding: 24px;
+            background: #313338;
+            display: flex;
+            flex-direction: column;
+            gap: 2px;
+        }
+
+        /* =========================
+           PESAN
+           ========================= */
+
+        .message-row {
+            display: flex;
+            gap: 16px;
+            align-items: flex-start;
+            padding: 6px 0;
+            position: relative;
+            width: 100%;
+            border-radius: 4px;
+        }
+
+        .message-row:hover {
+            background: #2e3035;
+        }
+
+        .avatar {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            object-fit: cover;
+            flex-shrink: 0;
+            margin-top: 2px;
+        }
+
+        .message-content-wrapper {
+            flex: 1;
+            min-width: 0;
+            word-break: break-word;
+            margin: 0;
+            padding: 0;
+            display: block;
+        }
+
+        .message-header {
+            display: block;
+            margin: 0;
+            padding: 0;
+            height: auto;
+            line-height: 18px;
+        }
+
+        .message-username {
+            display: block;
+            font-weight: 600;
+            color: white;
+            font-size: 15px;
+            margin: 0;
+            padding: 0;
+            line-height: 18px;
+        }
+
+        .message-text {
+            display: block;
+            color: #dbdee1;
+            font-size: 14.5px;
+            line-height: 1.4;
+            white-space: pre-wrap;
+            word-break: break-word;
+            margin: 0;
+            padding: 0;
+        }
+
+        .translation-text {
+            color: #23a55a;
+            font-size: 13px;
+            margin: 4px 0 0 0;
+            padding: 0;
+            display: block;
+        }
+
+        .chat-img {
+            max-width: 100%;
+            max-height: 250px;
+            border-radius: 8px;
+            margin: 8px 0 0 0;
+            display: block;
+        }
+
+        .reply-indicator {
+            font-size: 12px;
+            color: #949ba4;
+            margin: 0 0 2px 0;
+            padding: 0;
+            display: flex;
+            align-items: center;
+            gap: 4px;
+            font-style: italic;
+        }
+
+        /* =========================
+           ACTION BAR
+           ========================= */
+
+        .message-actions {
+            display: none;
+            flex-wrap: wrap;
+            gap: 2px;
+            background: #2b2d31;
+            border: 1px solid #1f2023;
+            border-radius: 4px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.3);
+            padding: 2px;
+            flex-shrink: 0;
+
+            position: absolute;
+            left: 56px;
+            top: calc(100% - 2px);
+            z-index: 100;
+        }
+
+        .message-row.show-actions .message-actions {
+            display: flex;
+        }
+
+        .action-icon-btn {
+            background: none;
+            border: none;
+            color: #b5bac1;
+            padding: 6px 8px;
+            cursor: pointer;
+            font-size: 13px;
+            line-height: 1;
+        }
+
+        .action-icon-btn:hover,
+        .action-icon-btn:active {
+            background: #404249;
+            color: white;
+        }
+
+        /* =========================
+           REACTION
+           ========================= */
+
+        .reaction-container {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 4px;
+            margin: 4px 0 0 0;
+            padding: 0;
+        }
+
+        .reaction-btn {
+            background: #2b2d31;
+            border: 1px solid transparent;
+            border-radius: 16px;
+            padding: 2px 6px;
+            font-size: 12px;
+            color: #b5bac1;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 3px;
+        }
+
+        .reaction-btn:hover {
+            border-color: #4f545c;
+            background: #35373c;
+        }
+
+        .reaction-btn.active {
+            background: #313338;
+            border-color: #5865F2;
+            color: white;
+        }
+
+        /* =========================
+           EMOJI PICKER
+           ========================= */
+
+        .emoji-picker-dialog {
+            position: absolute;
+            left: 56px;
+            top: calc(100% + 38px);
+            background: #313338;
+            border: 1px solid #1f2023;
+            border-radius: 8px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.5);
+            padding: 8px;
+            display: none;
+            z-index: 200;
+            width: 260px;
+            max-height: 180px;
+            overflow-y: auto;
+        }
+
+        .emoji-picker-dialog.show {
+            display: block;
+        }
+
+        .emoji-grid {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 4px;
+        }
+
+        .emoji-item {
+            font-size: 20px;
+            width: 32px;
+            height: 32px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            border-radius: 4px;
+            user-select: none;
+        }
+
+        .emoji-item:hover {
+            background: #404249;
+        }
+
+        /* =========================
+           EDIT
+           ========================= */
+
+        .edit-box {
+            margin-top: 6px;
+            display: flex;
+            flex-wrap: wrap;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .edit-input {
+            flex: 1;
+            min-width: 180px;
+            background: #1e1f22;
+            color: white;
+            border: 1px solid #5865F2;
+            padding: 8px;
+            border-radius: 4px;
+            outline: none;
+        }
+
+        .edit-save {
+            background: #248046;
+            color: white;
+            border: none;
+            padding: 6px 12px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-weight: bold;
+        }
+
+        .edit-cancel {
+            background: #4e5058;
+            color: white;
+            border: none;
+            padding: 6px 12px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-weight: bold;
+        }
+
+        /* =========================
+           INPUT
+           ========================= */
+
+        .bottom-panel {
+            padding: 0 24px 24px 24px;
+            background: #313338;
+            flex-shrink: 0;
+        }
+
+        .input-wrapper {
+            background: #383a40;
+            border-radius: 8px;
+            padding: 8px 10px;
+            border: 1px solid transparent;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .input-wrapper:focus-within {
+            border-color: #4e5058;
+        }
+
+        .reply-preview-bar {
+            display: none;
+            background: #2b2d31;
+            padding: 6px 10px;
+            border-radius: 4px;
+            font-size: 13px;
+            color: #b5bac1;
+            margin-bottom: 6px;
+            justify-content: space-between;
+            align-items: center;
+            width: 100%;
+        }
+
+        .reply-preview-text {
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            flex: 1;
+            text-align: left;
+            margin-right: 8px;
+        }
+
+        .cancel-reply-btn {
+            background: none;
+            border: none;
+            color: #949ba4;
+            cursor: pointer;
+            font-size: 16px;
+            padding: 0 4px;
+            flex-shrink: 0;
+        }
+
+        .cancel-reply-btn:hover {
+            color: white;
+        }
+
+        .input-container {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            width: 100%;
+        }
+
+        textarea#messageInput {
+            width: 100%;
+            background: transparent;
+            color: white;
+            border: none;
+            outline: none;
+            font-size: 14.5px;
+            resize: none;
+            height: 40px;
+            padding: 10px 0;
+            font-family: inherit;
+        }
+
+        .input-actions-bar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-top: 1px solid #3f4248;
+            padding-top: 8px;
+        }
+
+        .file-upload-btn {
+            background: #4e5058;
+            color: white;
+            padding: 6px 12px;
+            border-radius: 4px;
+            font-size: 13px;
+            cursor: pointer;
+            font-weight: 500;
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+        }
+
+        .file-upload-btn:hover {
+            background: #6d6f78;
+        }
+
+        .send-btn {
+            background: #5865F2;
+            color: white;
+            padding: 6px 16px;
+            border-radius: 4px;
+            font-size: 13px;
+            font-weight: 600;
+            border: none;
+            cursor: pointer;
+        }
+
+        .send-btn:hover {
+            background: #4752c4;
+        }
+
+        /* =========================
+           MODAL
+           ========================= */
+
+        #profile-modal {
+            background: #313338;
+            padding: 30px;
+            border-radius: 8px;
+            max-width: 360px;
+            margin: 120px auto;
+            border: 1px solid #1f2023;
+            text-align: center;
+            box-shadow: 0 8px 24px rgba(0,0,0,0.5);
+        }
+
+        .modal-overlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.7);
+            z-index: 300;
+        }
+
+        .dialog-box {
+            background: #313338;
+            width: 360px;
+            max-height: 480px;
+            overflow-y: auto;
+            margin: 100px auto;
+            padding: 20px;
+            border-radius: 8px;
+            border: 1px solid #1f2023;
+            position: relative;
+        }
+
+        .close-dialog {
+            position: absolute;
+            top: 15px;
+            right: 20px;
+            background: none;
+            border: none;
+            color: #949ba4;
+            font-size: 22px;
+            cursor: pointer;
+        }
+
+        .close-dialog:hover {
+            color: white;
+        }
+
+        #typing-indicator {
+            font-size: 12px;
+            color: #949ba4;
+            height: 18px;
+            margin-bottom: 2px;
+            font-style: italic;
+        }
+
+        input[type="text"],
+        input[type="file"] {
+            background: #1e1f22;
+            color: white;
+            border: 1px solid #1f2023;
+            padding: 10px;
+            border-radius: 4px;
+            width: 100%;
+            outline: none;
+        }
+    </style>
+</head>
+
+<body>
+
+    <!-- PROFIL -->
+    <div id="profile-modal">
+
+        <h3 style="color:white;margin-top:0;">
+            Atur Profil Anda
+        </h3>
+
+        <input
+            type="text"
+            id="usernameInput"
+            placeholder="Masukkan nama..."
+            style="margin-bottom:12px;"
+        >
+
+        <br>
+
+        <label
+            style="font-size:12px;display:block;margin-bottom:6px;color:#b5bac1;text-align:left;"
+        >
+            Pilih Foto Profil:
+        </label>
+
+        <input
+            type="file"
+            id="avatarInput"
+            accept="image/*"
+            style="margin-bottom:20px;"
+        >
+
+        <br>
+
+        <button
+            onclick="joinChat()"
+            style="background:#5865F2;color:white;border:none;padding:10px 20px;border-radius:4px;font-weight:bold;cursor:pointer;width:100%;"
+        >
+            Gabung Chat
+        </button>
+
+    </div>
+
+
+    <!-- MEMBER DIALOG -->
+    <div id="memberDialog" class="modal-overlay">
+
+        <div class="dialog-box">
+
+            <button
+                class="close-dialog"
+                onclick="toggleMemberDialog()"
+            >
+                &times;
+            </button>
+
+            <h3
+                style="margin-top:0;color:white;border-bottom:1px solid #3f4248;padding-bottom:10px;"
+            >
+                Anggota Online
+            </h3>
+
+            <div
+                id="member-list"
+                style="margin-top:15px;"
+            ></div>
+
+        </div>
+
+    </div>
+
+
+    <!-- CHAT -->
+    <div
+        id="app-container"
+        style="display:none;"
+        class="main-chat-container"
+    >
+
+        <div class="chat-header">
+
+            <div class="header-right-group">
+
+                <div class="vertical-controls">
+
+                    <select
+                        id="channelSelect"
+                        onchange="changeChannelHeader()"
+                    >
+                        <option value="umum"># umum</option>
+                        <option value="gaming"># gaming</option>
+                        <option value="musik"># musik</option>
+                    </select>
+
+                    <select
+                        id="targetLang"
+                        onchange="changeLanguage()"
+                        title="Pilih Bahasa Terjemahan"
+                    >
+                        <option value="id">🇮🇩 Indonesia</option>
+                        <option value="en">🇬🇧 English</option>
+                        <option value="ms">🇲🇾 Melayu</option>
+                        <option value="jv">Jawa</option>
+                        <option value="su">Sunda</option>
+                        <option value="zh-CN">🇨🇳 Mandarin</option>
+                        <option value="ja">🇯🇵 Japanese</option>
+                        <option value="ko">🇰🇷 Korean</option>
+                        <option value="ar">🇸🇦 Arabic</option>
+                        <option value="es">🇪🇸 Spanish</option>
+                    </select>
+
+                </div>
+
+                <button
+                    onclick="toggleMemberDialog()"
+                    id="memberBtn"
+                    style="background:#35373c;color:#dbdee1;border:none;padding:8px 12px;border-radius:4px;font-size:13px;cursor:pointer;"
+                >
+                    👥 (0)
+                </button>
+
+                <button
+                    onclick="clearAllChat()"
+                    style="background:#da373c;color:white;border:none;padding:8px 12px;border-radius:4px;font-size:13px;cursor:pointer;"
+                >
+                    🗑️ Hapus
+                </button>
+
+            </div>
+
+        </div>
+
+
+        <div id="chat-box"></div>
+
+
+        <!-- INPUT -->
+        <div class="bottom-panel">
+
+            <div id="typing-indicator"></div>
+
+            <div class="input-wrapper">
+
+                <div
+                    id="replyPreviewBar"
+                    class="reply-preview-bar"
+                >
+
+                    <span
+                        id="replyPreviewText"
+                        class="reply-preview-text"
+                    >
+                        Membalas ke...
+                    </span>
+
+                    <button
+                        class="cancel-reply-btn"
+                        onclick="cancelReply()"
+                    >
+                        &times;
+                    </button>
+
+                </div>
+
+
+                <div class="input-container">
+
+                    <textarea
+                        id="messageInput"
+                        placeholder="Ketik pesan..."
+                        oninput="handleTyping()"
+                        onkeypress="handleKeyPress(event)"
+                    ></textarea>
+
+
+                    <div class="input-actions-bar">
+
+                        <div>
+
+                            <input
+                                type="file"
+                                id="imageInput"
+                                accept="image/*"
+                                style="display:none;"
+                                onchange="updateFileLabel()"
+                            >
+
+                            <label
+                                for="imageInput"
+                                id="fileBtn"
+                                class="file-upload-btn"
+                            >
+                                📎 Unggah Gambar
+                            </label>
+
+                            <span
+                                id="fileName"
+                                style="font-size:12px;color:#23a55a;margin-left:8px;"
+                            ></span>
+
+                        </div>
+
+
+                        <button
+                            id="sendBtn"
+                            class="send-btn"
+                            type="button"
+                            onclick="sendMessage()"
+                        >
+                            Kirim
+                        </button>
+
+                    </div>
+
+                </div>
+
+            </div>
+
+        </div>
+
+    </div>
+
+
+    <script>
+
+        /* =========================
+           SOCKET
+           ========================= */
+
+        const socket = io();
+
+        let username = '';
+        let userAvatar = 'https://via.placeholder.com/40';
+        let myTargetLang = 'id';
+        let messageHistory = [];
+        let typingTimeout = null;
+        let replyingToId = null;
+
+
+        /* =========================
+           SOCKET CONNECTION
+           ========================= */
+
+        socket.on('connect', function() {
+
+            console.log(
+                'Socket terhubung:',
+                socket.id
+            );
+
+            /*
+             * Kalau username sudah tersedia,
+             * daftarkan profile lagi.
+             *
+             * Ini penting setelah reconnect.
+             */
+            if (username) {
+
+                socket.emit(
+                    'set_user_profile',
+                    {
+                        username: username,
+                        avatar: userAvatar
+                    }
+                );
+            }
+        });
+
+
+        socket.on(
+            'connect_error',
+            function(error) {
+
+                console.error(
+                    'Socket error:',
+                    error
+                );
+
+            }
+        );
+
+
+        /* =========================
+           LOAD PROFIL
+           ========================= */
+
+        window.onload = function() {
+
+            const savedName =
+                localStorage.getItem(
+                    'chat_username'
+                );
+
+            const savedAvatar =
+                localStorage.getItem(
+                    'chat_avatar'
+                );
+
+            if (savedName) {
+
+                username = savedName;
+
+                if (savedAvatar) {
+                    userAvatar =
+                        savedAvatar;
+                }
+
+                registerAndEnter();
+            }
+        };
+
+
+        /* =========================
+           MEMBER
+           ========================= */
+
+        function toggleMemberDialog() {
+
+            const modal =
+                document.getElementById(
+                    'memberDialog'
+                );
+
+            modal.style.display =
+                modal.style.display === 'block'
+                    ? 'none'
+                    : 'block';
+        }
+
+
+        /* =========================
+           JOIN
+           ========================= */
+
+        function joinChat() {
+
+            const nameVal =
+                document
+                    .getElementById(
+                        'usernameInput'
+                    )
+                    .value
+                    .trim();
+
+            if (!nameVal) {
+
+                alert(
+                    'Nama tidak boleh kosong!'
+                );
+
+                return;
+            }
+
+            username = nameVal;
+
+            localStorage.setItem(
+                'chat_username',
+                username
+            );
+
+            const avatarFile =
+                document
+                    .getElementById(
+                        'avatarInput'
+                    )
+                    .files[0];
+
+            if (avatarFile) {
+
+                const reader =
+                    new FileReader();
+
+                reader.onload =
+                    function(e) {
+
+                        userAvatar =
+                            e.target.result;
+
+                        localStorage.setItem(
+                            'chat_avatar',
+                            userAvatar
+                        );
+
+                        registerAndEnter();
+                    };
+
+                reader.readAsDataURL(
+                    avatarFile
+                );
+
+            } else {
+
+                localStorage.setItem(
+                    'chat_avatar',
+                    userAvatar
+                );
+
+                registerAndEnter();
+            }
+        }
+
+
+        function registerAndEnter() {
+
+            if (socket.connected) {
+
+                socket.emit(
+                    'set_user_profile',
+                    {
+                        username: username,
+                        avatar: userAvatar
+                    }
+                );
+            }
+
+            document.getElementById(
+                'profile-modal'
+            ).style.display = 'none';
+
+            document.getElementById(
+                'app-container'
+            ).style.display = 'flex';
+        }
+
+
+        /* =========================
+           CHANNEL
+           ========================= */
+
+        function changeChannelHeader() {
+
+            const channelName =
+                document.getElementById(
+                    'channelSelect'
+                ).value;
+
+            document.getElementById(
+                'messageInput'
+            ).placeholder =
+                `Kirim pesan ke #${channelName}...`;
+
+            closeAllMessageActions();
+
+            cancelReply();
+
+            socket.emit(
+                'switch_channel',
+                channelName
+            );
+        }
+
+
+        /* =========================
+           FILE
+           ========================= */
+
+        function updateFileLabel() {
+
+            const imageInput =
+                document.getElementById(
+                    'imageInput'
+                );
+
+            const fileNameSpan =
+                document.getElementById(
+                    'fileName'
+                );
+
+            if (
+                imageInput.files.length > 0
+            ) {
+
+                fileNameSpan.innerText =
+                    '📎 ' +
+                    imageInput.files[0].name;
+
+            } else {
+
+                fileNameSpan.innerText =
+                    '';
+            }
+        }
+
+
+        /* =========================
+           ESCAPE HTML
+           ========================= */
+
+        function escapeHtml(value) {
+
+            return String(
+                value ?? ''
+            ).replace(
+                /[&<>"']/g,
+                function(ch) {
+
+                    return {
+                        '&': '&amp;',
+                        '<': '&lt;',
+                        '>': '&gt;',
+                        '"': '&quot;',
+                        "'": '&#39;'
+                    }[ch];
+
+                }
+            );
+        }
+
+
+        /* =========================
+           LINKIFY
+           ========================= */
+
+        function linkify(text) {
+
+            const escaped =
+                escapeHtml(text);
+
+            return escaped.replace(
+                /(\b(https?|ftp|file):\/\/[-A-Z0-9+&@#\/%?=~_|!:,.;]*[-A-Z0-9+&@#\/%=~_|])/ig,
+
+                '<a href="$1" target="_blank" rel="noopener noreferrer" style="color:#00b0f4;text-decoration:underline;">$1</a>'
+            );
+        }
+
+
+        /* =========================
+           TRANSLATE
+           ========================= */
+
+        async function translateText(
+            text,
+            targetLang
+        ) {
+
+            if (!text) {
+                return '';
+            }
+
+            try {
+
+                const res =
+                    await fetch(
+                        `https://translate.googleapis.com/translate_a/single?client=gtx&sl=auto&tl=${targetLang}&dt=t&q=${encodeURIComponent(text)}`
+                    );
+
+                const data =
+                    await res.json();
+
+                return data[0]
+                    .map(
+                        item => item[0]
+                    )
+                    .join('');
+
+            } catch (err) {
+
+                return text;
+            }
+        }
+
+
+        /* =========================
+           SOUND
+           ========================= */
+
+        function playNotificationSound() {
+
+            try {
+
+                const audioCtx =
+                    new (
+                        window.AudioContext ||
+                        window.webkitAudioContext
+                    )();
+
+                const osc =
+                    audioCtx.createOscillator();
+
+                const gain =
+                    audioCtx.createGain();
+
+                osc.type = 'sine';
+
+                osc.frequency.value =
+                    587.33;
+
+                gain.gain.setValueAtTime(
+                    0.1,
+                    audioCtx.currentTime
+                );
+
+                gain.gain.exponentialRampToValueAtTime(
+                    0.001,
+                    audioCtx.currentTime + 0.15
+                );
+
+                osc.connect(gain);
+                gain.connect(
+                    audioCtx.destination
+                );
+
+                osc.start();
+
+                osc.stop(
+                    audioCtx.currentTime + 0.15
+                );
+
+            } catch (e) {}
+        }
+
+
+        /* =========================
+           REPLY
+           ========================= */
+
+        function startReply(
+            id,
+            event
+        ) {
+
+            if (event) {
+                event.preventDefault();
+                event.stopPropagation();
+            }
+
+            const msg =
+                messageHistory.find(
+                    m => m.id === id
+                );
+
+            if (!msg) {
+                return;
+            }
+
+            replyingToId = id;
+
+            const previewBar =
+                document.getElementById(
+                    'replyPreviewBar'
+                );
+
+            const previewText =
+                document.getElementById(
+                    'replyPreviewText'
+                );
+
+            if (
+                previewBar &&
+                previewText
+            ) {
+
+                previewText.textContent =
+                    `Membalas ke ${msg.sender}: ${msg.original || '[Gambar]'}`;
+
+                previewBar.style.display =
+                    'flex';
+            }
+
+            closeAllMessageActions();
+
+            document.getElementById(
+                'messageInput'
+            ).focus();
+        }
+
+
+        function cancelReply() {
+
+            replyingToId = null;
+
+            const previewBar =
+                document.getElementById(
+                    'replyPreviewBar'
+                );
+
+            const previewText =
+                document.getElementById(
+                    'replyPreviewText'
+                );
+
+            if (previewBar) {
+
+                previewBar.style.display =
+                    'none';
+            }
+
+            if (previewText) {
+
+                previewText.textContent =
+                    '';
+            }
+        }
+
+
+        /* =========================
+           ACTION BAR
+           ========================= */
+
+        function toggleMessageActions(
+            id,
+            event
+        ) {
+
+            if (event) {
+                event.preventDefault();
+                event.stopPropagation();
+            }
+
+            const row =
+                document.getElementById(
+                    `message-container-${id}`
+                );
+
+            if (!row) {
+                return;
+            }
+
+            const wasOpen =
+                row.classList.contains(
+                    'show-actions'
+                );
+
+            closeAllMessageActions();
+
+            if (!wasOpen) {
+
+                row.classList.add(
+                    'show-actions'
+                );
+            }
+        }
+
+
+        function closeAllMessageActions() {
+
+            document
+                .querySelectorAll(
+                    '.message-row.show-actions'
+                )
+                .forEach(
+                    function(el) {
+
+                        el.classList.remove(
+                            'show-actions'
+                        );
+                    }
+                );
+
+            document
+                .querySelectorAll(
+                    '.emoji-picker-dialog.show'
+                )
+                .forEach(
+                    function(el) {
+
+                        el.classList.remove(
+                            'show'
+                        );
+                    }
+                );
+        }
+
+
+        /* =========================
+           EMOJI PICKER
+           ========================= */
+
+        function toggleEmojiPicker(
+            id,
+            event
+        ) {
+
+            if (event) {
+                event.preventDefault();
+                event.stopPropagation();
+            }
+
+            const row =
+                document.getElementById(
+                    `message-container-${id}`
+                );
+
+            const picker =
+                document.getElementById(
+                    `emoji-picker-${id}`
+                );
+
+            if (!row || !picker) {
+                return;
+            }
+
+            const wasOpen =
+                picker.classList.contains(
+                    'show'
+                );
+
+            closeAllMessageActions();
+
+            if (!wasOpen) {
+
+                row.classList.add(
+                    'show-actions'
+                );
+
+                picker.classList.add(
+                    'show'
+                );
+            }
+        }
+
+
+        /* =========================
+           ADD REACTION
+           ========================= */
+
+        function addReaction(
+            id,
+            emoji,
+            event
+        ) {
+
+            if (event) {
+
+                event.preventDefault();
+                event.stopPropagation();
+            }
+
+            id = String(id);
+            emoji = String(emoji);
+
+            console.log(
+                'KLIK EMOJI:',
+                {
+                    id: id,
+                    emoji: emoji,
+                    connected: socket.connected
+                }
+            );
+
+            if (!socket.connected) {
+
+                console.error(
+                    'Socket belum terhubung'
+                );
+
+                return;
+            }
+
+            if (!id || !emoji) {
+
+                console.error(
+                    'ID atau emoji kosong'
+                );
+
+                return;
+            }
+
+            socket.emit(
+                'add_reaction',
+                {
+                    id: id,
+                    emoji: emoji
+                }
+            );
+
+            console.log(
+                'REACTION TERKIRIM:',
+                id,
+                emoji
+            );
+
+            const picker =
+                document.getElementById(
+                    `emoji-picker-${id}`
+                );
+
+            if (picker) {
+
+                picker.classList.remove(
+                    'show'
+                );
+            }
+        }
+
+
+        /* =========================
+           CLOSE ACTION
+           ========================= */
+
+        window.addEventListener(
+            'click',
+            function(event) {
+
+                if (
+                    event.target.closest(
+                        '.message-row'
+                    )
+                ) {
+                    return;
+                }
+
+                closeAllMessageActions();
+            }
+        );
+
+
+        /* =========================
+           RENDER CHAT
+           ========================= */
+
+        async function renderChat() {
+
+            const chatBox =
+                document.getElementById(
+                    'chat-box'
+                );
+
+            if (!chatBox) {
+                return;
+            }
+
+            chatBox.innerHTML = '';
+
+
+            for (
+                const data
+                of messageHistory
+            ) {
+
+                const id =
+                    String(data.id);
+
+                let contentHtml = '';
+
+
+                /* =========================
+                   REPLY INDICATOR
+                   ========================= */
+
+                const parentMsg =
+                    data.replyTo
+                        ? messageHistory.find(
+                            m =>
+                                m.id === data.replyTo
+                        )
+                        : null;
+
+                if (parentMsg) {
+
+                    contentHtml += `
+                        <div class="reply-indicator">
+                            ↪️
+                            <b>${escapeHtml(parentMsg.sender)}</b>:
+                            ${escapeHtml(parentMsg.original || '[Gambar]')}
+                        </div>
+                    `;
+                }
+
+
+                /* =========================
+                   PESAN
+                   ========================= */
+
+                if (data.original) {
+
+                    const translated =
+                        await translateText(
+                            data.original,
+                            myTargetLang
+                        );
+
+                    contentHtml += `
+                        <div
+                            class="message-text"
+                            id="msg-text-${escapeHtml(id)}"
+                        >${linkify(data.original)}${data.edited ? ' <small>(diedit)</small>' : ''}</div>
+                    `;
+
+                    if (
+                        translated &&
+                        translated !==
+                        data.original
+                    ) {
+
+                        contentHtml += `
+                            <small class="translation-text">
+                                🌐
+                                (Terjemahan [${escapeHtml(myTargetLang)}]:
+                                ${linkify(translated)})
+                            </small>
+                        `;
+                    }
+                }
+
+
+                /* =========================
+                   GAMBAR
+                   ========================= */
+
+                if (data.image) {
+
+                    contentHtml += `
+                        <img
+                            src="${escapeHtml(data.image)}"
+                            class="chat-img"
+                        >
+                    `;
+                }
+
+
+                /* =========================
+                   REACTION
+                   ========================= */
+
+                let reactionsHtml = '';
+
+                if (
+                    data.reactions &&
+                    Object.keys(
+                        data.reactions
+                    ).length > 0
+                ) {
+
+                    reactionsHtml =
+                        '<div class="reaction-container">';
+
+                    for (
+                        const [
+                            emoji,
+                            usersList
+                        ]
+                        of Object.entries(
+                            data.reactions
+                        )
+                    ) {
+
+                        const hasReacted =
+                            Array.isArray(
+                                usersList
+                            ) &&
+                            usersList.includes(
+                                username
+                            );
+
+                        const safeId =
+                            JSON.stringify(id);
+
+                        const safeEmoji =
+                            JSON.stringify(
+                                emoji
+                            );
+
+                        reactionsHtml += `
+                            <button
+                                type="button"
+                                class="reaction-btn ${hasReacted ? 'active' : ''}"
+                                onclick='addReaction(${safeId}, ${safeEmoji}, event)'
+                            >
+                                ${escapeHtml(emoji)}
+                                <span class="reaction-count">
+                                    ${Array.isArray(usersList) ? usersList.length : 0}
+                                </span>
+                            </button>
+                        `;
+                    }
+
+                    reactionsHtml +=
+                        '</div>';
+                }
+
+
+                /* =========================
+                   ACTION BUTTON
+                   ========================= */
+
+                let actionButtonsHtml = `
+                    <button
+                        type="button"
+                        class="action-icon-btn"
+                        onclick='startReply(${JSON.stringify(id)}, event)'
+                        title="Balas"
+                    >
+                        ↩️
+                    </button>
+                `;
+
+
+                actionButtonsHtml += `
+                    <button
+                        type="button"
+                        class="action-icon-btn"
+                        onclick='toggleEmojiPicker(${JSON.stringify(id)}, event)'
+                        title="Reaksi"
+                    >
+                        😀
+                    </button>
+                `;
+
+
+                actionButtonsHtml += `
+                    <button
+                        type="button"
+                        class="action-icon-btn"
+                        onclick='copyText(${JSON.stringify(data.original || '')}, this); event.stopPropagation();'
+                        title="Salin"
+                    >
+                        📋
+                    </button>
+                `;
+
+
+                if (
+                    data.sender === username &&
+                    data.original
+                ) {
+
+                    actionButtonsHtml += `
+                        <button
+                            type="button"
+                            class="action-icon-btn"
+                            onclick='enableEdit(${JSON.stringify(id)}, event)'
+                            title="Edit"
+                        >
+                            ✏️
+                        </button>
+                    `;
+                }
+
+
+                if (
+                    data.sender === username
+                ) {
+
+                    actionButtonsHtml += `
+                        <button
+                            type="button"
+                            class="action-icon-btn"
+                            onclick='deleteMessage(${JSON.stringify(id)}, event)'
+                            title="Hapus"
+                        >
+                            🗑️
+                        </button>
+                    `;
+                }
+
+
+                /* =========================
+                   EMOJI PICKER
+                   ========================= */
+
+                const emojiList = [
+                    '👍',
+                    '❤️',
+                    '😂',
+                    '😮',
+                    '😢',
+                    '🔥',
+                    '🎉',
+                    '🙏'
+                ];
+
+                let emojiHtml = '';
+
+                for (
+                    const emoji
+                    of emojiList
+                ) {
+
+                    emojiHtml += `
+                        <div
+                            class="emoji-item"
+                            onclick='addReaction(${JSON.stringify(id)}, ${JSON.stringify(emoji)}, event)'
+                        >
+                            ${emoji}
+                        </div>
+                    `;
+                }
+
+
+                /* =========================
+                   STRUKTUR PESAN
+                   ========================= */
+
+                chatBox.innerHTML += `
+
+                    <div
+                        class="message-row"
+                        id="message-container-${escapeHtml(id)}"
+                        onclick='toggleMessageActions(${JSON.stringify(id)}, event)'
+                    >
+
+                        <img
+                            src="${escapeHtml(data.avatar || 'https://via.placeholder.com/40')}"
+                            class="avatar"
+                        >
+
+                        <div class="message-content-wrapper">
+
+                            <div class="message-header">
+
+                                <span class="message-username">
+                                    ${escapeHtml(data.sender)}
+                                </span>
+
+                            </div>
+
+                            ${contentHtml}
+
+                            ${reactionsHtml}
+
+                        </div>
+
+
+                        <!-- ACTION BAR DI BAWAH PESAN -->
+
+                        <div
+                            class="message-actions"
+                            onclick="event.stopPropagation()"
+                        >
+                            ${actionButtonsHtml}
+                        </div>
+
+
+                        <!-- EMOJI PICKER -->
+
+                        <div
+                            id="emoji-picker-${escapeHtml(id)}"
+                            class="emoji-picker-dialog"
+                            onclick="event.stopPropagation()"
+                        >
+
+                            <div class="emoji-grid">
+                                ${emojiHtml}
+                            </div>
+
+                        </div>
+
+                    </div>
+                `;
+            }
+
+
+            chatBox.scrollTop =
+                chatBox.scrollHeight;
+        }
+
+
+        /* =========================
+           EDIT
+           ========================= */
+
+        function enableEdit(
+            id,
+            event
+        ) {
+
+            if (event) {
+                event.preventDefault();
+                event.stopPropagation();
+            }
+
+            const textEl =
+                document.getElementById(
+                    `msg-text-${id}`
+                );
+
+            const msg =
+                messageHistory.find(
+                    m => m.id === id
+                );
+
+            if (!textEl || !msg) {
+                return;
+            }
+
+            if (
+                document.getElementById(
+                    `edit-box-${id}`
+                )
+            ) {
+                return;
+            }
+
+            const editDiv =
+                document.createElement(
+                    'div'
+                );
+
+            editDiv.id =
+                `edit-box-${id}`;
+
+            editDiv.className =
+                'edit-box';
+
+            editDiv.innerHTML = `
+
+                <input
+                    type="text"
+                    id="edit-input-${escapeHtml(id)}"
+                    class="edit-input"
+                >
+
+                <button
+                    type="button"
+                    class="edit-save"
+                    onclick='saveEdit(${JSON.stringify(id)}, event)'
+                >
+                    Simpan
+                </button>
+
+                <button
+                    type="button"
+                    class="edit-cancel"
+                    onclick='cancelEdit(${JSON.stringify(id)}, event)'
+                >
+                    Batal
+                </button>
+            `;
+
+            textEl.style.display =
+                'none';
+
+            textEl.parentNode.insertBefore(
+                editDiv,
+                textEl.nextSibling
+            );
+
+            const input =
+                document.getElementById(
+                    `edit-input-${id}`
+                );
+
+            if (!input) {
+                return;
+            }
+
+            input.value =
+                msg.original || '';
+
+            input.focus();
+            input.select();
+        }
+
+
+        function cancelEdit(
+            id,
+            event
+        ) {
+
+            if (event) {
+                event.preventDefault();
+                event.stopPropagation();
+            }
+
+            const editBox =
+                document.getElementById(
+                    `edit-box-${id}`
+                );
+
+            const textEl =
+                document.getElementById(
+                    `msg-text-${id}`
+                );
+
+            if (editBox) {
+                editBox.remove();
+            }
+
+            if (textEl) {
+                textEl.style.display =
+                    '';
+            }
+        }
+
+
+        function saveEdit(
+            id,
+            event
+        ) {
+
+            if (event) {
+                event.preventDefault();
+                event.stopPropagation();
+            }
+
+            const inputEl =
+                document.getElementById(
+                    `edit-input-${id}`
+                );
+
+            if (!inputEl) {
+                return;
+            }
+
+            const newText =
+                inputEl.value.trim();
+
+            if (!newText) {
+                return;
+            }
+
+            socket.emit(
+                'edit_message',
+                {
+                    id: id,
+                    newText: newText
+                }
+            );
+
+            const editBox =
+                document.getElementById(
+                    `edit-box-${id}`
+                );
+
+            const textEl =
+                document.getElementById(
+                    `msg-text-${id}`
+                );
+
+            if (editBox) {
+                editBox.remove();
+            }
+
+            if (textEl) {
+                textEl.style.display =
+                    '';
+            }
+
+            closeAllMessageActions();
+        }
+
+
+        /* =========================
+           COPY
+           ========================= */
+
+        function copyText(
+            text,
+            btnElement
+        ) {
+
+            if (
+                navigator.clipboard &&
+                navigator.clipboard.writeText
+            ) {
+
+                navigator.clipboard
+                    .writeText(text)
+                    .then(
+                        function() {
+
+                            const orig =
+                                btnElement.innerHTML;
+
+                            btnElement.innerHTML =
+                                '✅';
+
+                            setTimeout(
+                                function() {
+
+                                    btnElement.innerHTML =
+                                        orig;
+
+                                },
+                                1500
+                            );
+                        }
+                    )
+                    .catch(
+                        function() {}
+                    );
+
+            } else {
+
+                const temp =
+                    document.createElement(
+                        'textarea'
+                    );
+
+                temp.value = text;
+
+                document.body.appendChild(
+                    temp
+                );
+
+                temp.select();
+
+                try {
+                    document.execCommand(
+                        'copy'
+                    );
+                } catch (e) {}
+
+                temp.remove();
+            }
+        }
+
+
+        /* =========================
+           LANGUAGE
+           ========================= */
+
+        async function changeLanguage() {
+
+            myTargetLang =
+                document.getElementById(
+                    'targetLang'
+                ).value;
+
+            await renderChat();
+        }
+
+
+        /* =========================
+           DELETE
+           ========================= */
+
+        function deleteMessage(
+            id,
+            event
+        ) {
+
+            if (event) {
+                event.preventDefault();
+                event.stopPropagation();
+            }
+
+            socket.emit(
+                'delete_message',
+                String(id)
+            );
+
+            closeAllMessageActions();
+        }
+
+
+        /* =========================
+           CLEAR
+           ========================= */
+
+        function clearAllChat() {
+
+            if (
+                confirm(
+                    'Yakin ingin menghapus seluruh riwayat chat di channel ini?'
+                )
+            ) {
+
+                socket.emit(
+                    'clear_all_chat'
+                );
+            }
+        }
+
+
+        /* =========================
+           ENTER
+           ========================= */
+
+        function handleKeyPress(e) {
+
+            if (
+                e.key === 'Enter' &&
+                !e.shiftKey
+            ) {
+
+                e.preventDefault();
+
+                sendMessage();
+            }
+        }
+
+
+        /* =========================
+           TYPING
+           ========================= */
+
+        function handleTyping() {
+
+            socket.emit(
+                'typing',
+                username
+            );
+
+            clearTimeout(
+                typingTimeout
+            );
+
+            typingTimeout =
+                setTimeout(
+                    function() {
+
+                        socket.emit(
+                            'stop_typing'
+                        );
+
+                    },
+                    1000
+                );
+        }
+
+
+        /* =========================
+           SEND
+           ========================= */
+
+        function sendMessage() {
+
+            const messageInput =
+                document.getElementById(
+                    'messageInput'
+                );
+
+            const imageInput =
+                document.getElementById(
+                    'imageInput'
+                );
+
+            const message =
+                messageInput.value.trim();
+
+            if (
+                !message &&
+                imageInput.files.length === 0
+            ) {
+
+                return;
+            }
+
+            socket.emit(
+                'stop_typing'
+            );
+
+            const messageData = {
+
+                sender: username,
+
+                avatar: userAvatar,
+
+                original: message,
+
+                image: null,
+
+                replyTo: replyingToId
+            };
+
+
+            if (
+                imageInput.files.length > 0
+            ) {
+
+                const reader =
+                    new FileReader();
+
+                reader.onload =
+                    function(e) {
+
+                        messageData.image =
+                            e.target.result;
+
+                        socket.emit(
+                            'send_message',
+                            messageData
+                        );
+
+                        resetForm();
+                    };
+
+                reader.readAsDataURL(
+                    imageInput.files[0]
+                );
+
+            } else {
+
+                socket.emit(
+                    'send_message',
+                    messageData
+                );
+
+                resetForm();
+            }
+        }
+
+
+        /* =========================
+           RESET
+           ========================= */
+
+        function resetForm() {
+
+            document.getElementById(
+                'messageInput'
+            ).value = '';
+
+            document.getElementById(
+                'imageInput'
+            ).value = '';
+
+            document.getElementById(
+                'fileName'
+            ).innerText = '';
+
+            cancelReply();
+        }
+
+
+        /* =========================
+           SOCKET HISTORY
+           ========================= */
+
+        socket.on(
+            'receive_history',
+            async function(history) {
+
+                if (
+                    messageHistory.length > 0 &&
+                    history.length >
+                    messageHistory.length
+                ) {
+
+                    const latestMsg =
+                        history[
+                            history.length - 1
+                        ];
+
+                    if (
+                        latestMsg &&
+                        latestMsg.sender !==
+                        username
+                    ) {
+
+                        playNotificationSound();
+                    }
+                }
+
+                messageHistory =
+                    Array.isArray(history)
+                        ? history
+                        : [];
+
+                await renderChat();
+            }
+        );
+
+
+        socket.on(
+            'message_deleted',
+            async function(history) {
+
+                messageHistory =
+                    Array.isArray(history)
+                        ? history
+                        : [];
+
+                await renderChat();
+            }
+        );
+
+
+        socket.on(
+            'message_edited',
+            async function(history) {
+
+                messageHistory =
+                    Array.isArray(history)
+                        ? history
+                        : [];
+
+                await renderChat();
+            }
+        );
+
+
+        socket.on(
+            'reaction_updated',
+            async function(history) {
+
+                console.log(
+                    'REACTION UPDATED:',
+                    history
+                );
+
+                messageHistory =
+                    Array.isArray(history)
+                        ? history
+                        : [];
+
+                await renderChat();
+            }
+        );
+
+
+        /* =========================
+           TYPING DISPLAY
+           ========================= */
+
+        socket.on(
+            'display_typing',
+            function(typingUser) {
+
+                document.getElementById(
+                    'typing-indicator'
+                ).innerText =
+                    `${typingUser} sedang mengetik...`;
+            }
+        );
+
+
+        socket.on(
+            'hide_typing',
+            function() {
+
+                document.getElementById(
+                    'typing-indicator'
+                ).innerText =
+                    '';
+            }
+        );
+
+
+        /* =========================
+           USERS
+           ========================= */
+
+        socket.on(
+            'update_users',
+            function(users) {
+
+                users =
+                    Array.isArray(users)
+                        ? users
+                        : [];
+
+                const onlineCount =
+                    users.length;
+
+                document.getElementById(
+                    'memberBtn'
+                ).innerText =
+                    `👥 (${onlineCount})`;
+
+
+                const memberList =
+                    document.getElementById(
+                        'member-list'
+                    );
+
+                memberList.innerHTML =
+                    '';
+
+
+                users.forEach(
+                    function(user) {
+
+                        memberList.innerHTML += `
+
+                            <div
+                                style="display:flex;align-items:center;margin-bottom:12px;gap:10px;"
+                            >
+
+                                <span
+                                    style="width:8px;height:8px;background-color:#23a55a;border-radius:50%;"
+                                ></span>
+
+                                <img
+                                    src="${escapeHtml(user.avatar || 'https://via.placeholder.com/40')}"
+                                    class="avatar"
+                                    style="width:30px;height:30px;margin-top:0;"
+                                >
+
+                                <span
+                                    style="color:white;font-size:14px;font-weight:500;"
+                                >
+                                    ${escapeHtml(user.username)}
+                                </span>
+
+                            </div>
+                        `;
+                    }
+                );
+            }
+        );
+
+    </script>
+
+</body>
+</html>
