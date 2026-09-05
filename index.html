@@ -2,8 +2,8 @@
 <html lang="id">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Discord Clone - Fixed</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <title>Discord Clone - Mobile</title>
     <script src="/socket.io/socket.io.js"></script>
 
     <style>
@@ -23,86 +23,113 @@
             font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
             background: #313338;
             color: #dbdee1;
-            display: flex;
-            height: 100dvh;
             overflow: hidden;
-            font-size: 36px;
+            font-size: 16px;
         }
 
         .main-chat-container {
-            flex: 1;
             display: flex;
             flex-direction: column;
-            background: #313338;
             width: 100%;
+            height: 100vh;
             height: 100dvh;
             min-width: 0;
             overflow: hidden;
+            background: #313338;
         }
 
+        /* =========================================================
+           HEADER
+           ========================================================= */
+
         .chat-header {
-            height: 95px;
-            font-size: 30px;
-            font-weight: bold;
-            border-bottom: 2px solid #1f2023;
-            padding: 0 24px;
+            min-height: 58px;
+            height: auto;
+            padding: 5px 7px;
             display: flex;
             justify-content: flex-end;
             align-items: center;
             background: #313338;
-            color: white;
+            border-bottom: 1px solid #1f2023;
             box-shadow: 0 1px 2px rgba(0,0,0,0.2);
             flex-shrink: 0;
         }
 
         .header-right-group {
+            width: 100%;
             display: flex;
             align-items: center;
-            gap: 16px;
+            justify-content: flex-end;
+            gap: 5px;
+            min-width: 0;
         }
 
         .vertical-controls {
+            flex: 1;
+            min-width: 0;
             display: flex;
             flex-direction: column;
-            gap: 6px;
-            align-items: flex-end;
+            gap: 3px;
         }
 
         select {
+            width: 100%;
+            min-width: 0;
+            height: 26px;
             background: #1e1f22;
             color: #dbdee1;
             border: 1px solid #1f2023;
-            padding: 6px 12px;
             border-radius: 4px;
             outline: none;
-            font-size: 28px;
-            width: 280px;
+            padding: 2px 5px;
+            font-size: 13px;
         }
+
+        #memberBtn,
+        .chat-header button {
+            flex-shrink: 0;
+            white-space: nowrap;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 13px !important;
+            padding: 7px 8px !important;
+        }
+
+        /* =========================================================
+           CHAT
+           ========================================================= */
 
         #chat-box {
             flex: 1;
+            min-height: 0;
+            width: 100%;
             overflow-y: auto;
             overflow-x: hidden;
-            padding: 24px;
+            padding: 5px 6px;
             background: #313338;
             display: flex;
             flex-direction: column;
-            gap: 6px;
-            min-height: 0;
+            gap: 0;
+            -webkit-overflow-scrolling: touch;
         }
 
-        /* =========================
+        /* =========================================================
            PESAN
-           ========================= */
+           ========================================================= */
 
         .message-row {
-            display: flex;
-            gap: 20px;
-            align-items: flex-start;
-            padding: 10px 0;
-            position: relative;
             width: 100%;
+            display: grid;
+            grid-template-columns: 42px minmax(0, 1fr);
+            grid-template-rows: auto auto auto;
+            column-gap: 9px;
+            align-items: start;
+            padding: 6px 2px;
+            margin: 0;
             border-radius: 4px;
+            position: relative;
+            min-width: 0;
         }
 
         .message-row:hover {
@@ -110,97 +137,120 @@
         }
 
         .avatar {
-            width: 64px;
-            height: 64px;
+            grid-column: 1;
+            grid-row: 1;
+            width: 42px;
+            height: 42px;
             border-radius: 50%;
             object-fit: cover;
             flex-shrink: 0;
-            margin-top: 4px;
+            margin-top: 1px;
         }
 
         .message-content-wrapper {
-            flex: 1;
+            grid-column: 2;
+            grid-row: 1;
+            width: 100%;
             min-width: 0;
             word-break: break-word;
+            overflow-wrap: anywhere;
             margin: 0;
             padding: 0;
-            display: block;
         }
 
         .message-header {
             display: block;
+            height: auto;
             margin: 0;
             padding: 0;
-            height: auto;
-            line-height: 40px;
+            line-height: 20px;
         }
 
         .message-username {
             display: block;
             font-weight: 600;
             color: white;
-            font-size: 32px;
+            font-size: 16px;
+            line-height: 20px;
             margin: 0;
             padding: 0;
-            line-height: 40px;
         }
 
         .message-text {
             display: block;
             color: #dbdee1;
-            font-size: 36px;
+            font-size: 16px;
             line-height: 1.4;
             white-space: pre-wrap;
             word-break: break-word;
+            overflow-wrap: anywhere;
             margin: 0;
             padding: 0;
         }
 
         .translation-text {
-            color: #23a55a;
-            font-size: 28px;
-            margin: 6px 0 0 0;
-            padding: 0;
             display: block;
+            color: #23a55a;
+            font-size: 13px;
+            line-height: 1.35;
+            margin: 3px 0 0 0;
+            padding: 0;
+            word-break: break-word;
         }
 
         .chat-img {
-            max-width: 100%;
-            max-height: 400px;
-            border-radius: 8px;
-            margin: 12px 0 0 0;
             display: block;
+            max-width: 100%;
+            max-height: 300px;
+            border-radius: 7px;
+            margin: 6px 0 0 0;
         }
 
         .reply-indicator {
-            font-size: 26px;
-            color: #949ba4;
-            margin: 0 0 4px 0;
-            padding: 0;
             display: flex;
             align-items: center;
-            gap: 6px;
+            gap: 4px;
+            color: #949ba4;
+            font-size: 12px;
+            line-height: 17px;
             font-style: italic;
+            margin: 0 0 2px 0;
+            padding: 0;
+            overflow: hidden;
         }
 
-        /* =========================
+        .reply-indicator b {
+            flex-shrink: 0;
+        }
+
+        /* =========================================================
            ACTION BAR
-           ========================= */
+           
+           PENTING:
+           Sekarang bukan absolute.
+           Jadi benar-benar berada DI BAWAH pesan.
+           ========================================================= */
 
         .message-actions {
+            grid-column: 2;
+            grid-row: 2;
+
             display: none;
             flex-wrap: wrap;
-            gap: 4px;
+            align-items: center;
+
+            width: fit-content;
+            max-width: 100%;
+
+            gap: 2px;
+            margin-top: 4px;
+            padding: 3px;
+
             background: #2b2d31;
             border: 1px solid #1f2023;
-            border-radius: 4px;
+            border-radius: 5px;
             box-shadow: 0 2px 4px rgba(0,0,0,0.3);
-            padding: 4px;
-            flex-shrink: 0;
 
-            position: absolute;
-            left: 84px;
-            top: calc(100% - 2px);
             z-index: 100;
         }
 
@@ -209,13 +259,16 @@
         }
 
         .action-icon-btn {
-            background: none;
+            background: transparent;
             border: none;
             color: #b5bac1;
-            padding: 10px 14px;
+            padding: 7px 8px;
             cursor: pointer;
-            font-size: 28px;
+            font-size: 17px;
             line-height: 1;
+            border-radius: 4px;
+            min-width: 32px;
+            min-height: 32px;
         }
 
         .action-icon-btn:hover,
@@ -224,29 +277,80 @@
             color: white;
         }
 
-        /* =========================
+        /* =========================================================
+           EMOJI PICKER
+           ========================================================= */
+
+        .emoji-picker-dialog {
+            grid-column: 2;
+            grid-row: 3;
+
+            display: none;
+
+            width: min(300px, calc(100vw - 65px));
+            max-height: 220px;
+
+            margin-top: 4px;
+            padding: 8px;
+
+            background: #313338;
+            border: 1px solid #1f2023;
+            border-radius: 7px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.5);
+
+            overflow-y: auto;
+            z-index: 200;
+        }
+
+        .emoji-picker-dialog.show {
+            display: block;
+        }
+
+        .emoji-grid {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 3px;
+        }
+
+        .emoji-item {
+            width: 36px;
+            height: 36px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 24px;
+            cursor: pointer;
+            border-radius: 4px;
+            user-select: none;
+        }
+
+        .emoji-item:hover {
+            background: #404249;
+        }
+
+        /* =========================================================
            REACTION
-           ========================= */
+           ========================================================= */
 
         .reaction-container {
             display: flex;
             flex-wrap: wrap;
-            gap: 6px;
-            margin: 8px 0 0 0;
+            gap: 4px;
+            margin: 5px 0 0 0;
             padding: 0;
         }
 
         .reaction-btn {
             background: #2b2d31;
             border: 1px solid transparent;
-            border-radius: 20px;
-            padding: 4px 12px;
-            font-size: 26px;
+            border-radius: 16px;
+            padding: 3px 8px;
+            font-size: 14px;
             color: #b5bac1;
             cursor: pointer;
             display: flex;
             align-items: center;
-            gap: 6px;
+            gap: 4px;
         }
 
         .reaction-btn:hover {
@@ -260,113 +364,77 @@
             color: white;
         }
 
-        /* =========================
-           EMOJI PICKER
-           ========================= */
-
-        .emoji-picker-dialog {
-            position: absolute;
-            left: 84px;
-            top: calc(100% + 50px);
-            background: #313338;
-            border: 1px solid #1f2023;
-            border-radius: 8px;
-            box-shadow: 0 5px 15px rgba(0,0,0,0.5);
-            padding: 12px;
-            display: none;
-            z-index: 200;
-            width: 380px;
-            max-height: 280px;
-            overflow-y: auto;
-        }
-
-        .emoji-picker-dialog.show {
-            display: block;
-        }
-
-        .emoji-grid {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 6px;
-        }
-
-        .emoji-item {
-            font-size: 34px;
-            width: 48px;
-            height: 48px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            cursor: pointer;
-            border-radius: 4px;
-            user-select: none;
-        }
-
-        .emoji-item:hover {
-            background: #404249;
-        }
-
-        /* =========================
+        /* =========================================================
            EDIT
-           ========================= */
+           ========================================================= */
 
         .edit-box {
-            margin-top: 8px;
             display: flex;
             flex-wrap: wrap;
             align-items: center;
-            gap: 8px;
+            gap: 4px;
+            margin-top: 5px;
+            width: 100%;
         }
 
         .edit-input {
             flex: 1;
-            min-width: 240px;
+            min-width: 120px;
             background: #1e1f22;
             color: white;
             border: 1px solid #5865F2;
-            padding: 12px;
             border-radius: 4px;
             outline: none;
-            font-size: 32px;
+            padding: 7px;
+            font-size: 16px;
+        }
+
+        .edit-save,
+        .edit-cancel {
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-weight: bold;
+            font-size: 13px;
+            padding: 7px 9px;
         }
 
         .edit-save {
             background: #248046;
             color: white;
-            border: none;
-            padding: 10px 18px;
-            border-radius: 4px;
-            cursor: pointer;
-            font-weight: bold;
-            font-size: 28px;
         }
 
         .edit-cancel {
             background: #4e5058;
             color: white;
-            border: none;
-            padding: 10px 18px;
-            border-radius: 4px;
-            cursor: pointer;
-            font-weight: bold;
-            font-size: 28px;
         }
 
-        /* =========================
-           INPUT
-           ========================= */
+        /* =========================================================
+           BOTTOM INPUT
+           ========================================================= */
 
         .bottom-panel {
-            padding: 0 24px 24px 24px;
-            background: #313338;
+            width: 100%;
             flex-shrink: 0;
+            padding: 0 6px 6px 6px;
+            background: #313338;
+        }
+
+        #typing-indicator {
+            height: 18px;
+            margin: 0 2px 2px;
+            color: #949ba4;
+            font-size: 12px;
+            line-height: 18px;
+            font-style: italic;
         }
 
         .input-wrapper {
+            width: 100%;
             background: #383a40;
-            border-radius: 8px;
-            padding: 12px 16px;
             border: 1px solid transparent;
+            border-radius: 7px;
+            padding: 5px 7px;
             display: flex;
             flex-direction: column;
         }
@@ -377,79 +445,96 @@
 
         .reply-preview-bar {
             display: none;
-            background: #2b2d31;
-            padding: 8px 12px;
-            border-radius: 4px;
-            font-size: 26px;
-            color: #b5bac1;
-            margin-bottom: 8px;
-            justify-content: space-between;
-            align-items: center;
             width: 100%;
+            align-items: center;
+            justify-content: space-between;
+
+            background: #2b2d31;
+            border-radius: 4px;
+
+            padding: 5px 7px;
+            margin-bottom: 4px;
+
+            font-size: 12px;
+            color: #b5bac1;
         }
 
         .reply-preview-text {
+            flex: 1;
+            min-width: 0;
+            text-align: left;
+            margin-right: 7px;
+
             white-space: nowrap;
             overflow: hidden;
             text-overflow: ellipsis;
-            flex: 1;
-            text-align: left;
-            margin-right: 12px;
         }
 
         .cancel-reply-btn {
+            flex-shrink: 0;
             background: none;
             border: none;
             color: #949ba4;
             cursor: pointer;
-            font-size: 30px;
-            padding: 0 6px;
-            flex-shrink: 0;
-        }
-
-        .cancel-reply-btn:hover {
-            color: white;
+            font-size: 20px;
+            padding: 0 4px;
         }
 
         .input-container {
+            width: 100%;
             display: flex;
             flex-direction: column;
-            gap: 10px;
-            width: 100%;
+            gap: 3px;
         }
 
         textarea#messageInput {
             width: 100%;
+            height: 42px;
+            min-height: 42px;
+            max-height: 120px;
+
             background: transparent;
             color: white;
             border: none;
             outline: none;
-            font-size: 36px;
             resize: none;
-            height: 80px;
-            padding: 10px 0;
+
             font-family: inherit;
+            font-size: 16px;
+            line-height: 1.35;
+
+            padding: 4px 0;
+            margin: 0;
+        }
+
+        textarea#messageInput::placeholder {
+            color: #949ba4;
         }
 
         .input-actions-bar {
+            width: 100%;
             display: flex;
             justify-content: space-between;
             align-items: center;
+
             border-top: 1px solid #3f4248;
-            padding-top: 12px;
+            padding-top: 5px;
         }
 
         .file-upload-btn {
-            background: #4e5058;
-            color: white;
-            padding: 10px 18px;
-            border-radius: 4px;
-            font-size: 28px;
-            cursor: pointer;
-            font-weight: 500;
             display: inline-flex;
             align-items: center;
-            gap: 8px;
+            gap: 4px;
+
+            background: #4e5058;
+            color: white;
+
+            padding: 6px 8px;
+            border-radius: 4px;
+
+            font-size: 12px;
+            cursor: pointer;
+            font-weight: 500;
         }
 
         .file-upload-btn:hover {
@@ -459,11 +544,13 @@
         .send-btn {
             background: #5865F2;
             color: white;
-            padding: 10px 24px;
-            border-radius: 4px;
-            font-size: 28px;
-            font-weight: 600;
             border: none;
+            border-radius: 4px;
+
+            padding: 6px 12px;
+
+            font-size: 13px;
+            font-weight: 600;
             cursor: pointer;
         }
 
@@ -471,26 +558,57 @@
             background: #4752c4;
         }
 
-        /* =========================
-           MODAL
-           ========================= */
+        #fileName {
+            font-size: 10px !important;
+            margin-left: 3px !important;
+        }
+
+        /* =========================================================
+           PROFILE MODAL
+           ========================================================= */
 
         #profile-modal {
+            width: calc(100% - 30px);
+            max-width: 420px;
+
             background: #313338;
-            padding: 40px;
-            border-radius: 10px;
-            max-width: 550px;
-            margin: 100px auto;
             border: 1px solid #1f2023;
+            border-radius: 9px;
+
+            padding: 22px;
+            margin: 50px auto;
+
             text-align: center;
             box-shadow: 0 8px 24px rgba(0,0,0,0.5);
         }
 
+        #profile-modal h3 {
+            color: white;
+            margin-top: 0;
+            font-size: 25px !important;
+        }
+
+        #profile-modal input {
+            font-size: 16px !important;
+        }
+
+        #profile-modal label {
+            font-size: 14px !important;
+        }
+
+        #profile-modal button {
+            font-size: 16px !important;
+            padding: 11px 18px !important;
+        }
+
+        /* =========================================================
+           MEMBER DIALOG
+           ========================================================= */
+
         .modal-overlay {
             display: none;
             position: fixed;
-            top: 0;
-            left: 0;
+            inset: 0;
             width: 100%;
             height: 100%;
             background: rgba(0,0,0,0.7);
@@ -498,26 +616,38 @@
         }
 
         .dialog-box {
-            background: #313338;
-            width: 550px;
-            max-width: calc(100% - 30px);
-            max-height: 600px;
+            width: calc(100% - 24px);
+            max-width: 420px;
+            max-height: 80dvh;
+
             overflow-y: auto;
-            margin: 100px auto;
-            padding: 30px;
-            border-radius: 10px;
+
+            margin: 45px auto;
+            padding: 18px;
+
+            background: #313338;
             border: 1px solid #1f2023;
+            border-radius: 9px;
+
             position: relative;
+        }
+
+        .dialog-box h3 {
+            margin-top: 0 !important;
+            padding-bottom: 9px !important;
+            font-size: 22px !important;
         }
 
         .close-dialog {
             position: absolute;
-            top: 20px;
-            right: 25px;
+            top: 9px;
+            right: 12px;
+
             background: none;
             border: none;
+
             color: #949ba4;
-            font-size: 36px;
+            font-size: 27px;
             cursor: pointer;
         }
 
@@ -525,310 +655,65 @@
             color: white;
         }
 
-        #typing-indicator {
-            font-size: 26px;
-            color: #949ba4;
-            height: 32px;
-            margin-bottom: 4px;
-            font-style: italic;
-        }
+        /* =========================================================
+           INPUT UMUM
+           ========================================================= */
 
         input[type="text"],
         input[type="file"] {
+            width: 100%;
+
             background: #1e1f22;
             color: white;
+
             border: 1px solid #1f2023;
-            padding: 14px;
             border-radius: 4px;
-            width: 100%;
+
             outline: none;
-            font-size: 32px;
+
+            padding: 9px;
+            font-size: 16px;
         }
 
         /* =========================================================
-           RESPONSIVE HP
-           ========================================================= */
-
-        @media (max-width: 600px) {
-
-            body {
-                font-size: 17px;
-            }
-
-            .main-chat-container {
-                width: 100%;
-                height: 100dvh;
-            }
-
-            /* HEADER */
-
-            .chat-header {
-                height: auto;
-                min-height: 70px;
-                padding: 7px 8px;
-            }
-
-            .header-right-group {
-                width: 100%;
-                gap: 5px;
-                align-items: center;
-                justify-content: flex-end;
-            }
-
-            .vertical-controls {
-                flex: 1;
-                min-width: 0;
-                gap: 4px;
-            }
-
-            select {
-                width: 100%;
-                max-width: 100%;
-                min-width: 0;
-                font-size: 15px;
-                padding: 6px 7px;
-                height: 31px;
-            }
-
-            #memberBtn,
-            .chat-header button {
-                font-size: 15px !important;
-                padding: 7px 8px !important;
-                white-space: nowrap;
-            }
-
-            /* CHAT */
-
-            #chat-box {
-                padding: 8px 7px;
-                gap: 1px;
-            }
-
-            .message-row {
-                gap: 9px;
-                padding: 7px 2px;
-            }
-
-            .avatar {
-                width: 42px;
-                height: 42px;
-                margin-top: 2px;
-            }
-
-            .message-content-wrapper {
-                min-width: 0;
-            }
-
-            .message-header {
-                line-height: 21px;
-            }
-
-            .message-username {
-                font-size: 17px;
-                line-height: 21px;
-            }
-
-            .message-text {
-                font-size: 17px;
-                line-height: 1.4;
-            }
-
-            .translation-text {
-                font-size: 14px;
-                line-height: 1.35;
-            }
-
-            .reply-indicator {
-                font-size: 13px;
-                line-height: 18px;
-                gap: 4px;
-            }
-
-            .chat-img {
-                max-width: 90%;
-                max-height: 300px;
-                margin-top: 7px;
-            }
-
-            /* ACTION BAR */
-
-            .message-actions {
-                left: 51px;
-                top: calc(100% - 2px);
-                max-width: calc(100vw - 60px);
-                padding: 3px;
-                gap: 2px;
-            }
-
-            .action-icon-btn {
-                font-size: 19px;
-                padding: 8px 9px;
-            }
-
-            /* EMOJI */
-
-            .emoji-picker-dialog {
-                left: 51px;
-                top: calc(100% + 46px);
-                width: min(320px, calc(100vw - 60px));
-                max-height: 230px;
-                padding: 9px;
-            }
-
-            .emoji-grid {
-                gap: 4px;
-            }
-
-            .emoji-item {
-                font-size: 25px;
-                width: 36px;
-                height: 36px;
-            }
-
-            /* BOTTOM INPUT */
-
-            .bottom-panel {
-                padding: 0 7px 7px 7px;
-            }
-
-            #typing-indicator {
-                font-size: 13px;
-                height: 19px;
-                margin-bottom: 2px;
-            }
-
-            .input-wrapper {
-                padding: 6px 8px;
-                border-radius: 8px;
-            }
-
-            .input-container {
-                gap: 5px;
-            }
-
-            textarea#messageInput {
-                font-size: 17px;
-                height: 48px;
-                padding: 5px 0;
-                line-height: 1.35;
-            }
-
-            .input-actions-bar {
-                padding-top: 6px;
-            }
-
-            .file-upload-btn {
-                font-size: 13px;
-                padding: 7px 8px;
-                gap: 5px;
-            }
-
-            .send-btn {
-                font-size: 14px;
-                padding: 7px 13px;
-            }
-
-            #fileName {
-                font-size: 11px !important;
-                margin-left: 4px !important;
-            }
-
-            /* REPLY */
-
-            .reply-preview-bar {
-                font-size: 13px;
-                padding: 6px 8px;
-                margin-bottom: 5px;
-            }
-
-            .cancel-reply-btn {
-                font-size: 22px;
-            }
-
-            /* EDIT */
-
-            .edit-box {
-                gap: 5px;
-            }
-
-            .edit-input {
-                min-width: 150px;
-                width: 100%;
-                font-size: 16px;
-                padding: 8px;
-            }
-
-            .edit-save,
-            .edit-cancel {
-                font-size: 14px;
-                padding: 7px 10px;
-            }
-
-            /* PROFILE */
-
-            #profile-modal {
-                width: calc(100% - 30px);
-                max-width: none;
-                margin: 50px auto;
-                padding: 22px;
-            }
-
-            #profile-modal h3 {
-                font-size: 25px !important;
-            }
-
-            #profile-modal input {
-                font-size: 17px !important;
-            }
-
-            #profile-modal label {
-                font-size: 15px !important;
-            }
-
-            #profile-modal button {
-                font-size: 17px !important;
-            }
-
-            /* MEMBER */
-
-            .dialog-box {
-                width: calc(100% - 25px);
-                max-width: none;
-                max-height: 80dvh;
-                margin: 50px auto;
-                padding: 20px;
-            }
-
-            .dialog-box h3 {
-                font-size: 23px !important;
-            }
-
-            .close-dialog {
-                font-size: 28px;
-                top: 12px;
-                right: 15px;
-            }
-        }
-
-        /* =========================================================
-           HP KECIL
+           HP SANGAT KECIL
            ========================================================= */
 
         @media (max-width: 380px) {
 
             .chat-header {
-                min-height: 66px;
+                min-height: 55px;
+                padding: 4px 5px;
+            }
+
+            .header-right-group {
+                gap: 3px;
+            }
+
+            .vertical-controls {
+                gap: 2px;
             }
 
             select {
-                font-size: 13px;
-                padding: 5px;
+                height: 24px;
+                font-size: 12px;
+                padding: 1px 4px;
             }
 
             #memberBtn,
             .chat-header button {
-                font-size: 13px !important;
+                font-size: 12px !important;
                 padding: 6px !important;
+            }
+
+            #chat-box {
+                padding: 4px 5px;
+            }
+
+            .message-row {
+                grid-template-columns: 38px minmax(0, 1fr);
+                column-gap: 7px;
+                padding: 5px 1px;
             }
 
             .avatar {
@@ -836,24 +721,38 @@
                 height: 38px;
             }
 
-            .message-row {
-                gap: 8px;
-            }
-
             .message-username {
-                font-size: 16px;
+                font-size: 15px;
+                line-height: 19px;
             }
 
             .message-text {
-                font-size: 16px;
+                font-size: 15px;
             }
 
             .translation-text {
-                font-size: 13px;
+                font-size: 12px;
+            }
+
+            .message-actions {
+                max-width: calc(100vw - 50px);
+            }
+
+            .action-icon-btn {
+                font-size: 16px;
+                min-width: 29px;
+                min-height: 29px;
+                padding: 6px 7px;
+            }
+
+            .bottom-panel {
+                padding: 0 5px 5px;
             }
 
             textarea#messageInput {
-                font-size: 16px;
+                height: 40px;
+                min-height: 40px;
+                font-size: 15px;
             }
 
             .file-upload-btn {
@@ -862,8 +761,8 @@
             }
 
             .send-btn {
-                font-size: 13px;
-                padding: 7px 10px;
+                font-size: 12px;
+                padding: 6px 10px;
             }
         }
     </style>
@@ -874,7 +773,7 @@
     <!-- PROFIL -->
     <div id="profile-modal">
 
-        <h3 style="color:white;margin-top:0;font-size:40px;">
+        <h3 style="color:white;margin-top:0;">
             Atur Profil Anda
         </h3>
 
@@ -882,13 +781,13 @@
             type="text"
             id="usernameInput"
             placeholder="Masukkan nama..."
-            style="margin-bottom:16px;"
+            style="margin-bottom:12px;"
         >
 
         <br>
 
         <label
-            style="font-size:28px;display:block;margin-bottom:8px;color:#b5bac1;text-align:left;"
+            style="display:block;margin-bottom:6px;color:#b5bac1;text-align:left;"
         >
             Pilih Foto Profil:
         </label>
@@ -897,14 +796,14 @@
             type="file"
             id="avatarInput"
             accept="image/*"
-            style="margin-bottom:24px;"
+            style="margin-bottom:18px;"
         >
 
         <br>
 
         <button
             onclick="joinChat()"
-            style="background:#5865F2;color:white;border:none;padding:14px 24px;border-radius:4px;font-weight:bold;cursor:pointer;width:100%;font-size:32px;"
+            style="background:#5865F2;color:white;border:none;border-radius:4px;font-weight:bold;cursor:pointer;width:100%;"
         >
             Gabung Chat
         </button>
@@ -925,14 +824,14 @@
             </button>
 
             <h3
-                style="margin-top:0;color:white;border-bottom:1px solid #3f4248;padding-bottom:12px;font-size:36px;"
+                style="margin-top:0;color:white;border-bottom:1px solid #3f4248;"
             >
                 Anggota Online
             </h3>
 
             <div
                 id="member-list"
-                style="margin-top:20px;"
+                style="margin-top:15px;"
             ></div>
 
         </div>
@@ -984,14 +883,14 @@
                 <button
                     onclick="toggleMemberDialog()"
                     id="memberBtn"
-                    style="background:#35373c;color:#dbdee1;border:none;padding:12px 18px;border-radius:4px;font-size:28px;cursor:pointer;"
+                    style="background:#35373c;color:#dbdee1;border:none;border-radius:4px;cursor:pointer;"
                 >
                     👥 (0)
                 </button>
 
                 <button
                     onclick="clearAllChat()"
-                    style="background:#da373c;color:white;border:none;padding:12px 18px;border-radius:4px;font-size:28px;cursor:pointer;"
+                    style="background:#da373c;color:white;border:none;border-radius:4px;cursor:pointer;"
                 >
                     🗑️ Hapus
                 </button>
@@ -1065,7 +964,7 @@
 
                             <span
                                 id="fileName"
-                                style="font-size:26px;color:#23a55a;margin-left:12px;"
+                                style="color:#23a55a;"
                             ></span>
 
                         </div>
@@ -1490,7 +1389,7 @@
 
             const msg =
                 messageHistory.find(
-                    m => m.id === id
+                    m => String(m.id) === String(id)
                 );
 
             if (!msg) {
@@ -1761,7 +1660,6 @@
 
             chatBox.innerHTML = '';
 
-
             for (
                 const data
                 of messageHistory
@@ -1781,7 +1679,7 @@
                     data.replyTo
                         ? messageHistory.find(
                             m =>
-                                m.id === data.replyTo
+                                String(m.id) === String(data.replyTo)
                         )
                         : null;
 
@@ -1818,8 +1716,7 @@
 
                     if (
                         translated &&
-                        translated !==
-                        data.original
+                        translated !== data.original
                     ) {
 
                         contentHtml += `
@@ -1886,9 +1783,7 @@
                             JSON.stringify(id);
 
                         const safeEmoji =
-                            JSON.stringify(
-                                emoji
-                            );
+                            JSON.stringify(emoji);
 
                         reactionsHtml += `
                             <button
@@ -1924,7 +1819,6 @@
                     </button>
                 `;
 
-
                 actionButtonsHtml += `
                     <button
                         type="button"
@@ -1936,7 +1830,6 @@
                     </button>
                 `;
 
-
                 actionButtonsHtml += `
                     <button
                         type="button"
@@ -1947,7 +1840,6 @@
                         📋
                     </button>
                 `;
-
 
                 if (
                     data.sender === username &&
@@ -1965,7 +1857,6 @@
                         </button>
                     `;
                 }
-
 
                 if (
                     data.sender === username
@@ -2051,8 +1942,6 @@
                         </div>
 
 
-                        <!-- ACTION BAR DI BAWAH PESAN -->
-
                         <div
                             class="message-actions"
                             onclick="event.stopPropagation()"
@@ -2060,8 +1949,6 @@
                             ${actionButtonsHtml}
                         </div>
 
-
-                        <!-- EMOJI PICKER -->
 
                         <div
                             id="emoji-picker-${escapeHtml(id)}"
@@ -2078,7 +1965,6 @@
                     </div>
                 `;
             }
-
 
             chatBox.scrollTop =
                 chatBox.scrollHeight;
@@ -2106,7 +1992,7 @@
 
             const msg =
                 messageHistory.find(
-                    m => m.id === id
+                    m => String(m.id) === String(id)
                 );
 
             if (!textEl || !msg) {
@@ -2690,21 +2576,21 @@
                         memberList.innerHTML += `
 
                             <div
-                                style="display:flex;align-items:center;margin-bottom:16px;gap:14px;"
+                                style="display:flex;align-items:center;margin-bottom:10px;gap:8px;"
                             >
 
                                 <span
-                                    style="width:12px;height:12px;background-color:#23a55a;border-radius:50%;"
+                                    style="width:8px;height:8px;background-color:#23a55a;border-radius:50%;"
                                 ></span>
 
                                 <img
                                     src="${escapeHtml(user.avatar || 'https://via.placeholder.com/64')}"
                                     class="avatar"
-                                    style="width:48px;height:48px;margin-top:0;"
+                                    style="width:38px;height:38px;margin-top:0;"
                                 >
 
                                 <span
-                                    style="color:white;font-size:28px;font-weight:500;"
+                                    style="color:white;font-size:16px;font-weight:500;"
                                 >
                                     ${escapeHtml(user.username)}
                                 </span>
