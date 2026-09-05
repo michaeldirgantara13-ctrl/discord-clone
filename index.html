@@ -997,6 +997,18 @@
                     )
                     .files[0];
 
+            if (
+                avatarFile &&
+                avatarFile.size > 1 * 1024 * 1024
+            ) {
+
+                alert(
+                    'Foto profil terlalu besar (maksimal 1MB). Silakan pilih foto lain.'
+                );
+
+                return;
+            }
+
             if (avatarFile) {
 
                 const reader =
@@ -1103,9 +1115,28 @@
                 imageInput.files.length > 0
             ) {
 
+                const file =
+                    imageInput.files[0];
+
+                if (
+                    file.size > 4 * 1024 * 1024
+                ) {
+
+                    alert(
+                        'Gambar terlalu besar (maksimal 4MB). Silakan pilih gambar lain.'
+                    );
+
+                    imageInput.value = '';
+
+                    fileNameSpan.innerText =
+                        '';
+
+                    return;
+                }
+
                 fileNameSpan.innerText =
                     '📎 ' +
-                    imageInput.files[0].name;
+                    file.name;
 
             } else {
 
@@ -2235,6 +2266,15 @@
 
         function clearAllChat() {
 
+            const password =
+                prompt(
+                    'Masukkan password admin untuk menghapus seluruh chat:'
+                );
+
+            if (password === null) {
+                return; // dibatalkan
+            }
+
             if (
                 confirm(
                     'Yakin ingin menghapus seluruh riwayat chat di channel ini?'
@@ -2242,7 +2282,8 @@
             ) {
 
                 socket.emit(
-                    'clear_all_chat'
+                    'clear_all_chat',
+                    { password: password }
                 );
             }
         }
@@ -2509,6 +2550,77 @@
                     'typing-indicator'
                 ).innerText =
                     '';
+            }
+        );
+
+
+        /* =========================
+           VALIDASI DARI SERVER
+           ========================= */
+
+        socket.on(
+            'clear_chat_denied',
+            function() {
+
+                alert(
+                    'Gagal menghapus chat: bukan admin atau password salah.'
+                );
+            }
+        );
+
+
+        socket.on(
+            'message_rejected',
+            function(payload) {
+
+                const reason =
+                    payload?.reason;
+
+                if (reason === 'image_too_large') {
+
+                    alert(
+                        'Gambar terlalu besar (maksimal 4MB). Pesan tidak terkirim.'
+                    );
+
+                } else {
+
+                    alert(
+                        'Pesan gagal terkirim (format gambar tidak didukung).'
+                    );
+                }
+
+                resetForm();
+            }
+        );
+
+
+        socket.on(
+            'avatar_rejected',
+            function() {
+
+                alert(
+                    'Foto profil terlalu besar (maksimal 1MB). Memakai foto default.'
+                );
+            }
+        );
+
+
+        // Server sudah mengubah foto profil (base64) jadi
+        // URL file. Simpan URL ini, bukan base64-nya, supaya
+        // sesi berikutnya tidak mengirim ulang data besar.
+        socket.on(
+            'profile_registered',
+            function(payload) {
+
+                if (payload?.avatar) {
+
+                    userAvatar = payload.avatar;
+
+                    localStorage.setItem(
+                        'chat_avatar',
+                        userAvatar
+                    );
+                }
             }
         );
 
