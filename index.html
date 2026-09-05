@@ -2,9 +2,9 @@
 <html lang="id">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Discord Clone - Extra Large Font</title>
-    <script src="/socket.io/socket.io.js"></script>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Discord Clone - Huge Font</title>
+    <script src="/socket.io/socket.io.js?v=2"></script>
 
     <style>
         * {
@@ -21,7 +21,7 @@
             font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
             background: #313338;
             color: #dbdee1;
-            font-size: 18px; /* Font dasar dibuat lebih besar */
+            font-size: 22px !important; /* Sengaja dibuat sangat besar agar langsung terlihat perbedaannya */
         }
 
         .main-chat-container {
@@ -35,9 +35,9 @@
         }
 
         .chat-header {
-            height: 65px;
-            min-height: 65px;
-            font-size: 16px;
+            height: 70px;
+            min-height: 70px;
+            font-size: 18px;
             font-weight: bold;
             border-bottom: 2px solid #1f2023;
             padding: 0 14px;
@@ -61,7 +61,7 @@
         .vertical-controls {
             display: flex;
             flex-direction: column;
-            gap: 3px;
+            gap: 4px;
             align-items: flex-end;
         }
 
@@ -69,11 +69,11 @@
             background: #1e1f22;
             color: #dbdee1;
             border: 1px solid #1f2023;
-            padding: 4px 6px;
+            padding: 6px 8px;
             border-radius: 4px;
             outline: none;
-            font-size: 14px;
-            max-width: 150px;
+            font-size: 16px;
+            max-width: 160px;
         }
 
         #chat-box {
@@ -84,7 +84,7 @@
             background: #313338;
             display: flex;
             flex-direction: column;
-            gap: 8px;
+            gap: 10px;
             min-height: 0;
         }
 
@@ -96,7 +96,7 @@
             display: flex;
             gap: 12px;
             align-items: flex-start;
-            padding: 8px 0;
+            padding: 10px 0;
             position: relative;
             width: 100%;
             border-radius: 4px;
@@ -107,8 +107,8 @@
         }
 
         .avatar {
-            width: 44px;
-            height: 44px;
+            width: 50px;
+            height: 50px;
             border-radius: 50%;
             object-fit: cover;
             flex-shrink: 0;
@@ -128,48 +128,48 @@
             display: block;
             margin: 0;
             padding: 0;
-            line-height: 24px;
+            line-height: 28px;
         }
 
         .message-username {
             display: block;
             font-weight: 600;
             color: white;
-            font-size: 17px; /* Diperbesar khusus nama pengirim */
+            font-size: 22px !important; /* Diperbesar */
             margin: 0;
             padding: 0;
-            line-height: 24px;
+            line-height: 28px;
         }
 
         .message-text {
             display: block;
             color: #dbdee1;
-            font-size: 17px; /* Diperbesar khusus isi teks chat */
+            font-size: 21px !important; /* Diperbesar */
             line-height: 1.5;
             white-space: pre-wrap;
             word-break: break-word;
-            margin: 2px 0 0 0;
+            margin: 4px 0 0 0;
             padding: 0;
         }
 
         .translation-text {
             color: #23a55a;
-            font-size: 14px;
-            margin: 4px 0 0 0;
+            font-size: 17px !important;
+            margin: 6px 0 0 0;
             padding: 0;
             display: block;
         }
 
         .chat-img {
             max-width: 100%;
-            max-height: 260px;
+            max-height: 300px;
             border-radius: 8px;
             margin: 8px 0 0 0;
             display: block;
         }
 
         .reply-indicator {
-            font-size: 14px;
+            font-size: 16px;
             color: #949ba4;
             margin: 0 0 4px 0;
             padding: 0;
@@ -195,7 +195,7 @@
             flex-shrink: 0;
 
             position: absolute;
-            left: 56px;
+            left: 62px;
             top: calc(100% - 2px);
             z-index: 100;
         }
@@ -208,9 +208,9 @@
             background: none;
             border: none;
             color: #b5bac1;
-            padding: 8px 10px;
+            padding: 10px 12px;
             cursor: pointer;
-            font-size: 16px;
+            font-size: 18px;
             line-height: 1;
         }
 
@@ -228,7 +228,7 @@
             display: flex;
             flex-wrap: wrap;
             gap: 6px;
-            margin: 6px 0 0 0;
+            margin: 8px 0 0 0;
             padding: 0;
         }
 
@@ -236,13 +236,13 @@
             background: #2b2d31;
             border: 1px solid transparent;
             border-radius: 16px;
-            padding: 4px 8px;
-            font-size: 14px;
+            padding: 6px 10px;
+            font-size: 16px;
             color: #b5bac1;
             cursor: pointer;
             display: flex;
             align-items: center;
-            gap: 4px;
+            gap: 6px;
         }
 
         .reaction-btn.active {
@@ -257,8 +257,8 @@
 
         .emoji-picker-dialog {
             position: absolute;
-            left: 56px;
-            top: calc(100% + 40px);
+            left: 62px;
+            top: calc(100% + 45px);
             background: #313338;
             border: 1px solid #1f2023;
             border-radius: 8px;
@@ -266,8 +266,8 @@
             padding: 10px;
             display: none;
             z-index: 200;
-            width: 250px;
-            max-height: 190px;
+            width: 270px;
+            max-height: 210px;
             overflow-y: auto;
         }
 
@@ -282,9 +282,9 @@
         }
 
         .emoji-item {
-            font-size: 24px;
-            width: 34px;
-            height: 34px;
+            font-size: 28px;
+            width: 38px;
+            height: 38px;
             display: flex;
             align-items: center;
             justify-content: center;
@@ -315,20 +315,20 @@
             background: #1e1f22;
             color: white;
             border: 1px solid #5865F2;
-            padding: 8px;
+            padding: 10px;
             border-radius: 4px;
             outline: none;
-            font-size: 17px;
+            font-size: 20px;
         }
 
         .edit-save, .edit-cancel {
             color: white;
             border: none;
-            padding: 8px 12px;
+            padding: 10px 14px;
             border-radius: 4px;
             cursor: pointer;
             font-weight: bold;
-            font-size: 14px;
+            font-size: 16px;
         }
         .edit-save { background: #248046; }
         .edit-cancel { background: #4e5058; }
@@ -346,7 +346,7 @@
         .input-wrapper {
             background: #383a40;
             border-radius: 8px;
-            padding: 8px 12px;
+            padding: 10px 14px;
             border: 1px solid transparent;
             display: flex;
             flex-direction: column;
@@ -361,7 +361,7 @@
             background: #2b2d31;
             padding: 6px 10px;
             border-radius: 4px;
-            font-size: 14px;
+            font-size: 16px;
             color: #b5bac1;
             margin-bottom: 6px;
             justify-content: space-between;
@@ -383,7 +383,7 @@
             border: none;
             color: #949ba4;
             cursor: pointer;
-            font-size: 18px;
+            font-size: 20px;
             padding: 0 4px;
             flex-shrink: 0;
         }
@@ -395,7 +395,7 @@
         .input-container {
             display: flex;
             flex-direction: column;
-            gap: 6px;
+            gap: 8px;
             width: 100%;
         }
 
@@ -405,9 +405,9 @@
             color: white;
             border: none;
             outline: none;
-            font-size: 17px; /* Diperbesar khusus kotak ketik pesan */
+            font-size: 21px !important; /* Kotak ketik pesan dibuat sangat besar */
             resize: none;
-            height: 42px;
+            height: 50px;
             padding: 6px 0;
             font-family: inherit;
         }
@@ -417,29 +417,29 @@
             justify-content: space-between;
             align-items: center;
             border-top: 1px solid #3f4248;
-            padding-top: 6px;
+            padding-top: 8px;
             gap: 8px;
         }
 
         .file-upload-btn {
             background: #4e5058;
             color: white;
-            padding: 6px 12px;
+            padding: 8px 14px;
             border-radius: 4px;
-            font-size: 14px;
+            font-size: 16px;
             cursor: pointer;
             font-weight: 500;
             display: inline-flex;
             align-items: center;
-            gap: 4px;
+            gap: 6px;
         }
 
         .send-btn {
             background: #5865F2;
             color: white;
-            padding: 6px 18px;
+            padding: 8px 20px;
             border-radius: 4px;
-            font-size: 14px;
+            font-size: 16px;
             font-weight: 600;
             border: none;
             cursor: pointer;
@@ -453,7 +453,7 @@
             background: #313338;
             padding: 24px;
             border-radius: 8px;
-            max-width: 320px;
+            max-width: 340px;
             width: 90%;
             margin: auto;
             border: 1px solid #1f2023;
@@ -477,10 +477,10 @@
         .dialog-box {
             background: #313338;
             width: 90%;
-            max-width: 320px;
+            max-width: 340px;
             max-height: 80vh;
             overflow-y: auto;
-            padding: 18px;
+            padding: 20px;
             border-radius: 8px;
             border: 1px solid #1f2023;
             position: relative;
@@ -493,14 +493,14 @@
             background: none;
             border: none;
             color: #949ba4;
-            font-size: 24px;
+            font-size: 26px;
             cursor: pointer;
         }
 
         #typing-indicator {
-            font-size: 14px;
+            font-size: 15px;
             color: #949ba4;
-            height: 18px;
+            height: 20px;
             margin-bottom: 4px;
             font-style: italic;
         }
@@ -510,11 +510,11 @@
             background: #1e1f22;
             color: white;
             border: 1px solid #1f2023;
-            padding: 8px;
+            padding: 10px;
             border-radius: 4px;
             width: 100%;
             outline: none;
-            font-size: 17px;
+            font-size: 18px;
         }
     </style>
 </head>
@@ -524,11 +524,11 @@
     <!-- PROFIL -->
     <div style="display:flex;align-items:center;justify-content:center;height:100%;width:100%;">
         <div id="profile-modal" style="display:block;">
-            <h3 style="color:white;margin-top:0;font-size:20px;">Atur Profil Anda</h3>
+            <h3 style="color:white;margin-top:0;font-size:22px;">Atur Profil Anda</h3>
             <input type="text" id="usernameInput" placeholder="Masukkan nama..." style="margin-bottom:12px;">
-            <label style="font-size:14px;display:block;margin-bottom:6px;color:#b5bac1;text-align:left;">Pilih Foto Profil:</label>
+            <label style="font-size:16px;display:block;margin-bottom:6px;color:#b5bac1;text-align:left;">Pilih Foto Profil:</label>
             <input type="file" id="avatarInput" accept="image/*" style="margin-bottom:16px;">
-            <button onclick="joinChat()" style="background:#5865F2;color:white;border:none;padding:10px 16px;border-radius:4px;font-weight:bold;cursor:pointer;width:100%;font-size:16px;">Gabung Chat</button>
+            <button onclick="joinChat()" style="background:#5865F2;color:white;border:none;padding:12px 16px;border-radius:4px;font-weight:bold;cursor:pointer;width:100%;font-size:18px;">Gabung Chat</button>
         </div>
     </div>
 
@@ -536,7 +536,7 @@
     <div id="memberDialog" class="modal-overlay">
         <div class="dialog-box">
             <button class="close-dialog" onclick="toggleMemberDialog()">&times;</button>
-            <h3 style="margin-top:0;color:white;border-bottom:1px solid #3f4248;padding-bottom:8px;font-size:18px;">Anggota Online</h3>
+            <h3 style="margin-top:0;color:white;border-bottom:1px solid #3f4248;padding-bottom:8px;font-size:20px;">Anggota Online</h3>
             <div id="member-list" style="margin-top:12px;"></div>
         </div>
     </div>
@@ -564,8 +564,8 @@
                         <option value="es">🇪🇸 Spanish</option>
                     </select>
                 </div>
-                <button onclick="toggleMemberDialog()" id="memberBtn" style="background:#35373c;color:#dbdee1;border:none;padding:8px 12px;border-radius:4px;font-size:14px;cursor:pointer;">👥 (0)</button>
-                <button onclick="clearAllChat()" style="background:#da373c;color:white;border:none;padding:8px 12px;border-radius:4px;font-size:14px;cursor:pointer;">🗑️ Hapus</button>
+                <button onclick="toggleMemberDialog()" id="memberBtn" style="background:#35373c;color:#dbdee1;border:none;padding:10px 14px;border-radius:4px;font-size:16px;cursor:pointer;">👥 (0)</button>
+                <button onclick="clearAllChat()" style="background:#da373c;color:white;border:none;padding:10px 14px;border-radius:4px;font-size:16px;cursor:pointer;">🗑️ Hapus</button>
             </div>
         </div>
 
@@ -585,7 +585,7 @@
                         <div style="display:flex; align-items:center; min-width:0; overflow:hidden;">
                             <input type="file" id="imageInput" accept="image/*" style="display:none;" onchange="updateFileLabel()">
                             <label for="imageInput" id="fileBtn" class="file-upload-btn">📎 Unggah</label>
-                            <span id="fileName" style="font-size:13px;color:#23a55a;margin-left:6px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;"></span>
+                            <span id="fileName" style="font-size:15px;color:#23a55a;margin-left:8px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;"></span>
                         </div>
                         <button id="sendBtn" class="send-btn" type="button" onclick="sendMessage()">Kirim</button>
                     </div>
@@ -1001,8 +1001,8 @@
                 memberList.innerHTML += `
                     <div style="display:flex;align-items:center;margin-bottom:12px;gap:10px;">
                         <span style="width:10px;height:10px;background-color:#23a55a;border-radius:50%;flex-shrink:0;"></span>
-                        <img src="${escapeHtml(user.avatar || 'https://via.placeholder.com/40')}" class="avatar" style="width:34px;height:34px;margin-top:0;">
-                        <span style="color:white;font-size:17px;font-weight:500;word-break:break-word;">${escapeHtml(user.username)}</span>
+                        <img src="${escapeHtml(user.avatar || 'https://via.placeholder.com/40')}" class="avatar" style="width:38px;height:38px;margin-top:0;">
+                        <span style="color:white;font-size:18px;font-weight:500;word-break:break-word;">${escapeHtml(user.username)}</span>
                     </div>
                 `;
             });
