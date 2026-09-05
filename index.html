@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Discord Clone - Fixed Mobile</title>
+    <title>Discord Clone - Larger Font</title>
     <script src="/socket.io/socket.io.js"></script>
 
     <style>
@@ -16,11 +16,12 @@
             padding: 0;
             width: 100%;
             height: 100%;
-            height: 100dvh; /* Menyesuaikan layar HP secara dinamis termasuk saat keyboard muncul */
+            height: 100dvh;
             overflow: hidden;
             font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
             background: #313338;
             color: #dbdee1;
+            font-size: 16px; /* Memperbesar base font standar */
         }
 
         .main-chat-container {
@@ -34,12 +35,12 @@
         }
 
         .chat-header {
-            height: 55px;
-            min-height: 55px;
-            font-size: 14px;
+            height: 60px;
+            min-height: 60px;
+            font-size: 15px;
             font-weight: bold;
             border-bottom: 2px solid #1f2023;
-            padding: 0 12px;
+            padding: 0 14px;
             display: flex;
             justify-content: flex-end;
             align-items: center;
@@ -52,7 +53,7 @@
         .header-right-group {
             display: flex;
             align-items: center;
-            gap: 6px;
+            gap: 8px;
             flex-wrap: wrap;
             justify-content: flex-end;
         }
@@ -60,7 +61,7 @@
         .vertical-controls {
             display: flex;
             flex-direction: column;
-            gap: 2px;
+            gap: 3px;
             align-items: flex-end;
         }
 
@@ -68,23 +69,23 @@
             background: #1e1f22;
             color: #dbdee1;
             border: 1px solid #1f2023;
-            padding: 2px 4px;
+            padding: 4px 6px;
             border-radius: 4px;
             outline: none;
-            font-size: 11px;
-            max-width: 130px;
+            font-size: 13px; /* Diperbesar */
+            max-width: 150px;
         }
 
         #chat-box {
             flex: 1;
             overflow-y: auto;
             -webkit-overflow-scrolling: touch;
-            padding: 12px;
+            padding: 14px;
             background: #313338;
             display: flex;
             flex-direction: column;
-            gap: 2px;
-            min-height: 0; /* Penting agar flex-grow berfungsi benar di HP */
+            gap: 6px;
+            min-height: 0;
         }
 
         /* =========================
@@ -93,9 +94,9 @@
 
         .message-row {
             display: flex;
-            gap: 10px;
+            gap: 12px;
             align-items: flex-start;
-            padding: 6px 0;
+            padding: 8px 0;
             position: relative;
             width: 100%;
             border-radius: 4px;
@@ -106,8 +107,8 @@
         }
 
         .avatar {
-            width: 34px;
-            height: 34px;
+            width: 40px; /* Diperbesar */
+            height: 40px; /* Diperbesar */
             border-radius: 50%;
             object-fit: cover;
             flex-shrink: 0;
@@ -127,33 +128,33 @@
             display: block;
             margin: 0;
             padding: 0;
-            line-height: 18px;
+            line-height: 22px;
         }
 
         .message-username {
             display: block;
             font-weight: 600;
             color: white;
-            font-size: 13px;
+            font-size: 15px; /* Diperbesar (nama pengirim) */
             margin: 0;
             padding: 0;
-            line-height: 18px;
+            line-height: 22px;
         }
 
         .message-text {
             display: block;
             color: #dbdee1;
-            font-size: 13px;
-            line-height: 1.4;
+            font-size: 15px; /* Diperbesar (isi pesan utama) */
+            line-height: 1.5;
             white-space: pre-wrap;
             word-break: break-word;
-            margin: 0;
+            margin: 2px 0 0 0;
             padding: 0;
         }
 
         .translation-text {
             color: #23a55a;
-            font-size: 11px;
+            font-size: 13px; /* Diperbesar */
             margin: 4px 0 0 0;
             padding: 0;
             display: block;
@@ -161,20 +162,20 @@
 
         .chat-img {
             max-width: 100%;
-            max-height: 200px;
+            max-height: 240px;
             border-radius: 8px;
-            margin: 6px 0 0 0;
+            margin: 8px 0 0 0;
             display: block;
         }
 
         .reply-indicator {
-            font-size: 11px;
+            font-size: 13px; /* Diperbesar */
             color: #949ba4;
-            margin: 0 0 2px 0;
+            margin: 0 0 4px 0;
             padding: 0;
             display: flex;
             align-items: center;
-            gap: 4px;
+            gap: 6px;
             font-style: italic;
         }
 
@@ -190,11 +191,11 @@
             border: 1px solid #1f2023;
             border-radius: 4px;
             box-shadow: 0 2px 4px rgba(0,0,0,0.3);
-            padding: 2px;
+            padding: 4px;
             flex-shrink: 0;
 
             position: absolute;
-            left: 44px;
+            left: 52px;
             top: calc(100% - 2px);
             z-index: 100;
         }
@@ -207,9 +208,9 @@
             background: none;
             border: none;
             color: #b5bac1;
-            padding: 6px 8px;
+            padding: 8px 10px;
             cursor: pointer;
-            font-size: 12px;
+            font-size: 15px; /* Diperbesar */
             line-height: 1;
         }
 
@@ -226,8 +227,8 @@
         .reaction-container {
             display: flex;
             flex-wrap: wrap;
-            gap: 4px;
-            margin: 4px 0 0 0;
+            gap: 6px;
+            margin: 6px 0 0 0;
             padding: 0;
         }
 
@@ -235,13 +236,13 @@
             background: #2b2d31;
             border: 1px solid transparent;
             border-radius: 16px;
-            padding: 2px 6px;
-            font-size: 11px;
+            padding: 4px 8px;
+            font-size: 13px; /* Diperbesar */
             color: #b5bac1;
             cursor: pointer;
             display: flex;
             align-items: center;
-            gap: 3px;
+            gap: 4px;
         }
 
         .reaction-btn.active {
@@ -256,17 +257,17 @@
 
         .emoji-picker-dialog {
             position: absolute;
-            left: 44px;
-            top: calc(100% + 34px);
+            left: 52px;
+            top: calc(100% + 40px);
             background: #313338;
             border: 1px solid #1f2023;
             border-radius: 8px;
             box-shadow: 0 5px 15px rgba(0,0,0,0.5);
-            padding: 8px;
+            padding: 10px;
             display: none;
             z-index: 200;
-            width: 220px;
-            max-height: 150px;
+            width: 240px;
+            max-height: 180px;
             overflow-y: auto;
         }
 
@@ -277,13 +278,13 @@
         .emoji-grid {
             display: flex;
             flex-wrap: wrap;
-            gap: 4px;
+            gap: 6px;
         }
 
         .emoji-item {
-            font-size: 18px;
-            width: 26px;
-            height: 26px;
+            font-size: 22px; /* Diperbesar */
+            width: 32px;
+            height: 32px;
             display: flex;
             align-items: center;
             justify-content: center;
@@ -301,33 +302,33 @@
            ========================= */
 
         .edit-box {
-            margin-top: 6px;
+            margin-top: 8px;
             display: flex;
             flex-wrap: wrap;
             align-items: center;
-            gap: 6px;
+            gap: 8px;
         }
 
         .edit-input {
             flex: 1;
-            min-width: 120px;
+            min-width: 140px;
             background: #1e1f22;
             color: white;
             border: 1px solid #5865F2;
-            padding: 6px;
+            padding: 8px;
             border-radius: 4px;
             outline: none;
-            font-size: 13px;
+            font-size: 15px; /* Diperbesar */
         }
 
         .edit-save, .edit-cancel {
             color: white;
             border: none;
-            padding: 6px 10px;
+            padding: 8px 12px;
             border-radius: 4px;
             cursor: pointer;
             font-weight: bold;
-            font-size: 11px;
+            font-size: 13px; /* Diperbesar */
         }
         .edit-save { background: #248046; }
         .edit-cancel { background: #4e5058; }
@@ -337,7 +338,7 @@
            ========================= */
 
         .bottom-panel {
-            padding: 8px 12px 12px 12px;
+            padding: 10px 14px 14px 14px;
             background: #313338;
             flex-shrink: 0;
         }
@@ -345,7 +346,7 @@
         .input-wrapper {
             background: #383a40;
             border-radius: 8px;
-            padding: 6px 10px;
+            padding: 8px 12px;
             border: 1px solid transparent;
             display: flex;
             flex-direction: column;
@@ -358,11 +359,11 @@
         .reply-preview-bar {
             display: none;
             background: #2b2d31;
-            padding: 4px 8px;
+            padding: 6px 10px;
             border-radius: 4px;
-            font-size: 11px;
+            font-size: 13px; /* Diperbesar */
             color: #b5bac1;
-            margin-bottom: 4px;
+            margin-bottom: 6px;
             justify-content: space-between;
             align-items: center;
             width: 100%;
@@ -374,7 +375,7 @@
             text-overflow: ellipsis;
             flex: 1;
             text-align: left;
-            margin-right: 6px;
+            margin-right: 8px;
         }
 
         .cancel-reply-btn {
@@ -382,8 +383,8 @@
             border: none;
             color: #949ba4;
             cursor: pointer;
-            font-size: 13px;
-            padding: 0 2px;
+            font-size: 16px; /* Diperbesar */
+            padding: 0 4px;
             flex-shrink: 0;
         }
 
@@ -394,7 +395,7 @@
         .input-container {
             display: flex;
             flex-direction: column;
-            gap: 4px;
+            gap: 6px;
             width: 100%;
         }
 
@@ -404,9 +405,9 @@
             color: white;
             border: none;
             outline: none;
-            font-size: 13px;
+            font-size: 15px; /* Diperbesar (kotak ketik pesan) */
             resize: none;
-            height: 32px;
+            height: 38px;
             padding: 4px 0;
             font-family: inherit;
         }
@@ -416,29 +417,29 @@
             justify-content: space-between;
             align-items: center;
             border-top: 1px solid #3f4248;
-            padding-top: 4px;
-            gap: 6px;
+            padding-top: 6px;
+            gap: 8px;
         }
 
         .file-upload-btn {
             background: #4e5058;
             color: white;
-            padding: 4px 8px;
+            padding: 6px 10px;
             border-radius: 4px;
-            font-size: 11px;
+            font-size: 13px; /* Diperbesar */
             cursor: pointer;
             font-weight: 500;
             display: inline-flex;
             align-items: center;
-            gap: 3px;
+            gap: 4px;
         }
 
         .send-btn {
             background: #5865F2;
             color: white;
-            padding: 4px 12px;
+            padding: 6px 16px;
             border-radius: 4px;
-            font-size: 11px;
+            font-size: 13px; /* Diperbesar */
             font-weight: 600;
             border: none;
             cursor: pointer;
@@ -450,9 +451,9 @@
 
         #profile-modal {
             background: #313338;
-            padding: 20px;
+            padding: 24px;
             border-radius: 8px;
-            max-width: 300px;
+            max-width: 320px;
             width: 90%;
             margin: auto;
             border: 1px solid #1f2023;
@@ -476,10 +477,10 @@
         .dialog-box {
             background: #313338;
             width: 90%;
-            max-width: 300px;
+            max-width: 320px;
             max-height: 80vh;
             overflow-y: auto;
-            padding: 16px;
+            padding: 18px;
             border-radius: 8px;
             border: 1px solid #1f2023;
             position: relative;
@@ -488,19 +489,19 @@
         .close-dialog {
             position: absolute;
             top: 10px;
-            right: 12px;
+            right: 14px;
             background: none;
             border: none;
             color: #949ba4;
-            font-size: 18px;
+            font-size: 22px;
             cursor: pointer;
         }
 
         #typing-indicator {
-            font-size: 11px;
+            font-size: 13px; /* Diperbesar */
             color: #949ba4;
-            height: 14px;
-            margin-bottom: 2px;
+            height: 16px;
+            margin-bottom: 4px;
             font-style: italic;
         }
 
@@ -509,11 +510,11 @@
             background: #1e1f22;
             color: white;
             border: 1px solid #1f2023;
-            padding: 6px;
+            padding: 8px;
             border-radius: 4px;
             width: 100%;
             outline: none;
-            font-size: 13px;
+            font-size: 15px; /* Diperbesar */
         }
     </style>
 </head>
@@ -523,11 +524,11 @@
     <!-- PROFIL -->
     <div style="display:flex;align-items:center;justify-content:center;height:100%;width:100%;">
         <div id="profile-modal" style="display:block;">
-            <h3 style="color:white;margin-top:0;font-size:16px;">Atur Profil Anda</h3>
-            <input type="text" id="usernameInput" placeholder="Masukkan nama..." style="margin-bottom:10px;">
-            <label style="font-size:11px;display:block;margin-bottom:4px;color:#b5bac1;text-align:left;">Pilih Foto Profil:</label>
-            <input type="file" id="avatarInput" accept="image/*" style="margin-bottom:14px;">
-            <button onclick="joinChat()" style="background:#5865F2;color:white;border:none;padding:8px 14px;border-radius:4px;font-weight:bold;cursor:pointer;width:100%;font-size:13px;">Gabung Chat</button>
+            <h3 style="color:white;margin-top:0;font-size:18px;">Atur Profil Anda</h3>
+            <input type="text" id="usernameInput" placeholder="Masukkan nama..." style="margin-bottom:12px;">
+            <label style="font-size:13px;display:block;margin-bottom:6px;color:#b5bac1;text-align:left;">Pilih Foto Profil:</label>
+            <input type="file" id="avatarInput" accept="image/*" style="margin-bottom:16px;">
+            <button onclick="joinChat()" style="background:#5865F2;color:white;border:none;padding:10px 16px;border-radius:4px;font-weight:bold;cursor:pointer;width:100%;font-size:15px;">Gabung Chat</button>
         </div>
     </div>
 
@@ -535,8 +536,8 @@
     <div id="memberDialog" class="modal-overlay">
         <div class="dialog-box">
             <button class="close-dialog" onclick="toggleMemberDialog()">&times;</button>
-            <h3 style="margin-top:0;color:white;border-bottom:1px solid #3f4248;padding-bottom:6px;font-size:15px;">Anggota Online</h3>
-            <div id="member-list" style="margin-top:10px;"></div>
+            <h3 style="margin-top:0;color:white;border-bottom:1px solid #3f4248;padding-bottom:8px;font-size:16px;">Anggota Online</h3>
+            <div id="member-list" style="margin-top:12px;"></div>
         </div>
     </div>
 
@@ -563,8 +564,8 @@
                         <option value="es">🇪🇸 Spanish</option>
                     </select>
                 </div>
-                <button onclick="toggleMemberDialog()" id="memberBtn" style="background:#35373c;color:#dbdee1;border:none;padding:6px 8px;border-radius:4px;font-size:11px;cursor:pointer;">👥 (0)</button>
-                <button onclick="clearAllChat()" style="background:#da373c;color:white;border:none;padding:6px 8px;border-radius:4px;font-size:11px;cursor:pointer;">🗑️ Hapus</button>
+                <button onclick="toggleMemberDialog()" id="memberBtn" style="background:#35373c;color:#dbdee1;border:none;padding:8px 10px;border-radius:4px;font-size:13px;cursor:pointer;">👥 (0)</button>
+                <button onclick="clearAllChat()" style="background:#da373c;color:white;border:none;padding:8px 10px;border-radius:4px;font-size:13px;cursor:pointer;">🗑️ Hapus</button>
             </div>
         </div>
 
@@ -584,7 +585,7 @@
                         <div style="display:flex; align-items:center; min-width:0; overflow:hidden;">
                             <input type="file" id="imageInput" accept="image/*" style="display:none;" onchange="updateFileLabel()">
                             <label for="imageInput" id="fileBtn" class="file-upload-btn">📎 Unggah</label>
-                            <span id="fileName" style="font-size:10px;color:#23a55a;margin-left:4px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;"></span>
+                            <span id="fileName" style="font-size:12px;color:#23a55a;margin-left:6px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;"></span>
                         </div>
                         <button id="sendBtn" class="send-btn" type="button" onclick="sendMessage()">Kirim</button>
                     </div>
@@ -998,10 +999,10 @@
             memberList.innerHTML = '';
             users.forEach(function(user) {
                 memberList.innerHTML += `
-                    <div style="display:flex;align-items:center;margin-bottom:10px;gap:8px;">
-                        <span style="width:8px;height:8px;background-color:#23a55a;border-radius:50%;flex-shrink:0;"></span>
-                        <img src="${escapeHtml(user.avatar || 'https://via.placeholder.com/40')}" class="avatar" style="width:28px;height:28px;margin-top:0;">
-                        <span style="color:white;font-size:13px;font-weight:500;word-break:break-word;">${escapeHtml(user.username)}</span>
+                    <div style="display:flex;align-items:center;margin-bottom:12px;gap:10px;">
+                        <span style="width:10px;height:10px;background-color:#23a55a;border-radius:50%;flex-shrink:0;"></span>
+                        <img src="${escapeHtml(user.avatar || 'https://via.placeholder.com/40')}" class="avatar" style="width:32px;height:32px;margin-top:0;">
+                        <span style="color:white;font-size:15px;font-weight:500;word-break:break-word;">${escapeHtml(user.username)}</span>
                     </div>
                 `;
             });
