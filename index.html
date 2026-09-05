@@ -1,1521 +1,948 @@
 <!DOCTYPE html>
 <html lang="id">
+
 <head>
-<meta charset="UTF-8">
 
-<meta name="viewport"
-      content="width=device-width,
-               initial-scale=1.0,
-               viewport-fit=cover">
+    <meta charset="UTF-8">
 
-<title>Discord Clone</title>
+    <meta
+        name="viewport"
+        content="width=device-width,
+                 initial-scale=1.0,
+                 viewport-fit=cover"
+    >
 
-<script src="/socket.io/socket.io.js"></script>
+    <title>Discord Clone - TEST</title>
 
-<style>
+    <script src="/socket.io/socket.io.js"></script>
 
-/* =========================================================
-   RESET
-   ========================================================= */
+    <style>
 
-* {
-    box-sizing: border-box;
-    -webkit-tap-highlight-color: transparent;
-}
+        /* =====================================================
+           TES UTAMA
+           JIKA FILE INI BENAR-BENAR DIPAKAI:
+           
+           BACKGROUND = MERAH
+           NAMA       = HIJAU 36PX
+           PESAN      = KUNING 36PX
+           ===================================================== */
 
-html,
-body {
-    width: 100%;
-    height: 100%;
-    min-width: 0;
-    min-height: 0;
+        html,
+        body {
 
-    margin: 0;
-    padding: 0;
+            width: 100%;
+            height: 100%;
 
-    overflow: hidden;
-}
+            margin: 0;
+            padding: 0;
 
-body {
-    font-family:
-        'Helvetica Neue',
-        Helvetica,
-        Arial,
-        sans-serif;
+            overflow: hidden;
 
-    background: #313338;
-    color: #dbdee1;
+            background: red !important;
 
-    font-size: 18px;
+            color: white;
 
-    width: 100vw;
+            font-family:
+                Arial,
+                Helvetica,
+                sans-serif;
+        }
 
-    height: 100vh;
-    height: 100dvh;
-}
 
+        * {
+            box-sizing: border-box;
+        }
 
-/* =========================================================
-   MAIN APP
-   ========================================================= */
 
-.main-chat-container {
+        /* =====================================================
+           APP
+           ===================================================== */
 
-    display: flex;
+        .main-chat-container {
 
-    flex-direction: column;
+            display: flex;
 
-    width: 100vw;
-    max-width: none;
+            flex-direction: column;
 
-    height: 100vh;
-    height: 100dvh;
+            width: 100vw;
 
-    min-width: 0;
-    min-height: 0;
+            height: 100vh;
+            height: 100dvh;
 
-    margin: 0;
-    padding: 0;
+            background: red !important;
 
-    overflow: hidden;
+            overflow: hidden;
+        }
 
-    background: #313338;
-}
 
+        /* =====================================================
+           HEADER
+           ===================================================== */
 
-/* =========================================================
-   PROFILE
-   ========================================================= */
+        .chat-header {
 
-#profile-modal {
+            width: 100%;
 
-    width: calc(100% - 30px);
+            min-height: 75px;
 
-    max-width: 500px;
+            padding: 8px;
 
-    background: #313338;
+            display: flex;
 
-    border:
-        1px solid #1f2023;
+            align-items: center;
 
-    border-radius: 10px;
+            background: #313338;
 
-    padding: 25px;
+            border-bottom:
+                1px solid #1f2023;
 
-    margin: 50px auto;
+            flex-shrink: 0;
+        }
 
-    text-align: center;
 
-    box-shadow:
-        0 8px 24px rgba(0,0,0,.5);
-}
+        .header-right-group {
 
-#profile-modal h3 {
+            width: 100%;
 
-    color: white;
+            display: flex;
 
-    margin-top: 0;
+            align-items: center;
 
-    font-size: 27px !important;
-}
+            gap: 7px;
+        }
 
-#profile-modal input {
 
-    font-size: 18px !important;
-}
+        .vertical-controls {
 
-#profile-modal label {
+            flex: 1;
 
-    font-size: 16px !important;
-}
+            display: flex;
 
-#profile-modal button {
+            flex-direction: column;
 
-    font-size: 18px !important;
+            gap: 5px;
 
-    padding:
-        13px
-        20px !important;
-}
+            min-width: 0;
+        }
 
 
-/* =========================================================
-   HEADER
-   ========================================================= */
+        select {
 
-.chat-header {
+            width: 100%;
 
-    width: 100vw;
+            height: 31px;
 
-    min-height: 70px;
+            background: #1e1f22;
 
-    height: auto;
+            color: white;
 
-    flex: 0 0 auto;
+            border: 1px solid #1f2023;
 
-    padding:
-        6px
-        7px;
+            border-radius: 5px;
 
-    display: flex;
+            font-size: 18px !important;
+        }
 
-    align-items: center;
 
-    background: #313338;
+        #memberBtn,
+        .chat-header button {
 
-    border-bottom:
-        1px solid #1f2023;
+            min-height: 43px;
 
-    box-shadow:
-        0 1px 3px rgba(0,0,0,.25);
+            padding:
+                8px
+                11px;
 
-    overflow: hidden;
-}
+            border: none;
 
+            border-radius: 5px;
 
-.header-right-group {
+            font-size: 17px !important;
 
-    width: 100%;
+            white-space: nowrap;
+        }
 
-    min-width: 0;
 
-    display: flex;
+        /* =====================================================
+           CHAT
+           ===================================================== */
 
-    align-items: center;
+        #chat-box {
 
-    justify-content: flex-end;
+            flex: 1;
 
-    gap: 6px;
-}
+            min-height: 0;
 
+            width: 100%;
 
-.vertical-controls {
+            overflow-y: auto;
 
-    flex:
-        1
-        1
-        auto;
+            overflow-x: hidden;
 
-    min-width: 0;
+            padding: 8px;
 
-    display: flex;
+            background: red !important;
+        }
 
-    flex-direction: column;
 
-    gap: 4px;
-}
+        /* =====================================================
+           MESSAGE
+           ===================================================== */
 
+        .message-row {
 
-select {
+            width: 100%;
 
-    width: 100%;
+            display: grid;
 
-    min-width: 0;
+            grid-template-columns:
+                56px
+                minmax(0, 1fr);
 
-    height: 30px;
+            grid-template-rows:
+                auto
+                auto
+                auto;
 
-    background: #1e1f22;
+            column-gap: 11px;
 
-    color: #dbdee1;
+            padding:
+                9px
+                2px;
 
-    border:
-        1px solid #1f2023;
+            margin: 0;
 
-    border-radius: 5px;
+            border-radius: 5px;
 
-    outline: none;
+            position: relative;
+        }
 
-    padding:
-        2px
-        7px;
 
-    font-size: 16px;
-}
+        .message-row:hover {
 
+            background: #2e3035;
+        }
 
-#memberBtn,
-.chat-header button {
 
-    flex:
-        0
-        0
-        auto;
+        /* =====================================================
+           AVATAR
+           ===================================================== */
 
-    min-height: 40px;
+        .avatar {
 
-    white-space: nowrap;
+            grid-column: 1;
 
-    border: none;
+            grid-row: 1;
 
-    border-radius: 5px;
+            width: 56px;
 
-    cursor: pointer;
+            height: 56px;
 
-    font-size: 16px !important;
+            border-radius: 50%;
 
-    padding:
-        8px
-        10px !important;
-}
+            object-fit: cover;
 
+            margin-top: 1px;
+        }
 
-/* =========================================================
-   CHAT BOX
-   ========================================================= */
 
-#chat-box {
+        /* =====================================================
+           MESSAGE CONTENT
+           ===================================================== */
 
-    width: 100vw;
+        .message-content-wrapper {
 
-    flex:
-        1
-        1
-        0;
+            grid-column: 2;
 
-    min-width: 0;
-    min-height: 0;
+            grid-row: 1;
 
-    height: auto;
+            width: 100%;
 
-    overflow-y: auto;
-    overflow-x: hidden;
+            min-width: 0;
 
-    padding:
-        7px
-        7px;
+            word-break: break-word;
 
-    margin: 0;
+            overflow-wrap: anywhere;
+        }
 
-    background: #313338;
 
-    display: flex;
+        .message-header {
 
-    flex-direction: column;
+            width: 100%;
 
-    gap: 0;
+            line-height: 42px;
+        }
 
-    -webkit-overflow-scrolling: touch;
 
-    overscroll-behavior:
-        contain;
-}
+        /* =====================================================
+           NAMA — 36PX
+           ===================================================== */
 
+        .message-username {
 
-/* =========================================================
-   MESSAGE
-   ========================================================= */
+            display: block;
 
-.message-row {
+            color: lime !important;
 
-    width: 100%;
-    max-width: none;
+            font-size: 36px !important;
 
-    min-width: 0;
+            line-height: 42px !important;
 
-    display: grid;
+            font-weight: bold !important;
 
-    grid-template-columns:
-        48px
-        minmax(0,1fr);
+            margin: 0;
 
-    grid-template-rows:
-        auto
-        auto
-        auto;
+            padding: 0;
+        }
 
-    column-gap: 10px;
 
-    align-items: start;
+        /* =====================================================
+           PESAN — 36PX
+           ===================================================== */
 
-    padding:
-        8px
-        2px;
+        .message-text {
 
-    margin: 0;
+            display: block;
 
-    border-radius: 5px;
+            color: yellow !important;
 
-    position: relative;
-}
+            font-size: 36px !important;
 
+            line-height: 1.4 !important;
 
-.message-row:hover {
+            font-weight: normal;
 
-    background: #2e3035;
-}
+            white-space: pre-wrap;
 
+            word-break: break-word;
 
-/* =========================================================
-   AVATAR
-   ========================================================= */
+            overflow-wrap: anywhere;
 
-.avatar {
+            margin: 0;
 
-    grid-column: 1;
+            padding: 0;
+        }
 
-    grid-row: 1;
 
-    width: 48px;
+        /* =====================================================
+           TRANSLATION
+           ===================================================== */
 
-    height: 48px;
+        .translation-text {
 
-    border-radius: 50%;
+            display: block;
 
-    object-fit: cover;
+            color: #00ff88 !important;
 
-    flex-shrink: 0;
+            font-size: 24px !important;
 
-    margin-top: 1px;
-}
+            line-height: 1.4;
 
+            margin-top: 5px;
 
-/* =========================================================
-   CONTENT
-   ========================================================= */
+            word-break: break-word;
+        }
 
-.message-content-wrapper {
 
-    grid-column: 2;
+        /* =====================================================
+           REPLY
+           ===================================================== */
 
-    grid-row: 1;
+        .reply-indicator {
 
-    width: 100%;
+            color: #ffffff;
 
-    max-width: none;
+            font-size: 20px !important;
 
-    min-width: 0;
+            line-height: 26px;
 
-    word-break: break-word;
+            margin-bottom: 4px;
+        }
 
-    overflow-wrap: anywhere;
 
-    margin: 0;
+        /* =====================================================
+           IMAGE
+           ===================================================== */
 
-    padding: 0;
-}
+        .chat-img {
 
+            display: block;
 
-.message-header {
+            max-width: 100%;
 
-    display: block;
+            max-height: 450px;
 
-    width: 100%;
+            border-radius: 8px;
 
-    height: auto;
+            margin-top: 8px;
+        }
 
-    margin: 0;
 
-    padding: 0;
+        /* =====================================================
+           ACTION BAR
+           ===================================================== */
 
-    line-height: 23px;
-}
+        .message-actions {
 
+            grid-column: 2;
 
-.message-username {
+            grid-row: 2;
 
-    display: block;
+            display: none;
 
-    width: 100%;
+            flex-wrap: wrap;
 
-    font-weight: 600;
+            align-items: center;
 
-    color: white;
+            width: fit-content;
 
-    font-size: 18px;
+            max-width: 100%;
 
-    line-height: 23px;
+            gap: 4px;
 
-    margin: 0;
+            margin-top: 7px;
 
-    padding: 0;
-}
+            padding: 5px;
 
+            background: #2b2d31;
 
-.message-text {
+            border:
+                1px solid #1f2023;
 
-    display: block;
+            border-radius: 7px;
 
-    width: 100%;
+            z-index: 100;
+        }
 
-    color: #dbdee1;
 
-    font-size: 18px;
+        .message-row.show-actions
+        .message-actions {
 
-    line-height: 1.45;
+            display: flex;
+        }
 
-    white-space: pre-wrap;
 
-    word-break: break-word;
+        .action-icon-btn {
 
-    overflow-wrap: anywhere;
+            min-width: 44px;
 
-    margin: 0;
+            min-height: 44px;
 
-    padding: 0;
-}
+            padding: 9px;
 
+            border: none;
 
-.translation-text {
+            border-radius: 5px;
 
-    display: block;
+            background: transparent;
 
-    width: 100%;
+            color: white;
 
-    color: #23a55a;
+            font-size: 23px !important;
+        }
 
-    font-size: 15px;
 
-    line-height: 1.4;
+        /* =====================================================
+           EMOJI
+           ===================================================== */
 
-    margin:
-        4px
-        0
-        0;
+        .emoji-picker-dialog {
 
-    padding: 0;
+            grid-column: 2;
 
-    word-break: break-word;
+            grid-row: 3;
 
-    overflow-wrap: anywhere;
-}
+            display: none;
 
+            width:
+                min(
+                    350px,
+                    calc(100vw - 70px)
+                );
 
-/* =========================================================
-   IMAGE
-   ========================================================= */
+            max-height: 280px;
 
-.chat-img {
+            margin-top: 6px;
 
-    display: block;
+            padding: 10px;
 
-    max-width: 100%;
+            background: #313338;
 
-    max-height: 400px;
+            border:
+                1px solid #1f2023;
 
-    border-radius: 8px;
+            border-radius: 8px;
 
-    margin:
-        7px
-        0
-        0;
-}
+            overflow-y: auto;
 
+            z-index: 200;
+        }
 
-/* =========================================================
-   REPLY INDICATOR
-   ========================================================= */
 
-.reply-indicator {
+        .emoji-picker-dialog.show {
 
-    display: flex;
+            display: block;
+        }
 
-    align-items: center;
 
-    gap: 5px;
+        .emoji-grid {
 
-    width: 100%;
+            display: flex;
 
-    color: #949ba4;
+            flex-wrap: wrap;
 
-    font-size: 14px;
+            gap: 5px;
+        }
 
-    line-height: 19px;
 
-    font-style: italic;
+        .emoji-item {
 
-    margin:
-        0
-        0
-        3px;
+            width: 45px;
 
-    padding: 0;
+            height: 45px;
 
-    overflow: hidden;
-}
+            display: flex;
 
+            align-items: center;
 
-.reply-indicator b {
+            justify-content: center;
 
-    flex-shrink: 0;
-}
+            font-size: 31px !important;
 
+            border-radius: 5px;
+        }
 
-/* =========================================================
-   ACTION BAR
-   DI BAWAH PESAN
-   ========================================================= */
 
-.message-actions {
+        /* =====================================================
+           REACTION
+           ===================================================== */
 
-    grid-column: 2;
+        .reaction-container {
 
-    grid-row: 2;
+            display: flex;
 
-    display: none;
+            flex-wrap: wrap;
 
-    flex-wrap: wrap;
+            gap: 5px;
 
-    align-items: center;
+            margin-top: 7px;
+        }
 
-    width: fit-content;
 
-    max-width: 100%;
+        .reaction-btn {
 
-    gap: 3px;
+            background: #2b2d31;
 
-    margin-top: 6px;
+            border:
+                1px solid transparent;
 
-    padding: 4px;
+            border-radius: 18px;
 
-    background: #2b2d31;
+            padding:
+                5px
+                11px;
 
-    border:
-        1px solid #1f2023;
+            font-size: 18px !important;
 
-    border-radius: 6px;
+            color: #b5bac1;
+        }
 
-    box-shadow:
-        0 2px 5px rgba(0,0,0,.35);
 
-    z-index: 100;
-}
+        /* =====================================================
+           EDIT
+           ===================================================== */
 
+        .edit-box {
 
-.message-row.show-actions
-.message-actions {
+            display: flex;
 
-    display: flex;
-}
+            flex-wrap: wrap;
 
+            gap: 5px;
 
-/* =========================================================
-   ACTION BUTTON
-   ========================================================= */
+            margin-top: 7px;
 
-.action-icon-btn {
+            width: 100%;
+        }
 
-    background: transparent;
 
-    border: none;
+        .edit-input {
 
-    color: #b5bac1;
+            flex: 1;
 
-    padding:
-        8px
-        10px;
+            min-width: 120px;
 
-    cursor: pointer;
+            background: #1e1f22;
 
-    font-size: 20px;
+            color: white;
 
-    line-height: 1;
+            border:
+                1px solid #5865F2;
 
-    border-radius: 5px;
+            border-radius: 5px;
 
-    min-width: 38px;
+            padding: 10px;
 
-    min-height: 38px;
-}
+            font-size: 20px !important;
+        }
 
 
-.action-icon-btn:hover,
-.action-icon-btn:active {
+        .edit-save,
+        .edit-cancel {
 
-    background: #404249;
+            border: none;
 
-    color: white;
-}
+            border-radius: 5px;
 
+            padding:
+                9px
+                12px;
 
-/* =========================================================
-   EMOJI PICKER
-   ========================================================= */
+            font-size: 17px !important;
+        }
 
-.emoji-picker-dialog {
 
-    grid-column: 2;
+        /* =====================================================
+           BOTTOM
+           ===================================================== */
 
-    grid-row: 3;
+        .bottom-panel {
 
-    display: none;
+            width: 100%;
 
-    width:
-        min(
-            340px,
-            calc(100vw - 65px)
-        );
+            flex-shrink: 0;
 
-    max-width: 100%;
+            padding:
+                0
+                8px
+                8px;
 
-    max-height: 260px;
+            background: #313338;
+        }
 
-    margin-top: 5px;
 
-    padding: 10px;
+        #typing-indicator {
 
-    background: #313338;
+            height: 22px;
 
-    border:
-        1px solid #1f2023;
+            font-size: 16px !important;
 
-    border-radius: 8px;
+            line-height: 22px;
 
-    box-shadow:
-        0 5px 18px rgba(0,0,0,.5);
+            color: #949ba4;
+        }
 
-    overflow-y: auto;
 
-    z-index: 200;
-}
+        .input-wrapper {
 
+            width: 100%;
 
-.emoji-picker-dialog.show {
+            background: #383a40;
 
-    display: block;
-}
+            border-radius: 8px;
 
+            padding:
+                7px
+                9px;
+        }
 
-.emoji-grid {
 
-    display: flex;
+        .reply-preview-bar {
 
-    flex-wrap: wrap;
+            display: none;
 
-    gap: 4px;
-}
+            width: 100%;
 
+            align-items: center;
 
-.emoji-item {
+            justify-content: space-between;
 
-    width: 42px;
+            background: #2b2d31;
 
-    height: 42px;
+            border-radius: 5px;
 
-    display: flex;
+            padding:
+                7px
+                9px;
 
-    align-items: center;
+            margin-bottom: 5px;
 
-    justify-content: center;
+            font-size: 16px !important;
+        }
 
-    font-size: 28px;
 
-    cursor: pointer;
+        .input-container {
 
-    border-radius: 5px;
+            width: 100%;
 
-    user-select: none;
-}
+            display: flex;
 
+            flex-direction: column;
 
-.emoji-item:hover {
+            gap: 5px;
+        }
 
-    background: #404249;
-}
 
+        /* =====================================================
+           TEXT INPUT — 36PX UNTUK TES
+           ===================================================== */
 
-/* =========================================================
-   REACTION
-   ========================================================= */
+        textarea#messageInput {
 
-.reaction-container {
+            width: 100%;
 
-    display: flex;
+            height: 60px;
 
-    flex-wrap: wrap;
+            min-height: 60px;
 
-    gap: 5px;
+            max-height: 150px;
 
-    width: 100%;
+            background: transparent;
 
-    margin:
-        6px
-        0
-        0;
+            color: white;
 
-    padding: 0;
-}
+            border: none;
 
+            outline: none;
 
-.reaction-btn {
+            resize: none;
 
-    background: #2b2d31;
+            font-family: inherit;
 
-    border:
-        1px solid transparent;
+            font-size: 36px !important;
 
-    border-radius: 17px;
+            line-height: 1.3 !important;
 
-    padding:
-        4px
-        10px;
+            padding: 5px 0;
 
-    font-size: 16px;
+            margin: 0;
+        }
 
-    color: #b5bac1;
 
-    cursor: pointer;
+        textarea#messageInput::placeholder {
 
-    display: flex;
+            color: #949ba4;
+        }
 
-    align-items: center;
 
-    gap: 5px;
-}
+        .input-actions-bar {
 
+            width: 100%;
 
-.reaction-btn:hover {
+            display: flex;
 
-    border-color: #4f545c;
+            justify-content: space-between;
 
-    background: #35373c;
-}
+            align-items: center;
 
+            border-top:
+                1px solid #3f4248;
 
-.reaction-btn.active {
+            padding-top: 6px;
+        }
 
-    background: #313338;
 
-    border-color: #5865F2;
+        .file-upload-btn {
 
-    color: white;
-}
+            display: inline-flex;
 
+            align-items: center;
 
-/* =========================================================
-   EDIT
-   ========================================================= */
+            gap: 5px;
 
-.edit-box {
+            background: #4e5058;
 
-    display: flex;
+            color: white;
 
-    flex-wrap: wrap;
+            padding:
+                8px
+                10px;
 
-    align-items: center;
+            border-radius: 5px;
 
-    gap: 5px;
+            font-size: 16px !important;
+        }
 
-    margin-top: 6px;
 
-    width: 100%;
-}
+        .send-btn {
 
+            background: #5865F2;
 
-.edit-input {
+            color: white;
 
-    flex: 1;
+            border: none;
 
-    min-width: 120px;
+            border-radius: 5px;
 
-    background: #1e1f22;
+            padding:
+                9px
+                16px;
 
-    color: white;
+            font-size: 19px !important;
 
-    border:
-        1px solid #5865F2;
+            font-weight: bold;
+        }
 
-    border-radius: 5px;
 
-    outline: none;
+        #fileName {
 
-    padding: 9px;
+            font-size: 14px !important;
+        }
 
-    font-size: 18px;
-}
 
+        /* =====================================================
+           PROFILE
+           ===================================================== */
 
-.edit-save,
-.edit-cancel {
+        #profile-modal {
 
-    border: none;
+            width:
+                calc(100% - 30px);
 
-    border-radius: 5px;
+            max-width: 500px;
 
-    cursor: pointer;
+            background: #313338;
 
-    font-weight: bold;
+            border:
+                1px solid #1f2023;
 
-    font-size: 15px;
+            border-radius: 10px;
 
-    padding:
-        8px
-        11px;
-}
+            padding: 25px;
 
+            margin: 50px auto;
 
-.edit-save {
+            text-align: center;
+        }
 
-    background: #248046;
 
-    color: white;
-}
+        #profile-modal h3 {
 
+            font-size: 30px !important;
+        }
 
-.edit-cancel {
 
-    background: #4e5058;
+        #profile-modal input {
 
-    color: white;
-}
+            font-size: 20px !important;
+        }
 
 
-/* =========================================================
-   BOTTOM PANEL
-   ========================================================= */
+        #profile-modal label {
 
-.bottom-panel {
+            font-size: 18px !important;
+        }
 
-    width: 100vw;
 
-    max-width: none;
+        #profile-modal button {
 
-    flex:
-        0
-        0
-        auto;
+            font-size: 20px !important;
 
-    padding:
-        0
-        7px
-        7px;
+            padding:
+                13px
+                20px !important;
+        }
 
-    margin: 0;
 
-    background: #313338;
-}
+        /* =====================================================
+           MEMBER DIALOG
+           ===================================================== */
 
+        .modal-overlay {
 
-#typing-indicator {
+            display: none;
 
-    width: 100%;
+            position: fixed;
 
-    height: 20px;
+            inset: 0;
 
-    margin:
-        0
-        3px
-        2px;
+            width: 100vw;
 
-    color: #949ba4;
+            height: 100vh;
 
-    font-size: 13px;
+            background:
+                rgba(0,0,0,.7);
 
-    line-height: 20px;
+            z-index: 300;
+        }
 
-    font-style: italic;
 
-    overflow: hidden;
-}
+        .dialog-box {
 
+            width:
+                calc(100% - 24px);
 
-.input-wrapper {
+            max-width: 500px;
 
-    width: 100%;
+            max-height: 80vh;
 
-    max-width: none;
+            overflow-y: auto;
 
-    background: #383a40;
+            margin:
+                45px auto;
 
-    border:
-        1px
-        solid
-        transparent;
+            padding: 20px;
 
-    border-radius: 8px;
+            background: #313338;
 
-    padding:
-        6px
-        8px;
+            border:
+                1px solid #1f2023;
 
-    display: flex;
+            border-radius: 10px;
 
-    flex-direction: column;
-}
+            position: relative;
+        }
 
 
-.input-wrapper:focus-within {
+        .dialog-box h3 {
 
-    border-color: #4e5058;
-}
+            font-size: 27px !important;
+        }
 
 
-/* =========================================================
-   REPLY PREVIEW
-   ========================================================= */
+        .close-dialog {
 
-.reply-preview-bar {
+            position: absolute;
 
-    display: none;
+            top: 9px;
 
-    width: 100%;
+            right: 12px;
 
-    align-items: center;
+            background: none;
 
-    justify-content: space-between;
+            border: none;
 
-    background: #2b2d31;
+            color: #949ba4;
 
-    border-radius: 5px;
+            font-size: 32px !important;
+        }
 
-    padding:
-        6px
-        8px;
 
-    margin-bottom: 5px;
+        /* =====================================================
+           GENERAL INPUT
+           ===================================================== */
 
-    font-size: 14px;
+        input[type="text"],
+        input[type="file"] {
 
-    color: #b5bac1;
-}
+            width: 100%;
 
+            background: #1e1f22;
 
-.reply-preview-text {
+            color: white;
 
-    flex: 1;
+            border:
+                1px solid #1f2023;
 
-    min-width: 0;
+            border-radius: 5px;
 
-    text-align: left;
+            padding: 10px;
 
-    margin-right: 8px;
+            font-size: 20px !important;
+        }
 
-    white-space: nowrap;
+    </style>
 
-    overflow: hidden;
-
-    text-overflow: ellipsis;
-}
-
-
-.cancel-reply-btn {
-
-    flex-shrink: 0;
-
-    background: none;
-
-    border: none;
-
-    color: #949ba4;
-
-    cursor: pointer;
-
-    font-size: 24px;
-
-    padding:
-        0
-        5px;
-}
-
-
-/* =========================================================
-   INPUT
-   ========================================================= */
-
-.input-container {
-
-    width: 100%;
-
-    display: flex;
-
-    flex-direction: column;
-
-    gap: 4px;
-}
-
-
-textarea#messageInput {
-
-    display: block;
-
-    width: 100%;
-
-    height: 52px;
-
-    min-height: 52px;
-
-    max-height: 140px;
-
-    background: transparent;
-
-    color: white;
-
-    border: none;
-
-    outline: none;
-
-    resize: none;
-
-    font-family: inherit;
-
-    font-size: 18px;
-
-    line-height: 1.4;
-
-    padding:
-        5px
-        0;
-
-    margin: 0;
-}
-
-
-textarea#messageInput::placeholder {
-
-    color: #949ba4;
-}
-
-
-/* =========================================================
-   INPUT BUTTON BAR
-   ========================================================= */
-
-.input-actions-bar {
-
-    width: 100%;
-
-    display: flex;
-
-    justify-content: space-between;
-
-    align-items: center;
-
-    border-top:
-        1px
-        solid
-        #3f4248;
-
-    padding-top: 6px;
-}
-
-
-.file-upload-btn {
-
-    display: inline-flex;
-
-    align-items: center;
-
-    gap: 5px;
-
-    background: #4e5058;
-
-    color: white;
-
-    padding:
-        7px
-        10px;
-
-    border-radius: 5px;
-
-    font-size: 14px;
-
-    cursor: pointer;
-
-    font-weight: 500;
-}
-
-
-.file-upload-btn:hover {
-
-    background: #6d6f78;
-}
-
-
-.send-btn {
-
-    background: #5865F2;
-
-    color: white;
-
-    border: none;
-
-    border-radius: 5px;
-
-    padding:
-        8px
-        15px;
-
-    font-size: 15px;
-
-    font-weight: 600;
-
-    cursor: pointer;
-}
-
-
-.send-btn:hover {
-
-    background: #4752c4;
-}
-
-
-#fileName {
-
-    font-size: 12px !important;
-
-    margin-left: 4px !important;
-}
-
-
-/* =========================================================
-   MEMBER DIALOG
-   ========================================================= */
-
-.modal-overlay {
-
-    display: none;
-
-    position: fixed;
-
-    inset: 0;
-
-    width: 100vw;
-
-    height: 100vh;
-    height: 100dvh;
-
-    background:
-        rgba(0,0,0,.7);
-
-    z-index: 300;
-}
-
-
-.dialog-box {
-
-    width:
-        calc(100% - 24px);
-
-    max-width: 500px;
-
-    max-height: 80dvh;
-
-    overflow-y: auto;
-
-    margin:
-        45px
-        auto;
-
-    padding: 20px;
-
-    background: #313338;
-
-    border:
-        1px
-        solid
-        #1f2023;
-
-    border-radius: 10px;
-
-    position: relative;
-}
-
-
-.dialog-box h3 {
-
-    margin-top: 0 !important;
-
-    padding-bottom: 10px !important;
-
-    font-size: 24px !important;
-}
-
-
-.close-dialog {
-
-    position: absolute;
-
-    top: 9px;
-
-    right: 12px;
-
-    background: none;
-
-    border: none;
-
-    color: #949ba4;
-
-    font-size: 30px;
-
-    cursor: pointer;
-}
-
-
-.close-dialog:hover {
-
-    color: white;
-}
-
-
-/* =========================================================
-   GENERAL INPUT
-   ========================================================= */
-
-input[type="text"],
-input[type="file"] {
-
-    width: 100%;
-
-    background: #1e1f22;
-
-    color: white;
-
-    border:
-        1px
-        solid
-        #1f2023;
-
-    border-radius: 5px;
-
-    outline: none;
-
-    padding: 10px;
-
-    font-size: 18px;
-}
-
-
-/* =========================================================
-   MOBILE
-   ========================================================= */
-
-@media (max-width: 600px) {
-
-    body {
-
-        font-size: 18px;
-    }
-
-
-    .main-chat-container {
-
-        width: 100vw;
-
-        height: 100vh;
-        height: 100dvh;
-    }
-
-
-    .chat-header {
-
-        min-height: 72px;
-
-        padding:
-            6px
-            6px;
-    }
-
-
-    .header-right-group {
-
-        gap: 5px;
-    }
-
-
-    .vertical-controls {
-
-        gap: 4px;
-    }
-
-
-    select {
-
-        height: 31px;
-
-        font-size: 16px;
-
-        padding:
-            3px
-            6px;
-    }
-
-
-    #memberBtn,
-    .chat-header button {
-
-        min-height: 43px;
-
-        font-size: 15px !important;
-
-        padding:
-            8px
-            9px !important;
-    }
-
-
-    #chat-box {
-
-        width: 100vw;
-
-        padding:
-            6px
-            6px;
-    }
-
-
-    .message-row {
-
-        width: 100%;
-
-        grid-template-columns:
-            48px
-            minmax(0,1fr);
-
-        column-gap: 9px;
-
-        padding:
-            8px
-            1px;
-    }
-
-
-    .avatar {
-
-        width: 48px;
-
-        height: 48px;
-    }
-
-
-    .message-username {
-
-        font-size: 18px;
-
-        line-height: 23px;
-    }
-
-
-    .message-text {
-
-        font-size: 18px;
-
-        line-height: 1.45;
-    }
-
-
-    .translation-text {
-
-        font-size: 15px;
-    }
-
-
-    .message-actions {
-
-        max-width:
-            calc(100vw - 62px);
-    }
-
-
-    .action-icon-btn {
-
-        font-size: 20px;
-
-        min-width: 39px;
-
-        min-height: 39px;
-
-        padding:
-            8px
-            9px;
-    }
-
-
-    .emoji-picker-dialog {
-
-        width:
-            min(
-                340px,
-                calc(100vw - 62px)
-            );
-
-        max-height: 270px;
-    }
-
-
-    .emoji-item {
-
-        width: 43px;
-
-        height: 43px;
-
-        font-size: 28px;
-    }
-
-
-    .bottom-panel {
-
-        width: 100vw;
-
-        padding:
-            0
-            6px
-            6px;
-    }
-
-
-    #typing-indicator {
-
-        height: 20px;
-
-        font-size: 13px;
-    }
-
-
-    .input-wrapper {
-
-        padding:
-            6px
-            8px;
-    }
-
-
-    textarea#messageInput {
-
-        height: 54px;
-
-        min-height: 54px;
-
-        font-size: 18px;
-    }
-
-
-    .file-upload-btn {
-
-        font-size: 13px;
-
-        padding:
-            8px
-            9px;
-    }
-
-
-    .send-btn {
-
-        font-size: 15px;
-
-        padding:
-            8px
-            15px;
-    }
-}
-
-
-/* =========================================================
-   SAFE AREA
-   ========================================================= */
-
-@supports (padding-bottom: env(safe-area-inset-bottom)) {
-
-    .bottom-panel {
-
-        padding-bottom:
-            max(
-                6px,
-                env(safe-area-inset-bottom)
-            );
-    }
-}
-
-</style>
 </head>
 
 
@@ -1580,7 +1007,7 @@ input[type="file"] {
 
 
 <!-- =========================================================
-     MEMBER DIALOG
+     MEMBER
      ========================================================= -->
 
 <div
@@ -1618,7 +1045,7 @@ input[type="file"] {
 
 
 <!-- =========================================================
-     CHAT
+     APP
      ========================================================= -->
 
 <div
@@ -1713,9 +1140,6 @@ input[type="file"] {
                 style="
                     background:#35373c;
                     color:#dbdee1;
-                    border:none;
-                    border-radius:5px;
-                    cursor:pointer;
                 "
             >
                 👥 (0)
@@ -1727,9 +1151,6 @@ input[type="file"] {
                 style="
                     background:#da373c;
                     color:white;
-                    border:none;
-                    border-radius:5px;
-                    cursor:pointer;
                 "
             >
                 🗑️ Hapus
@@ -1740,7 +1161,7 @@ input[type="file"] {
     </div>
 
 
-    <!-- CHAT BOX -->
+    <!-- CHAT -->
 
     <div id="chat-box"></div>
 
@@ -1751,9 +1172,7 @@ input[type="file"] {
 
         <div id="typing-indicator"></div>
 
-
         <div class="input-wrapper">
-
 
             <div
                 id="replyPreviewBar"
@@ -1766,7 +1185,6 @@ input[type="file"] {
                 >
                     Membalas ke...
                 </span>
-
 
                 <button
                     class="cancel-reply-btn"
@@ -1800,7 +1218,6 @@ input[type="file"] {
                             onchange="updateFileLabel()"
                         >
 
-
                         <label
                             for="imageInput"
                             id="fileBtn"
@@ -1808,7 +1225,6 @@ input[type="file"] {
                         >
                             📎 Unggah Gambar
                         </label>
-
 
                         <span
                             id="fileName"
@@ -1861,7 +1277,7 @@ let replyingToId = null;
 
 
 /* =========================================================
-   SOCKET CONNECTION
+   CONNECTION
    ========================================================= */
 
 socket.on(
@@ -1898,13 +1314,12 @@ socket.on(
             'Socket error:',
             error
         );
-
     }
 );
 
 
 /* =========================================================
-   LOAD PROFILE
+   LOAD
    ========================================================= */
 
 window.onload =
@@ -1914,7 +1329,6 @@ function() {
         localStorage.getItem(
             'chat_username'
         );
-
 
     const savedAvatar =
         localStorage.getItem(
@@ -2137,7 +1551,7 @@ function updateFileLabel() {
 
 
 /* =========================================================
-   ESCAPE HTML
+   ESCAPE
    ========================================================= */
 
 function escapeHtml(value) {
@@ -2164,7 +1578,7 @@ function escapeHtml(value) {
 
 
 /* =========================================================
-   LINKIFY
+   LINK
    ========================================================= */
 
 function linkify(text) {
@@ -2273,7 +1687,6 @@ function playNotificationSound() {
 
 
         osc.start();
-
 
         osc.stop(
             audioCtx.currentTime + 0.15
@@ -2387,7 +1800,7 @@ function cancelReply() {
 
 
 /* =========================================================
-   ACTION BAR
+   ACTION
    ========================================================= */
 
 function toggleMessageActions(
@@ -2610,7 +2023,7 @@ window.addEventListener(
 
 
 /* =========================================================
-   RENDER CHAT
+   RENDER
    ========================================================= */
 
 async function renderChat() {
@@ -2643,10 +2056,6 @@ async function renderChat() {
         let contentHtml =
             '';
 
-
-        /* =====================================================
-           REPLY
-           ===================================================== */
 
         const parentMsg =
             data.replyTo
@@ -2681,10 +2090,6 @@ async function renderChat() {
         }
 
 
-        /* =====================================================
-           TEXT
-           ===================================================== */
-
         if (data.original) {
 
             const translated =
@@ -2701,11 +2106,13 @@ async function renderChat() {
                     id="msg-text-${escapeHtml(id)}"
                 >
                     ${linkify(data.original)}
+
                     ${
                         data.edited
                             ? ' <small>(diedit)</small>'
                             : ''
                     }
+
                 </div>
 
             `;
@@ -2722,20 +2129,18 @@ async function renderChat() {
                     <small
                         class="translation-text"
                     >
+
                         🌐
                         (Terjemahan
                         [${escapeHtml(myTargetLang)}]:
                         ${linkify(translated)})
+
                     </small>
 
                 `;
             }
         }
 
-
-        /* =====================================================
-           IMAGE
-           ===================================================== */
 
         if (data.image) {
 
@@ -2749,10 +2154,6 @@ async function renderChat() {
             `;
         }
 
-
-        /* =====================================================
-           REACTIONS
-           ===================================================== */
 
         let reactionsHtml =
             '';
@@ -2808,9 +2209,7 @@ async function renderChat() {
 
                         ${escapeHtml(emoji)}
 
-                        <span
-                            class="reaction-count"
-                        >
+                        <span>
                             ${
                                 Array.isArray(
                                     usersList
@@ -2831,17 +2230,12 @@ async function renderChat() {
         }
 
 
-        /* =====================================================
-           ACTIONS
-           ===================================================== */
-
         let actionButtonsHtml = `
 
             <button
                 type="button"
                 class="action-icon-btn"
                 onclick='startReply(${JSON.stringify(id)}, event)'
-                title="Balas"
             >
                 ↩️
             </button>
@@ -2855,7 +2249,6 @@ async function renderChat() {
                 type="button"
                 class="action-icon-btn"
                 onclick='toggleEmojiPicker(${JSON.stringify(id)}, event)'
-                title="Reaksi"
             >
                 😀
             </button>
@@ -2869,7 +2262,6 @@ async function renderChat() {
                 type="button"
                 class="action-icon-btn"
                 onclick='copyText(${JSON.stringify(data.original || '')}, this); event.stopPropagation();'
-                title="Salin"
             >
                 📋
             </button>
@@ -2888,7 +2280,6 @@ async function renderChat() {
                     type="button"
                     class="action-icon-btn"
                     onclick='enableEdit(${JSON.stringify(id)}, event)'
-                    title="Edit"
                 >
                     ✏️
                 </button>
@@ -2907,7 +2298,6 @@ async function renderChat() {
                     type="button"
                     class="action-icon-btn"
                     onclick='deleteMessage(${JSON.stringify(id)}, event)'
-                    title="Hapus"
                 >
                     🗑️
                 </button>
@@ -2915,10 +2305,6 @@ async function renderChat() {
             `;
         }
 
-
-        /* =====================================================
-           EMOJI LIST
-           ===================================================== */
 
         const emojiList = [
 
@@ -2956,10 +2342,6 @@ async function renderChat() {
         }
 
 
-        /* =====================================================
-           MESSAGE
-           ===================================================== */
-
         chatBox.innerHTML += `
 
             <div
@@ -2967,7 +2349,6 @@ async function renderChat() {
                 id="message-container-${escapeHtml(id)}"
                 onclick='toggleMessageActions(${JSON.stringify(id)}, event)'
             >
-
 
                 <img
                     src="${escapeHtml(
@@ -3027,7 +2408,6 @@ async function renderChat() {
                     </div>
 
                 </div>
-
 
             </div>
 
@@ -3109,7 +2489,6 @@ function enableEdit(
             class="edit-input"
         >
 
-
         <button
             type="button"
             class="edit-save"
@@ -3117,7 +2496,6 @@ function enableEdit(
         >
             Simpan
         </button>
-
 
         <button
             type="button"
@@ -3416,7 +2794,7 @@ function clearAllChat() {
 
 
 /* =========================================================
-   ENTER
+   KEYBOARD
    ========================================================= */
 
 function handleKeyPress(e) {
@@ -3516,7 +2894,6 @@ function sendMessage() {
 
         replyTo:
             replyingToId
-
     };
 
 
@@ -3591,7 +2968,7 @@ function resetForm() {
 
 
 /* =========================================================
-   HISTORY
+   RECEIVE HISTORY
    ========================================================= */
 
 socket.on(
@@ -3632,6 +3009,10 @@ socket.on(
 );
 
 
+/* =========================================================
+   DELETE
+   ========================================================= */
+
 socket.on(
     'message_deleted',
     async function(history) {
@@ -3647,6 +3028,10 @@ socket.on(
 );
 
 
+/* =========================================================
+   EDIT
+   ========================================================= */
+
 socket.on(
     'message_edited',
     async function(history) {
@@ -3661,6 +3046,10 @@ socket.on(
     }
 );
 
+
+/* =========================================================
+   REACTION
+   ========================================================= */
 
 socket.on(
     'reaction_updated',
@@ -3755,8 +3144,8 @@ socket.on(
 
                         <span
                             style="
-                                width:9px;
-                                height:9px;
+                                width:10px;
+                                height:10px;
                                 background-color:#23a55a;
                                 border-radius:50%;
                             "
@@ -3770,8 +3159,8 @@ socket.on(
                             )}"
                             class="avatar"
                             style="
-                                width:42px;
-                                height:42px;
+                                width:44px;
+                                height:44px;
                                 margin-top:0;
                             "
                         >
@@ -3780,7 +3169,7 @@ socket.on(
                         <span
                             style="
                                 color:white;
-                                font-size:18px;
+                                font-size:20px;
                                 font-weight:500;
                             "
                         >
