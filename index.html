@@ -3,8 +3,8 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Discord Clone - Huge Font</title>
-    <script src="/socket.io/socket.io.js?v=2"></script>
+    <title>Discord Clone - Jumbo Font</title>
+    <script src="/socket.io/socket.io.js?v=3"></script>
 
     <style>
         * {
@@ -21,7 +21,7 @@
             font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
             background: #313338;
             color: #dbdee1;
-            font-size: 22px !important; /* Sengaja dibuat sangat besar agar langsung terlihat perbedaannya */
+            font-size: 28px !important; /* Diperbesar sangat besar (Jumbo) */
         }
 
         .main-chat-container {
@@ -35,9 +35,9 @@
         }
 
         .chat-header {
-            height: 70px;
-            min-height: 70px;
-            font-size: 18px;
+            height: 75px;
+            min-height: 75px;
+            font-size: 20px;
             font-weight: bold;
             border-bottom: 2px solid #1f2023;
             padding: 0 14px;
@@ -72,8 +72,8 @@
             padding: 6px 8px;
             border-radius: 4px;
             outline: none;
-            font-size: 16px;
-            max-width: 160px;
+            font-size: 18px;
+            max-width: 170px;
         }
 
         #chat-box {
@@ -84,7 +84,7 @@
             background: #313338;
             display: flex;
             flex-direction: column;
-            gap: 10px;
+            gap: 12px;
             min-height: 0;
         }
 
@@ -94,9 +94,9 @@
 
         .message-row {
             display: flex;
-            gap: 12px;
+            gap: 14px;
             align-items: flex-start;
-            padding: 10px 0;
+            padding: 12px 0;
             position: relative;
             width: 100%;
             border-radius: 4px;
@@ -107,8 +107,8 @@
         }
 
         .avatar {
-            width: 50px;
-            height: 50px;
+            width: 60px;
+            height: 60px;
             border-radius: 50%;
             object-fit: cover;
             flex-shrink: 0;
@@ -128,50 +128,50 @@
             display: block;
             margin: 0;
             padding: 0;
-            line-height: 28px;
+            line-height: 32px;
         }
 
         .message-username {
             display: block;
             font-weight: 600;
             color: white;
-            font-size: 22px !important; /* Diperbesar */
+            font-size: 28px !important; /* Nama pengirim jadi sangat besar */
             margin: 0;
             padding: 0;
-            line-height: 28px;
+            line-height: 32px;
         }
 
         .message-text {
             display: block;
             color: #dbdee1;
-            font-size: 21px !important; /* Diperbesar */
+            font-size: 28px !important; /* Isi teks chat jadi sangat besar */
             line-height: 1.5;
             white-space: pre-wrap;
             word-break: break-word;
-            margin: 4px 0 0 0;
+            margin: 6px 0 0 0;
             padding: 0;
         }
 
         .translation-text {
             color: #23a55a;
-            font-size: 17px !important;
-            margin: 6px 0 0 0;
+            font-size: 22px !important; /* Terjemahan juga diperbesar */
+            margin: 8px 0 0 0;
             padding: 0;
             display: block;
         }
 
         .chat-img {
             max-width: 100%;
-            max-height: 300px;
+            max-height: 350px;
             border-radius: 8px;
-            margin: 8px 0 0 0;
+            margin: 10px 0 0 0;
             display: block;
         }
 
         .reply-indicator {
-            font-size: 16px;
+            font-size: 20px;
             color: #949ba4;
-            margin: 0 0 4px 0;
+            margin: 0 0 6px 0;
             padding: 0;
             display: flex;
             align-items: center;
@@ -191,11 +191,11 @@
             border: 1px solid #1f2023;
             border-radius: 4px;
             box-shadow: 0 2px 4px rgba(0,0,0,0.3);
-            padding: 4px;
+            padding: 6px;
             flex-shrink: 0;
 
             position: absolute;
-            left: 62px;
+            left: 74px;
             top: calc(100% - 2px);
             z-index: 100;
         }
@@ -208,9 +208,9 @@
             background: none;
             border: none;
             color: #b5bac1;
-            padding: 10px 12px;
+            padding: 10px 14px;
             cursor: pointer;
-            font-size: 18px;
+            font-size: 22px;
             line-height: 1;
         }
 
@@ -227,17 +227,17 @@
         .reaction-container {
             display: flex;
             flex-wrap: wrap;
-            gap: 6px;
-            margin: 8px 0 0 0;
+            gap: 8px;
+            margin: 10px 0 0 0;
             padding: 0;
         }
 
         .reaction-btn {
             background: #2b2d31;
             border: 1px solid transparent;
-            border-radius: 16px;
-            padding: 6px 10px;
-            font-size: 16px;
+            border-radius: 18px;
+            padding: 8px 12px;
+            font-size: 20px;
             color: #b5bac1;
             cursor: pointer;
             display: flex;
@@ -257,17 +257,17 @@
 
         .emoji-picker-dialog {
             position: absolute;
-            left: 62px;
-            top: calc(100% + 45px);
+            left: 74px;
+            top: calc(100% + 50px);
             background: #313338;
             border: 1px solid #1f2023;
             border-radius: 8px;
             box-shadow: 0 5px 15px rgba(0,0,0,0.5);
-            padding: 10px;
+            padding: 12px;
             display: none;
             z-index: 200;
-            width: 270px;
-            max-height: 210px;
+            width: 310px;
+            max-height: 250px;
             overflow-y: auto;
         }
 
@@ -278,13 +278,13 @@
         .emoji-grid {
             display: flex;
             flex-wrap: wrap;
-            gap: 6px;
+            gap: 8px;
         }
 
         .emoji-item {
-            font-size: 28px;
-            width: 38px;
-            height: 38px;
+            font-size: 34px;
+            width: 44px;
+            height: 44px;
             display: flex;
             align-items: center;
             justify-content: center;
@@ -302,33 +302,33 @@
            ========================= */
 
         .edit-box {
-            margin-top: 8px;
+            margin-top: 10px;
             display: flex;
             flex-wrap: wrap;
             align-items: center;
-            gap: 8px;
+            gap: 10px;
         }
 
         .edit-input {
             flex: 1;
-            min-width: 140px;
+            min-width: 160px;
             background: #1e1f22;
             color: white;
             border: 1px solid #5865F2;
-            padding: 10px;
+            padding: 12px;
             border-radius: 4px;
             outline: none;
-            font-size: 20px;
+            font-size: 26px;
         }
 
         .edit-save, .edit-cancel {
             color: white;
             border: none;
-            padding: 10px 14px;
+            padding: 12px 18px;
             border-radius: 4px;
             cursor: pointer;
             font-weight: bold;
-            font-size: 16px;
+            font-size: 20px;
         }
         .edit-save { background: #248046; }
         .edit-cancel { background: #4e5058; }
@@ -338,7 +338,7 @@
            ========================= */
 
         .bottom-panel {
-            padding: 10px 14px 14px 14px;
+            padding: 12px 16px 16px 16px;
             background: #313338;
             flex-shrink: 0;
         }
@@ -346,7 +346,7 @@
         .input-wrapper {
             background: #383a40;
             border-radius: 8px;
-            padding: 10px 14px;
+            padding: 12px 16px;
             border: 1px solid transparent;
             display: flex;
             flex-direction: column;
@@ -359,11 +359,11 @@
         .reply-preview-bar {
             display: none;
             background: #2b2d31;
-            padding: 6px 10px;
+            padding: 8px 12px;
             border-radius: 4px;
-            font-size: 16px;
+            font-size: 20px;
             color: #b5bac1;
-            margin-bottom: 6px;
+            margin-bottom: 8px;
             justify-content: space-between;
             align-items: center;
             width: 100%;
@@ -383,7 +383,7 @@
             border: none;
             color: #949ba4;
             cursor: pointer;
-            font-size: 20px;
+            font-size: 24px;
             padding: 0 4px;
             flex-shrink: 0;
         }
@@ -395,7 +395,7 @@
         .input-container {
             display: flex;
             flex-direction: column;
-            gap: 8px;
+            gap: 10px;
             width: 100%;
         }
 
@@ -405,9 +405,9 @@
             color: white;
             border: none;
             outline: none;
-            font-size: 21px !important; /* Kotak ketik pesan dibuat sangat besar */
+            font-size: 28px !important; /* Kotak ketik pesan diperbesar jumbo */
             resize: none;
-            height: 50px;
+            height: 60px;
             padding: 6px 0;
             font-family: inherit;
         }
@@ -417,29 +417,29 @@
             justify-content: space-between;
             align-items: center;
             border-top: 1px solid #3f4248;
-            padding-top: 8px;
-            gap: 8px;
+            padding-top: 10px;
+            gap: 10px;
         }
 
         .file-upload-btn {
             background: #4e5058;
             color: white;
-            padding: 8px 14px;
+            padding: 10px 18px;
             border-radius: 4px;
-            font-size: 16px;
+            font-size: 20px;
             cursor: pointer;
             font-weight: 500;
             display: inline-flex;
             align-items: center;
-            gap: 6px;
+            gap: 8px;
         }
 
         .send-btn {
             background: #5865F2;
             color: white;
-            padding: 8px 20px;
+            padding: 10px 24px;
             border-radius: 4px;
-            font-size: 16px;
+            font-size: 20px;
             font-weight: 600;
             border: none;
             cursor: pointer;
@@ -451,9 +451,9 @@
 
         #profile-modal {
             background: #313338;
-            padding: 24px;
+            padding: 28px;
             border-radius: 8px;
-            max-width: 340px;
+            max-width: 380px;
             width: 90%;
             margin: auto;
             border: 1px solid #1f2023;
@@ -477,10 +477,10 @@
         .dialog-box {
             background: #313338;
             width: 90%;
-            max-width: 340px;
+            max-width: 380px;
             max-height: 80vh;
             overflow-y: auto;
-            padding: 20px;
+            padding: 24px;
             border-radius: 8px;
             border: 1px solid #1f2023;
             position: relative;
@@ -488,20 +488,20 @@
 
         .close-dialog {
             position: absolute;
-            top: 10px;
-            right: 14px;
+            top: 12px;
+            right: 16px;
             background: none;
             border: none;
             color: #949ba4;
-            font-size: 26px;
+            font-size: 30px;
             cursor: pointer;
         }
 
         #typing-indicator {
-            font-size: 15px;
+            font-size: 18px;
             color: #949ba4;
-            height: 20px;
-            margin-bottom: 4px;
+            height: 22px;
+            margin-bottom: 6px;
             font-style: italic;
         }
 
@@ -510,11 +510,11 @@
             background: #1e1f22;
             color: white;
             border: 1px solid #1f2023;
-            padding: 10px;
+            padding: 12px;
             border-radius: 4px;
             width: 100%;
             outline: none;
-            font-size: 18px;
+            font-size: 22px;
         }
     </style>
 </head>
@@ -524,11 +524,11 @@
     <!-- PROFIL -->
     <div style="display:flex;align-items:center;justify-content:center;height:100%;width:100%;">
         <div id="profile-modal" style="display:block;">
-            <h3 style="color:white;margin-top:0;font-size:22px;">Atur Profil Anda</h3>
-            <input type="text" id="usernameInput" placeholder="Masukkan nama..." style="margin-bottom:12px;">
-            <label style="font-size:16px;display:block;margin-bottom:6px;color:#b5bac1;text-align:left;">Pilih Foto Profil:</label>
-            <input type="file" id="avatarInput" accept="image/*" style="margin-bottom:16px;">
-            <button onclick="joinChat()" style="background:#5865F2;color:white;border:none;padding:12px 16px;border-radius:4px;font-weight:bold;cursor:pointer;width:100%;font-size:18px;">Gabung Chat</button>
+            <h3 style="color:white;margin-top:0;font-size:26px;">Atur Profil Anda</h3>
+            <input type="text" id="usernameInput" placeholder="Masukkan nama..." style="margin-bottom:14px;">
+            <label style="font-size:20px;display:block;margin-bottom:8px;color:#b5bac1;text-align:left;">Pilih Foto Profil:</label>
+            <input type="file" id="avatarInput" accept="image/*" style="margin-bottom:18px;">
+            <button onclick="joinChat()" style="background:#5865F2;color:white;border:none;padding:14px 18px;border-radius:4px;font-weight:bold;cursor:pointer;width:100%;font-size:22px;">Gabung Chat</button>
         </div>
     </div>
 
@@ -536,8 +536,8 @@
     <div id="memberDialog" class="modal-overlay">
         <div class="dialog-box">
             <button class="close-dialog" onclick="toggleMemberDialog()">&times;</button>
-            <h3 style="margin-top:0;color:white;border-bottom:1px solid #3f4248;padding-bottom:8px;font-size:20px;">Anggota Online</h3>
-            <div id="member-list" style="margin-top:12px;"></div>
+            <h3 style="margin-top:0;color:white;border-bottom:1px solid #3f4248;padding-bottom:10px;font-size:24px;">Anggota Online</h3>
+            <div id="member-list" style="margin-top:14px;"></div>
         </div>
     </div>
 
@@ -564,8 +564,8 @@
                         <option value="es">🇪🇸 Spanish</option>
                     </select>
                 </div>
-                <button onclick="toggleMemberDialog()" id="memberBtn" style="background:#35373c;color:#dbdee1;border:none;padding:10px 14px;border-radius:4px;font-size:16px;cursor:pointer;">👥 (0)</button>
-                <button onclick="clearAllChat()" style="background:#da373c;color:white;border:none;padding:10px 14px;border-radius:4px;font-size:16px;cursor:pointer;">🗑️ Hapus</button>
+                <button onclick="toggleMemberDialog()" id="memberBtn" style="background:#35373c;color:#dbdee1;border:none;padding:12px 16px;border-radius:4px;font-size:20px;cursor:pointer;">👥 (0)</button>
+                <button onclick="clearAllChat()" style="background:#da373c;color:white;border:none;padding:12px 16px;border-radius:4px;font-size:20px;cursor:pointer;">🗑️ Hapus</button>
             </div>
         </div>
 
@@ -585,7 +585,7 @@
                         <div style="display:flex; align-items:center; min-width:0; overflow:hidden;">
                             <input type="file" id="imageInput" accept="image/*" style="display:none;" onchange="updateFileLabel()">
                             <label for="imageInput" id="fileBtn" class="file-upload-btn">📎 Unggah</label>
-                            <span id="fileName" style="font-size:15px;color:#23a55a;margin-left:8px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;"></span>
+                            <span id="fileName" style="font-size:18px;color:#23a55a;margin-left:10px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;"></span>
                         </div>
                         <button id="sendBtn" class="send-btn" type="button" onclick="sendMessage()">Kirim</button>
                     </div>
@@ -999,10 +999,10 @@
             memberList.innerHTML = '';
             users.forEach(function(user) {
                 memberList.innerHTML += `
-                    <div style="display:flex;align-items:center;margin-bottom:12px;gap:10px;">
-                        <span style="width:10px;height:10px;background-color:#23a55a;border-radius:50%;flex-shrink:0;"></span>
-                        <img src="${escapeHtml(user.avatar || 'https://via.placeholder.com/40')}" class="avatar" style="width:38px;height:38px;margin-top:0;">
-                        <span style="color:white;font-size:18px;font-weight:500;word-break:break-word;">${escapeHtml(user.username)}</span>
+                    <div style="display:flex;align-items:center;margin-bottom:14px;gap:12px;">
+                        <span style="width:12px;height:12px;background-color:#23a55a;border-radius:50%;flex-shrink:0;"></span>
+                        <img src="${escapeHtml(user.avatar || 'https://via.placeholder.com/40')}" class="avatar" style="width:44px;height:44px;margin-top:0;">
+                        <span style="color:white;font-size:22px;font-weight:500;word-break:break-word;">${escapeHtml(user.username)}</span>
                     </div>
                 `;
             });
