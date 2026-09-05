@@ -4,6 +4,7 @@ const http = require('http').createServer(app);
 const io = require('socket.io')(http);
 const path = require('path');
 const fs = require('fs');
+const crypto = require('crypto');
 
 app.use(express.static(__dirname));
 
@@ -12,10 +13,136 @@ app.get('/', (req, res) => {
 });
 
 // ============================================================
-// FILE DATABASE
+// LOKASI DATA PERMANEN
+// ============================================================
+//
+// Kalau kamu sudah pasang Railway Volume, Railway otomatis
+// menyediakan environment variable RAILWAY_VOLUME_MOUNT_PATH
+// yang menunjuk ke folder permanen tersebut. Kalau belum ada
+// Volume, data akan tetap tersimpan di folder project seperti
+// biasa, tapi BISA HILANG setiap kali Railway redeploy/restart.
+
+const DATA_DIR =
+    process.env.RAILWAY_VOLUME_MOUNT_PATH ||
+    __dirname;
+
+function ensureDir(dir) {
+
+    if (!fs.existsSync(dir)) {
+
+        fs.mkdirSync(
+            dir,
+            { recursive: true }
+        );
+    }
+}
+
+ensureDir(DATA_DIR);
+
+const DATA_FILE =
+    path.join(
+        DATA_DIR,
+        'chat-data.json'
+    );
+
+// ============================================================
+// FOLDER UPLOAD GAMBAR (terpisah dari chat-data.json,
+// supaya file data tidak membengkak oleh base64)
 // ============================================================
 
-const DATA_FILE = path.join(__dirname, 'chat-data.json');
+const UPLOAD_DIR =
+    path.join(DATA_DIR, 'uploads');
+
+const AVATAR_DIR =
+    path.join(UPLOAD_DIR, 'avatars');
+
+const IMAGE_DIR =
+    path.join(UPLOAD_DIR, 'images');
+
+ensureDir(UPLOAD_DIR);
+ensureDir(AVATAR_DIR);
+ensureDir(IMAGE_DIR);
+
+app.use(
+    '/uploads',
+    express.static(UPLOAD_DIR)
+);
+
+const MAX_AVATAR_BYTES = 1 * 1024 * 1024;   // 1MB
+const MAX_IMAGE_BYTES = 4 * 1024 * 1024;    // 4MB
+
+// Simpan data URL base64 (data:image/...;base64,....) sebagai
+// file di disk. Nama file dari hash isinya, jadi gambar yang
+// sama tidak disimpan berkali-kali (hemat tempat).
+function saveBase64File(
+    dataUrl,
+    dir,
+    urlPrefix,
+    maxBytes
+) {
+
+    if (typeof dataUrl !== 'string') {
+        return null;
+    }
+
+    const match =
+        dataUrl.match(
+            /^data:image\/(png|jpe?g|gif|webp);base64,(.+)$/i
+        );
+
+    if (!match) {
+        return null;
+    }
+
+    const ext =
+        match[1].toLowerCase() === 'jpg'
+            ? 'jpeg'
+            : match[1].toLowerCase();
+
+    let buffer;
+
+    try {
+
+        buffer =
+            Buffer.from(
+                match[2],
+                'base64'
+            );
+
+    } catch (e) {
+
+        return null;
+    }
+
+    if (buffer.length > maxBytes) {
+
+        return { error: 'too_large' };
+    }
+
+    const hash =
+        crypto
+            .createHash('sha1')
+            .update(buffer)
+            .digest('hex');
+
+    const filename =
+        `${hash}.${ext}`;
+
+    const filePath =
+        path.join(dir, filename);
+
+    if (!fs.existsSync(filePath)) {
+
+        fs.writeFileSync(
+            filePath,
+            buffer
+        );
+    }
+
+    return {
+        url: `${urlPrefix}/${filename}`
+    };
+}
 
 // ============================================================
 // DEFAULT DATA
@@ -150,6 +277,12 @@ const onlineUsers = {};
 
 const ADMIN_USERNAME = 'Admin';
 
+// PENTING: ganti ini lewat environment variable ADMIN_PASSWORD
+// di Railway (tab Variables), jangan andalkan nilai default ini.
+const ADMIN_PASSWORD =
+    process.env.ADMIN_PASSWORD ||
+    'ganti-password-ini';
+
 // ============================================================
 // HELPER
 // ============================================================
@@ -231,9 +364,54 @@ io.on('connection', (socket) => {
                 .trim()
                 .slice(0, 50);
 
-            const avatar =
-                profile.avatar ||
+            let avatar =
                 'https://via.placeholder.com/40';
+
+            if (
+                typeof profile.avatar === 'string' &&
+                profile.avatar.startsWith('data:')
+            ) {
+
+                // Foto baru diunggah (base64) -> simpan
+                // sebagai file, bukan disimpan mentah.
+                const saved =
+                    saveBase64File(
+                        profile.avatar,
+                        AVATAR_DIR,
+                        '/uploads/avatars',
+                        MAX_AVATAR_BYTES
+                    );
+
+                if (saved?.url) {
+
+                    avatar = saved.url;
+
+                } else if (
+                    saved?.error === 'too_large'
+                ) {
+
+                    socket.emit(
+                        'avatar_rejected',
+                        { reason: 'too_large' }
+                    );
+                }
+
+            } else if (
+                typeof profile.avatar === 'string' &&
+                profile.avatar.startsWith('/uploads/')
+            ) {
+
+                // Sudah berupa URL dari sesi sebelumnya
+                // (disimpan di localStorage browser).
+                avatar = profile.avatar;
+
+            } else if (
+                typeof profile.avatar === 'string' &&
+                profile.avatar.startsWith('http')
+            ) {
+
+                avatar = profile.avatar;
+            }
 
             // clientId permanen dari localStorage browser.
             // Ini yang dipakai untuk kepemilikan pesan,
@@ -259,6 +437,14 @@ io.on('connection', (socket) => {
                 avatar:
                     avatar
             };
+
+            // Beritahu pengirim URL avatar final-nya,
+            // supaya browser bisa simpan URL itu (bukan
+            // base64) untuk sesi berikutnya.
+            socket.emit(
+                'profile_registered',
+                { avatar: avatar }
+            );
 
             io.emit(
                 'update_users',
@@ -338,6 +524,19 @@ io.on('connection', (socket) => {
                 return;
             }
 
+            // ANTI-SPAM: batasi 1 pesan per 400ms per koneksi.
+            const now = Date.now();
+
+            if (
+                socket.lastMessageAt &&
+                now - socket.lastMessageAt < 400
+            ) {
+
+                return;
+            }
+
+            socket.lastMessageAt = now;
+
             const profile =
                 onlineUsers[socket.id];
 
@@ -363,6 +562,49 @@ io.on('connection', (socket) => {
                 return;
             }
 
+            // Simpan gambar sebagai file terpisah,
+            // bukan base64 mentah di chat-data.json.
+            let imageUrl = null;
+
+            if (
+                typeof data.image === 'string' &&
+                data.image.startsWith('data:')
+            ) {
+
+                const saved =
+                    saveBase64File(
+                        data.image,
+                        IMAGE_DIR,
+                        '/uploads/images',
+                        MAX_IMAGE_BYTES
+                    );
+
+                if (saved?.url) {
+
+                    imageUrl = saved.url;
+
+                } else if (
+                    saved?.error === 'too_large'
+                ) {
+
+                    socket.emit(
+                        'message_rejected',
+                        { reason: 'image_too_large' }
+                    );
+
+                    return;
+
+                } else {
+
+                    socket.emit(
+                        'message_rejected',
+                        { reason: 'invalid_image' }
+                    );
+
+                    return;
+                }
+            }
+
             const newMessage = {
 
                 id:
@@ -385,7 +627,7 @@ io.on('connection', (socket) => {
                     ).slice(0, 5000),
 
                 image:
-                    data.image || null,
+                    imageUrl,
 
                 replyTo:
                     replyTo,
@@ -558,7 +800,7 @@ io.on('connection', (socket) => {
 
     socket.on(
         'clear_all_chat',
-        () => {
+        (payload = {}) => {
 
             const profile =
                 onlineUsers[socket.id];
@@ -574,7 +816,29 @@ io.on('connection', (socket) => {
             ) {
 
                 console.log(
-                    'Clear chat ditolak:',
+                    'Clear chat ditolak (bukan admin):',
+                    profile.username
+                );
+
+                socket.emit(
+                    'clear_chat_denied'
+                );
+
+                return;
+            }
+
+            const passwordGiven =
+                typeof payload === 'string'
+                    ? payload
+                    : payload?.password;
+
+            if (
+                passwordGiven !==
+                ADMIN_PASSWORD
+            ) {
+
+                console.log(
+                    'Clear chat ditolak (password salah):',
                     profile.username
                 );
 
