@@ -2,6 +2,7 @@
 <html lang="id">
 <head>
     <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Discord Clone - Fixed</title>
     <script src="/socket.io/socket.io.js"></script>
 
@@ -35,7 +36,7 @@
             font-size: 15px;
             font-weight: bold;
             border-bottom: 2px solid #1f2023;
-            padding: 0 24px;
+            padding: 0 16px;
             display: flex;
             justify-content: flex-end;
             align-items: center;
@@ -48,7 +49,9 @@
         .header-right-group {
             display: flex;
             align-items: center;
-            gap: 12px;
+            gap: 8px;
+            flex-wrap: wrap;
+            justify-content: flex-end;
         }
 
         .vertical-controls {
@@ -66,13 +69,13 @@
             border-radius: 4px;
             outline: none;
             font-size: 12px;
-            width: 180px;
+            max-width: 150px;
         }
 
         #chat-box {
             flex: 1;
             overflow-y: scroll;
-            padding: 24px;
+            padding: 16px;
             background: #313338;
             display: flex;
             flex-direction: column;
@@ -85,7 +88,7 @@
 
         .message-row {
             display: flex;
-            gap: 16px;
+            gap: 12px;
             align-items: flex-start;
             padding: 6px 0;
             position: relative;
@@ -98,8 +101,8 @@
         }
 
         .avatar {
-            width: 40px;
-            height: 40px;
+            width: 36px;
+            height: 36px;
             border-radius: 50%;
             object-fit: cover;
             flex-shrink: 0;
@@ -127,7 +130,7 @@
             display: block;
             font-weight: 600;
             color: white;
-            font-size: 15px;
+            font-size: 14px;
             margin: 0;
             padding: 0;
             line-height: 18px;
@@ -136,7 +139,7 @@
         .message-text {
             display: block;
             color: #dbdee1;
-            font-size: 14.5px;
+            font-size: 14px;
             line-height: 1.4;
             white-space: pre-wrap;
             word-break: break-word;
@@ -146,7 +149,7 @@
 
         .translation-text {
             color: #23a55a;
-            font-size: 13px;
+            font-size: 12px;
             margin: 4px 0 0 0;
             padding: 0;
             display: block;
@@ -154,14 +157,14 @@
 
         .chat-img {
             max-width: 100%;
-            max-height: 250px;
+            max-height: 220px;
             border-radius: 8px;
             margin: 8px 0 0 0;
             display: block;
         }
 
         .reply-indicator {
-            font-size: 12px;
+            font-size: 11px;
             color: #949ba4;
             margin: 0 0 2px 0;
             padding: 0;
@@ -187,7 +190,7 @@
             flex-shrink: 0;
 
             position: absolute;
-            left: 56px;
+            left: 48px;
             top: calc(100% - 2px);
             z-index: 100;
         }
@@ -202,7 +205,7 @@
             color: #b5bac1;
             padding: 6px 8px;
             cursor: pointer;
-            font-size: 13px;
+            font-size: 12px;
             line-height: 1;
         }
 
@@ -229,7 +232,7 @@
             border: 1px solid transparent;
             border-radius: 16px;
             padding: 2px 6px;
-            font-size: 12px;
+            font-size: 11px;
             color: #b5bac1;
             cursor: pointer;
             display: flex;
@@ -254,7 +257,7 @@
 
         .emoji-picker-dialog {
             position: absolute;
-            left: 56px;
+            left: 48px;
             top: calc(100% + 38px);
             background: #313338;
             border: 1px solid #1f2023;
@@ -263,8 +266,8 @@
             padding: 8px;
             display: none;
             z-index: 200;
-            width: 260px;
-            max-height: 180px;
+            width: 240px;
+            max-height: 160px;
             overflow-y: auto;
         }
 
@@ -279,9 +282,9 @@
         }
 
         .emoji-item {
-            font-size: 20px;
-            width: 32px;
-            height: 32px;
+            font-size: 18px;
+            width: 28px;
+            height: 28px;
             display: flex;
             align-items: center;
             justify-content: center;
@@ -308,33 +311,36 @@
 
         .edit-input {
             flex: 1;
-            min-width: 180px;
+            min-width: 140px;
             background: #1e1f22;
             color: white;
             border: 1px solid #5865F2;
-            padding: 8px;
+            padding: 6px;
             border-radius: 4px;
             outline: none;
+            font-size: 14px;
         }
 
         .edit-save {
             background: #248046;
             color: white;
             border: none;
-            padding: 6px 12px;
+            padding: 6px 10px;
             border-radius: 4px;
             cursor: pointer;
             font-weight: bold;
+            font-size: 12px;
         }
 
         .edit-cancel {
             background: #4e5058;
             color: white;
             border: none;
-            padding: 6px 12px;
+            padding: 6px 10px;
             border-radius: 4px;
             cursor: pointer;
             font-weight: bold;
+            font-size: 12px;
         }
 
         /* =========================
@@ -342,7 +348,7 @@
            ========================= */
 
         .bottom-panel {
-            padding: 0 24px 24px 24px;
+            padding: 0 16px 16px 16px;
             background: #313338;
             flex-shrink: 0;
         }
@@ -365,7 +371,7 @@
             background: #2b2d31;
             padding: 6px 10px;
             border-radius: 4px;
-            font-size: 13px;
+            font-size: 12px;
             color: #b5bac1;
             margin-bottom: 6px;
             justify-content: space-between;
@@ -387,7 +393,7 @@
             border: none;
             color: #949ba4;
             cursor: pointer;
-            font-size: 16px;
+            font-size: 14px;
             padding: 0 4px;
             flex-shrink: 0;
         }
@@ -399,7 +405,7 @@
         .input-container {
             display: flex;
             flex-direction: column;
-            gap: 8px;
+            gap: 6px;
             width: 100%;
         }
 
@@ -409,10 +415,10 @@
             color: white;
             border: none;
             outline: none;
-            font-size: 14.5px;
+            font-size: 14px;
             resize: none;
-            height: 40px;
-            padding: 10px 0;
+            height: 36px;
+            padding: 6px 0;
             font-family: inherit;
         }
 
@@ -421,20 +427,21 @@
             justify-content: space-between;
             align-items: center;
             border-top: 1px solid #3f4248;
-            padding-top: 8px;
+            padding-top: 6px;
+            gap: 8px;
         }
 
         .file-upload-btn {
             background: #4e5058;
             color: white;
-            padding: 6px 12px;
+            padding: 6px 10px;
             border-radius: 4px;
-            font-size: 13px;
+            font-size: 12px;
             cursor: pointer;
             font-weight: 500;
             display: inline-flex;
             align-items: center;
-            gap: 5px;
+            gap: 4px;
         }
 
         .file-upload-btn:hover {
@@ -444,9 +451,9 @@
         .send-btn {
             background: #5865F2;
             color: white;
-            padding: 6px 16px;
+            padding: 6px 14px;
             border-radius: 4px;
-            font-size: 13px;
+            font-size: 12px;
             font-weight: 600;
             border: none;
             cursor: pointer;
@@ -462,10 +469,11 @@
 
         #profile-modal {
             background: #313338;
-            padding: 30px;
+            padding: 24px;
             border-radius: 8px;
-            max-width: 360px;
-            margin: 120px auto;
+            max-width: 320px;
+            width: 90%;
+            margin: auto;
             border: 1px solid #1f2023;
             text-align: center;
             box-shadow: 0 8px 24px rgba(0,0,0,0.5);
@@ -480,14 +488,16 @@
             height: 100%;
             background: rgba(0,0,0,0.7);
             z-index: 300;
+            align-items: center;
+            justify-content: center;
         }
 
         .dialog-box {
             background: #313338;
-            width: 360px;
-            max-height: 480px;
+            width: 90%;
+            max-width: 320px;
+            max-height: 80vh;
             overflow-y: auto;
-            margin: 100px auto;
             padding: 20px;
             border-radius: 8px;
             border: 1px solid #1f2023;
@@ -496,12 +506,12 @@
 
         .close-dialog {
             position: absolute;
-            top: 15px;
-            right: 20px;
+            top: 12px;
+            right: 16px;
             background: none;
             border: none;
             color: #949ba4;
-            font-size: 22px;
+            font-size: 20px;
             cursor: pointer;
         }
 
@@ -510,9 +520,9 @@
         }
 
         #typing-indicator {
-            font-size: 12px;
+            font-size: 11px;
             color: #949ba4;
-            height: 18px;
+            height: 16px;
             margin-bottom: 2px;
             font-style: italic;
         }
@@ -522,10 +532,11 @@
             background: #1e1f22;
             color: white;
             border: 1px solid #1f2023;
-            padding: 10px;
+            padding: 8px;
             border-radius: 4px;
             width: 100%;
             outline: none;
+            font-size: 14px;
         }
     </style>
 </head>
@@ -533,43 +544,41 @@
 <body>
 
     <!-- PROFIL -->
-    <div id="profile-modal">
+    <div style="display:flex;align-items:center;justify-content:center;height:100vh;width:100%;">
+        <div id="profile-modal" style="display:block;">
 
-        <h3 style="color:white;margin-top:0;">
-            Atur Profil Anda
-        </h3>
+            <h3 style="color:white;margin-top:0;font-size:18px;">
+                Atur Profil Anda
+            </h3>
 
-        <input
-            type="text"
-            id="usernameInput"
-            placeholder="Masukkan nama..."
-            style="margin-bottom:12px;"
-        >
+            <input
+                type="text"
+                id="usernameInput"
+                placeholder="Masukkan nama..."
+                style="margin-bottom:12px;"
+            >
 
-        <br>
+            <label
+                style="font-size:11px;display:block;margin-bottom:6px;color:#b5bac1;text-align:left;"
+            >
+                Pilih Foto Profil:
+            </label>
 
-        <label
-            style="font-size:12px;display:block;margin-bottom:6px;color:#b5bac1;text-align:left;"
-        >
-            Pilih Foto Profil:
-        </label>
+            <input
+                type="file"
+                id="avatarInput"
+                accept="image/*"
+                style="margin-bottom:16px;"
+            >
 
-        <input
-            type="file"
-            id="avatarInput"
-            accept="image/*"
-            style="margin-bottom:20px;"
-        >
+            <button
+                onclick="joinChat()"
+                style="background:#5865F2;color:white;border:none;padding:10px 16px;border-radius:4px;font-weight:bold;cursor:pointer;width:100%;font-size:14px;"
+            >
+                Gabung Chat
+            </button>
 
-        <br>
-
-        <button
-            onclick="joinChat()"
-            style="background:#5865F2;color:white;border:none;padding:10px 20px;border-radius:4px;font-weight:bold;cursor:pointer;width:100%;"
-        >
-            Gabung Chat
-        </button>
-
+        </div>
     </div>
 
 
@@ -586,14 +595,14 @@
             </button>
 
             <h3
-                style="margin-top:0;color:white;border-bottom:1px solid #3f4248;padding-bottom:10px;"
+                style="margin-top:0;color:white;border-bottom:1px solid #3f4248;padding-bottom:8px;font-size:16px;"
             >
                 Anggota Online
             </h3>
 
             <div
                 id="member-list"
-                style="margin-top:15px;"
+                style="margin-top:12px;"
             ></div>
 
         </div>
@@ -645,14 +654,14 @@
                 <button
                     onclick="toggleMemberDialog()"
                     id="memberBtn"
-                    style="background:#35373c;color:#dbdee1;border:none;padding:8px 12px;border-radius:4px;font-size:13px;cursor:pointer;"
+                    style="background:#35373c;color:#dbdee1;border:none;padding:6px 10px;border-radius:4px;font-size:12px;cursor:pointer;"
                 >
                     👥 (0)
                 </button>
 
                 <button
                     onclick="clearAllChat()"
-                    style="background:#da373c;color:white;border:none;padding:8px 12px;border-radius:4px;font-size:13px;cursor:pointer;"
+                    style="background:#da373c;color:white;border:none;padding:6px 10px;border-radius:4px;font-size:12px;cursor:pointer;"
                 >
                     🗑️ Hapus
                 </button>
@@ -706,7 +715,7 @@
 
                     <div class="input-actions-bar">
 
-                        <div>
+                        <div style="display:flex; align-items:center; min-width:0; overflow:hidden;">
 
                             <input
                                 type="file"
@@ -721,12 +730,12 @@
                                 id="fileBtn"
                                 class="file-upload-btn"
                             >
-                                📎 Unggah Gambar
+                                📎 Unggah
                             </label>
 
                             <span
                                 id="fileName"
-                                style="font-size:12px;color:#23a55a;margin-left:8px;"
+                                style="font-size:11px;color:#23a55a;margin-left:6px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;"
                             ></span>
 
                         </div>
@@ -779,12 +788,6 @@
                 socket.id
             );
 
-            /*
-             * Kalau username sudah tersedia,
-             * daftarkan profile lagi.
-             *
-             * Ini penting setelah reconnect.
-             */
             if (username) {
 
                 socket.emit(
@@ -853,9 +856,9 @@
                 );
 
             modal.style.display =
-                modal.style.display === 'block'
+                modal.style.display === 'flex'
                     ? 'none'
-                    : 'block';
+                    : 'flex';
         }
 
 
@@ -944,9 +947,10 @@
                 );
             }
 
-            document.getElementById(
-                'profile-modal'
-            ).style.display = 'none';
+            const profileModalContainer = document.getElementById('profile-modal').parentNode;
+            if (profileModalContainer) {
+                profileModalContainer.style.display = 'none';
+            }
 
             document.getElementById(
                 'app-container'
@@ -1002,7 +1006,6 @@
             ) {
 
                 fileNameSpan.innerText =
-                    '📎 ' +
                     imageInput.files[0].name;
 
             } else {
@@ -1360,30 +1363,11 @@
             id = String(id);
             emoji = String(emoji);
 
-            console.log(
-                'KLIK EMOJI:',
-                {
-                    id: id,
-                    emoji: emoji,
-                    connected: socket.connected
-                }
-            );
-
             if (!socket.connected) {
-
-                console.error(
-                    'Socket belum terhubung'
-                );
-
                 return;
             }
 
             if (!id || !emoji) {
-
-                console.error(
-                    'ID atau emoji kosong'
-                );
-
                 return;
             }
 
@@ -1393,12 +1377,6 @@
                     id: id,
                     emoji: emoji
                 }
-            );
-
-            console.log(
-                'REACTION TERKIRIM:',
-                id,
-                emoji
             );
 
             const picker =
@@ -2307,11 +2285,6 @@
             'reaction_updated',
             async function(history) {
 
-                console.log(
-                    'REACTION UPDATED:',
-                    history
-                );
-
                 messageHistory =
                     Array.isArray(history)
                         ? history
@@ -2391,7 +2364,7 @@
                             >
 
                                 <span
-                                    style="width:8px;height:8px;background-color:#23a55a;border-radius:50%;"
+                                    style="width:8px;height:8px;background-color:#23a55a;border-radius:50%;flex-shrink:0;"
                                 ></span>
 
                                 <img
@@ -2401,7 +2374,7 @@
                                 >
 
                                 <span
-                                    style="color:white;font-size:14px;font-weight:500;"
+                                    style="color:white;font-size:14px;font-weight:500;word-break:break-word;"
                                 >
                                     ${escapeHtml(user.username)}
                                 </span>
