@@ -527,13 +527,17 @@ function broadcastMemberStats() {
 }
 
 // ============================================================
+// ============================================================
 // ADMIN
 // ============================================================
 
-const ADMIN_USERNAME = 'Admin';
+// Username dan password admin diambil dari
+// Environment Variables Railway.
 
-// PENTING: ganti ini lewat environment variable ADMIN_PASSWORD
-// di Railway (tab Variables), jangan andalkan nilai default ini.
+const ADMIN_USERNAME =
+    process.env.ADMIN_USERNAME ||
+    'Admin';
+
 const ADMIN_PASSWORD =
     process.env.ADMIN_PASSWORD ||
     'ganti-password-ini';
