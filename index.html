@@ -866,6 +866,7 @@
         let replyingToId = null;
         let currentOnlineUsers = [];
         let youAreBlocked = false;
+        let isAdmin = false;
 
         /*
          * clientId permanen, disimpan di localStorage.
@@ -1994,7 +1995,7 @@
 
 
                 if (
-                    username === 'Admin' &&
+                    isAdmin &&
                     data.sender !== username
                 ) {
 
@@ -2866,6 +2867,10 @@
                         userAvatar
                     );
                 }
+
+                isAdmin = Boolean(
+                    payload?.isAdmin
+                );
             }
         );
 
@@ -2938,7 +2943,7 @@
                             // muncul untuk Admin, dan tidak
                             // untuk diri sendiri.
                             if (
-                                username === 'Admin' &&
+                                isAdmin &&
                                 !isMe
                             ) {
 
