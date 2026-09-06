@@ -666,38 +666,6 @@
     </div>
 
 
-    <!-- KELOLA BLOKIR (ADMIN) -->
-    <div id="blockedDialog" class="modal-overlay">
-
-        <div class="dialog-box">
-
-            <button
-                class="close-dialog"
-                onclick="toggleBlockedDialog()"
-            >
-                &times;
-            </button>
-
-            <h3
-                style="margin-top:0;color:white;border-bottom:1px solid #3f4248;padding-bottom:10px;"
-            >
-                Daftar Diblokir
-            </h3>
-
-            <div
-                id="blocked-list"
-                style="margin-top:15px;"
-            >
-                <p style="color:#949ba4;font-size:13px;">
-                    Memuat...
-                </p>
-            </div>
-
-        </div>
-
-    </div>
-
-
     <!-- LAYAR TERKUNCI (USER DIBLOKIR) -->
     <div
         id="blocked-screen"
@@ -774,11 +742,10 @@
                 </button>
 
                 <button
-                    onclick="toggleBlockedDialog()"
-                    id="blockManageBtn"
-                    style="display:none;background:#4e5058;color:white;border:none;padding:8px 12px;border-radius:4px;font-size:13px;cursor:pointer;"
+                    onclick="window.location.href = 'profile.html'"
+                    style="background:#35373c;color:#dbdee1;border:none;padding:8px 12px;border-radius:4px;font-size:13px;cursor:pointer;"
                 >
-                    🚫 Kelola Blokir
+                    ✏️ Edit Profil
                 </button>
 
                 <button
@@ -1029,81 +996,8 @@
 
 
         /* =========================
-           KELOLA BLOKIR (ADMIN)
+           BLOKIR (dari menu Anggota)
            ========================= */
-
-        function toggleBlockedDialog() {
-
-            const modal =
-                document.getElementById(
-                    'blockedDialog'
-                );
-
-            const willOpen =
-                modal.style.display !== 'block';
-
-            modal.style.display =
-                willOpen
-                    ? 'block'
-                    : 'none';
-
-            if (willOpen) {
-
-                document.getElementById(
-                    'blocked-list'
-                ).innerHTML =
-                    '<p style="color:#949ba4;font-size:13px;">Memuat...</p>';
-
-                socket.emit(
-                    'get_blocked_list'
-                );
-            }
-        }
-
-
-        function renderBlockedList(list) {
-
-            const container =
-                document.getElementById(
-                    'blocked-list'
-                );
-
-            if (
-                !Array.isArray(list) ||
-                list.length === 0
-            ) {
-
-                container.innerHTML =
-                    '<p style="color:#949ba4;font-size:13px;">Belum ada yang diblokir.</p>';
-
-                return;
-            }
-
-            container.innerHTML =
-                list.map(
-                    function(item) {
-
-                        return `
-                            <div
-                                style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;gap:10px;"
-                            >
-                                <span style="color:white;font-size:14px;">
-                                    ${escapeHtml(item.username)}
-                                </span>
-
-                                <button
-                                    type="button"
-                                    onclick='unblockUser(${JSON.stringify(item.clientId)}, ${JSON.stringify(item.username)})'
-                                    style="background:#248046;color:white;border:none;padding:6px 10px;border-radius:4px;font-size:12px;cursor:pointer;"
-                                >
-                                    Buka Blokir
-                                </button>
-                            </div>
-                        `;
-                    }
-                ).join('');
-        }
-
 
         function unblockUser(
             targetUserId,
@@ -1238,13 +1132,6 @@
             document.getElementById(
                 'app-container'
             ).style.display = 'flex';
-
-            if (username === 'Admin') {
-
-                document.getElementById(
-                    'blockManageBtn'
-                ).style.display = 'inline-block';
-            }
 
             requestNotificationPermission();
         }
@@ -2953,15 +2840,6 @@
 
 
         socket.on(
-            'blocked_list',
-            function(list) {
-
-                renderBlockedList(list);
-            }
-        );
-
-
-        socket.on(
             'avatar_rejected',
             function() {
 
@@ -3011,11 +2889,11 @@
 
                 const onlineCount =
                     payload?.onlineCount ??
-                    users.length;
+                    users.filter(u => u.online).length;
 
                 const totalCount =
                     payload?.totalCount ??
-                    onlineCount;
+                    users.length;
 
                 // Simpan supaya bisa dipakai tombol blokir
                 currentOnlineUsers = users;
@@ -3031,39 +2909,96 @@
                         'member-list'
                     );
 
+                if (users.length === 0) {
+
+                    memberList.innerHTML =
+                        '<p style="color:#949ba4;font-size:13px;">Belum ada anggota.</p>';
+
+                    return;
+                }
+
                 memberList.innerHTML =
-                    '';
+                    users.map(
+                        function(user) {
 
+                            const isMe =
+                                user.username === username;
 
-                users.forEach(
-                    function(user) {
+                            const isOnline =
+                                user.online !== false;
 
-                        memberList.innerHTML += `
+                            const dotColor =
+                                isOnline
+                                    ? '#23a55a'
+                                    : '#4e5058';
 
-                            <div
-                                style="display:flex;align-items:center;margin-bottom:12px;gap:10px;"
-                            >
+                            let actionBtn = '';
 
-                                <span
-                                    style="width:8px;height:8px;background-color:#23a55a;border-radius:50%;"
-                                ></span>
+                            // Tombol blokir/buka blokir cuma
+                            // muncul untuk Admin, dan tidak
+                            // untuk diri sendiri.
+                            if (
+                                username === 'Admin' &&
+                                !isMe
+                            ) {
 
-                                <img
-                                    src="${escapeHtml(user.avatar || 'https://via.placeholder.com/40')}"
-                                    class="avatar"
-                                    style="width:30px;height:30px;margin-top:0;"
+                                if (user.blocked) {
+
+                                    actionBtn = `
+                                        <button
+                                            type="button"
+                                            onclick='unblockUser(${JSON.stringify(user.clientId)}, ${JSON.stringify(user.username)})'
+                                            style="background:#248046;color:white;border:none;padding:5px 9px;border-radius:4px;font-size:11px;cursor:pointer;"
+                                        >
+                                            Buka Blokir
+                                        </button>
+                                    `;
+
+                                } else {
+
+                                    actionBtn = `
+                                        <button
+                                            type="button"
+                                            onclick='blockUser(${JSON.stringify(user.clientId)}, ${JSON.stringify(user.username)})'
+                                            style="background:#da373c;color:white;border:none;padding:5px 9px;border-radius:4px;font-size:11px;cursor:pointer;"
+                                        >
+                                            🚫 Blokir
+                                        </button>
+                                    `;
+                                }
+                            }
+
+                            return `
+                                <div
+                                    style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;gap:10px;${isOnline ? '' : 'opacity:0.55;'}"
                                 >
 
-                                <span
-                                    style="color:white;font-size:14px;font-weight:500;"
-                                >
-                                    ${escapeHtml(user.username)}
-                                </span>
+                                    <div style="display:flex;align-items:center;gap:10px;min-width:0;">
 
-                            </div>
-                        `;
-                    }
-                );
+                                        <span
+                                            style="width:8px;height:8px;flex-shrink:0;background-color:${dotColor};border-radius:50%;"
+                                        ></span>
+
+                                        <img
+                                            src="${escapeHtml(user.avatar || 'https://via.placeholder.com/40')}"
+                                            class="avatar"
+                                            style="width:30px;height:30px;margin-top:0;flex-shrink:0;"
+                                        >
+
+                                        <span
+                                            style="color:white;font-size:14px;font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;"
+                                        >
+                                            ${escapeHtml(user.username)}${user.blocked ? ' 🚫' : ''}
+                                        </span>
+
+                                    </div>
+
+                                    ${actionBtn}
+
+                                </div>
+                            `;
+                        }
+                    ).join('');
             }
         );
 
