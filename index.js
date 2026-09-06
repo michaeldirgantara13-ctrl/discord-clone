@@ -266,10 +266,265 @@ function saveChannels() {
 const channels = loadChannels();
 
 // ============================================================
-// ONLINE USERS
+// ONLINE USERS (sesi aktif saat ini)
 // ============================================================
 
 const onlineUsers = {};
+
+// ============================================================
+// REGISTRY ANGGOTA (permanen, untuk hitung total anggota)
+// ============================================================
+
+const MEMBERS_FILE =
+    path.join(
+        DATA_DIR,
+        'members.json'
+    );
+
+function loadMembers() {
+
+    try {
+
+        if (
+            fs.existsSync(MEMBERS_FILE)
+        ) {
+
+            return JSON.parse(
+                fs.readFileSync(
+                    MEMBERS_FILE,
+                    'utf8'
+                )
+            );
+        }
+
+    } catch (e) {
+
+        console.error(
+            'Gagal load members:',
+            e
+        );
+    }
+
+    return {};
+}
+
+function saveMembers() {
+
+    try {
+
+        fs.writeFileSync(
+            MEMBERS_FILE,
+            JSON.stringify(
+                registeredMembers,
+                null,
+                2
+            )
+        );
+
+    } catch (e) {
+
+        console.error(
+            'Gagal simpan members:',
+            e
+        );
+    }
+}
+
+// key = clientId permanen -> { username, avatar, firstSeen, lastSeen }
+const registeredMembers =
+    loadMembers();
+
+// ============================================================
+// DAFTAR BLOKIR (permanen)
+// ============================================================
+
+const BLOCKED_FILE =
+    path.join(
+        DATA_DIR,
+        'blocked-users.json'
+    );
+
+function loadBlocked() {
+
+    try {
+
+        if (
+            fs.existsSync(BLOCKED_FILE)
+        ) {
+
+            const parsed =
+                JSON.parse(
+                    fs.readFileSync(
+                        BLOCKED_FILE,
+                        'utf8'
+                    )
+                );
+
+            // Migrasi dari format lama (flat object
+            // clientId -> info) ke format baru
+            // { byClientId, byIp }.
+            if (
+                parsed &&
+                !parsed.byClientId &&
+                !parsed.byIp
+            ) {
+
+                return {
+                    byClientId: parsed,
+                    byIp: {}
+                };
+            }
+
+            return {
+                byClientId:
+                    parsed.byClientId || {},
+                byIp:
+                    parsed.byIp || {}
+            };
+        }
+
+    } catch (e) {
+
+        console.error(
+            'Gagal load blocked:',
+            e
+        );
+    }
+
+    return {
+        byClientId: {},
+        byIp: {}
+    };
+}
+
+function saveBlocked() {
+
+    try {
+
+        fs.writeFileSync(
+            BLOCKED_FILE,
+            JSON.stringify(
+                blockedData,
+                null,
+                2
+            )
+        );
+
+    } catch (e) {
+
+        console.error(
+            'Gagal simpan blocked:',
+            e
+        );
+    }
+}
+
+// { byClientId: { clientId -> {username, ip, blockedAt} },
+//   byIp: { ip -> {username, clientId, blockedAt} } }
+const blockedData =
+    loadBlocked();
+
+function isIdentityBlocked(
+    clientId,
+    ip
+) {
+
+    return Boolean(
+        (
+            clientId &&
+            blockedData.byClientId[clientId]
+        ) ||
+        (
+            ip &&
+            blockedData.byIp[ip]
+        )
+    );
+}
+
+function blockIdentity(
+    clientId,
+    ip,
+    username
+) {
+
+    blockedData.byClientId[clientId] = {
+
+        username:
+            username,
+
+        ip:
+            ip || null,
+
+        blockedAt:
+            Date.now()
+    };
+
+    if (ip) {
+
+        blockedData.byIp[ip] = {
+
+            username:
+                username,
+
+            clientId:
+                clientId,
+
+            blockedAt:
+                Date.now()
+        };
+    }
+
+    saveBlocked();
+}
+
+function unblockIdentity(clientId) {
+
+    const entry =
+        blockedData.byClientId[clientId];
+
+    if (entry?.ip) {
+
+        delete blockedData.byIp[
+            entry.ip
+        ];
+    }
+
+    delete blockedData.byClientId[
+        clientId
+    ];
+
+    saveBlocked();
+}
+
+function broadcastMemberStats() {
+
+    const onlineClientIds =
+        new Set(
+            Object.values(onlineUsers)
+                .map(u => u.userId)
+        );
+
+    io.emit(
+        'update_users',
+        {
+            list:
+                Object.values(
+                    onlineUsers
+                ),
+
+            onlineCount:
+                onlineClientIds.size,
+
+            totalCount:
+                Math.max(
+                    Object.keys(
+                        registeredMembers
+                    ).length,
+                    onlineClientIds.size
+                )
+        }
+    );
+}
 
 // ============================================================
 // ADMIN
@@ -326,28 +581,86 @@ io.on('connection', (socket) => {
     // ID sementara (fallback sebelum clientId permanen diterima)
     socket.userId = socket.id;
 
+    // Deteksi alamat IP (dukung app di belakang proxy Railway
+    // yang meneruskan header x-forwarded-for).
+    const forwardedFor =
+        socket.handshake.headers['x-forwarded-for'];
+
+    const rawIp =
+        (
+            typeof forwardedFor === 'string' &&
+            forwardedFor.split(',')[0].trim()
+        ) ||
+        socket.handshake.address ||
+        '';
+
+    socket.clientIp =
+        rawIp.replace('::ffff:', '');
+
+    // Cek blokir berbasis IP dari awal, sebelum profil
+    // apapun didaftarkan (menutup celah "buat akun baru").
+    socket.isBlocked =
+        isIdentityBlocked(
+            null,
+            socket.clientIp
+        );
+
     socket.join('channel:umum');
 
     console.log(
         'User terhubung:',
-        socket.id
+        socket.id,
+        '| IP:',
+        socket.clientIp,
+        socket.isBlocked ? '(DIBLOKIR)' : ''
     );
 
-    // Kirim history channel umum
-    socket.emit(
-        'receive_history',
-        channels.umum
-    );
+    if (socket.isBlocked) {
+
+        socket.emit(
+            'you_are_blocked'
+        );
+
+    } else {
+
+        // Kirim history channel umum
+        socket.emit(
+            'receive_history',
+            channels.umum
+        );
+    }
 
     // Kirim juga daftar user online saat ini,
     // supaya tidak sempat kelihatan 0 kalau
     // ada delay saat registrasi profil.
-    socket.emit(
-        'update_users',
-        Object.values(
-            onlineUsers
-        )
-    );
+    {
+        const onlineClientIds =
+            new Set(
+                Object.values(onlineUsers)
+                    .map(u => u.userId)
+            );
+
+        socket.emit(
+            'update_users',
+            {
+                list:
+                    Object.values(
+                        onlineUsers
+                    ),
+
+                onlineCount:
+                    onlineClientIds.size,
+
+                totalCount:
+                    Math.max(
+                        Object.keys(
+                            registeredMembers
+                        ).length,
+                        onlineClientIds.size
+                    )
+            }
+        );
+    }
 
     // ========================================================
     // SET USER PROFILE
@@ -363,6 +676,51 @@ io.on('connection', (socket) => {
                 )
                 .trim()
                 .slice(0, 50);
+
+            // clientId permanen dari localStorage browser.
+            // Ini yang dipakai untuk kepemilikan pesan,
+            // supaya tetap valid walau socket reconnect
+            // dan mendapat socket.id baru.
+            const clientId =
+                typeof profile.clientId === 'string' &&
+                profile.clientId.trim()
+                    ? profile.clientId.trim().slice(0, 100)
+                    : socket.id;
+
+            socket.clientId = clientId;
+            socket.userId = clientId;
+
+            // Cek blokir SEBELUM apapun diproses (termasuk
+            // upload avatar), berdasarkan clientId ATAU IP.
+            // Dua-duanya dicek supaya reset localStorage
+            // (dapat clientId baru) saja tidak cukup untuk
+            // lolos blokir selama IP-nya sama.
+            if (
+                isIdentityBlocked(
+                    clientId,
+                    socket.clientIp
+                )
+            ) {
+
+                socket.isBlocked = true;
+
+                socket.emit(
+                    'you_are_blocked'
+                );
+
+                console.log(
+                    'Profil ditolak (diblokir):',
+                    username,
+                    '| clientId:',
+                    clientId,
+                    '| IP:',
+                    socket.clientIp
+                );
+
+                return;
+            }
+
+            socket.isBlocked = false;
 
             let avatar =
                 'https://via.placeholder.com/40';
@@ -413,19 +771,6 @@ io.on('connection', (socket) => {
                 avatar = profile.avatar;
             }
 
-            // clientId permanen dari localStorage browser.
-            // Ini yang dipakai untuk kepemilikan pesan,
-            // supaya tetap valid walau socket reconnect
-            // dan mendapat socket.id baru.
-            const clientId =
-                typeof profile.clientId === 'string' &&
-                profile.clientId.trim()
-                    ? profile.clientId.trim().slice(0, 100)
-                    : socket.id;
-
-            socket.clientId = clientId;
-            socket.userId = clientId;
-
             onlineUsers[socket.id] = {
 
                 userId:
@@ -438,6 +783,28 @@ io.on('connection', (socket) => {
                     avatar
             };
 
+            // Daftarkan/update ke registry anggota permanen
+            registeredMembers[clientId] = {
+
+                username:
+                    username,
+
+                avatar:
+                    avatar,
+
+                firstSeen:
+                    registeredMembers[clientId]?.firstSeen ||
+                    Date.now(),
+
+                lastSeen:
+                    Date.now(),
+
+                lastIp:
+                    socket.clientIp || null
+            };
+
+            saveMembers();
+
             // Beritahu pengirim URL avatar final-nya,
             // supaya browser bisa simpan URL itu (bukan
             // base64) untuk sesi berikutnya.
@@ -446,12 +813,16 @@ io.on('connection', (socket) => {
                 { avatar: avatar }
             );
 
-            io.emit(
-                'update_users',
-                Object.values(
-                    onlineUsers
-                )
+            // Kirim riwayat channel yang sedang aktif,
+            // karena tadi belum tentu terkirim kalau
+            // sebelumnya sempat dianggap berpotensi
+            // diblokir berbasis IP saja.
+            socket.emit(
+                'receive_history',
+                channels[socket.currentChannel] || []
             );
+
+            broadcastMemberStats();
 
             console.log(
                 'Profile:',
@@ -473,6 +844,15 @@ io.on('connection', (socket) => {
             if (
                 !validChannel(channel)
             ) {
+                return;
+            }
+
+            if (socket.isBlocked) {
+
+                socket.emit(
+                    'you_are_blocked'
+                );
+
                 return;
             }
 
@@ -521,6 +901,17 @@ io.on('connection', (socket) => {
             if (
                 !validChannel(channel)
             ) {
+                return;
+            }
+
+            // Ditolak kalau user ini diblokir admin
+            if (socket.isBlocked) {
+
+                socket.emit(
+                    'message_rejected',
+                    { reason: 'blocked' }
+                );
+
                 return;
             }
 
@@ -877,6 +1268,228 @@ io.on('connection', (socket) => {
     );
 
     // ========================================================
+    // BLOKIR / BUKA BLOKIR USER (admin only)
+    // ========================================================
+
+    socket.on(
+        'block_user',
+        (payload = {}) => {
+
+            const profile =
+                onlineUsers[socket.id];
+
+            if (
+                !profile ||
+                profile.username !== ADMIN_USERNAME
+            ) {
+
+                socket.emit(
+                    'clear_chat_denied'
+                );
+
+                return;
+            }
+
+            if (
+                payload.password !==
+                ADMIN_PASSWORD
+            ) {
+
+                socket.emit(
+                    'clear_chat_denied'
+                );
+
+                return;
+            }
+
+            const targetUserId =
+                String(
+                    payload.targetUserId || ''
+                );
+
+            if (!targetUserId) {
+                return;
+            }
+
+            if (
+                targetUserId === socket.clientId
+            ) {
+
+                // Admin tidak bisa blokir diri sendiri
+                return;
+            }
+
+            const targetUsername =
+                String(
+                    payload.targetUsername || 'User'
+                ).slice(0, 50);
+
+            // Ambil IP terakhir yang diketahui dari target,
+            // baik dia sedang online maupun tidak, supaya
+            // blokir tetap efektif walau dia reset clientId
+            // (selama IP-nya belum ganti).
+            const targetIp =
+                registeredMembers[targetUserId]?.lastIp ||
+                null;
+
+            blockIdentity(
+                targetUserId,
+                targetIp,
+                targetUsername
+            );
+
+            // Kalau target sedang online, putus akses
+            // chat-nya seketika.
+            for (
+                const sid
+                of Object.keys(onlineUsers)
+            ) {
+
+                if (
+                    onlineUsers[sid].userId ===
+                    targetUserId
+                ) {
+
+                    const targetSocket =
+                        io.sockets.sockets.get(sid);
+
+                    if (targetSocket) {
+
+                        targetSocket.isBlocked = true;
+
+                        targetSocket.emit(
+                            'you_are_blocked'
+                        );
+                    }
+                }
+            }
+
+            console.log(
+                'USER DIBLOKIR ADMIN:',
+                targetUsername,
+                targetUserId,
+                '| IP:',
+                targetIp
+            );
+        }
+    );
+
+    socket.on(
+        'unblock_user',
+        (payload = {}) => {
+
+            const profile =
+                onlineUsers[socket.id];
+
+            if (
+                !profile ||
+                profile.username !== ADMIN_USERNAME
+            ) {
+
+                socket.emit(
+                    'clear_chat_denied'
+                );
+
+                return;
+            }
+
+            if (
+                payload.password !==
+                ADMIN_PASSWORD
+            ) {
+
+                socket.emit(
+                    'clear_chat_denied'
+                );
+
+                return;
+            }
+
+            const targetUserId =
+                String(
+                    payload.targetUserId || ''
+                );
+
+            unblockIdentity(
+                targetUserId
+            );
+
+            for (
+                const sid
+                of Object.keys(onlineUsers)
+            ) {
+
+                if (
+                    onlineUsers[sid].userId ===
+                    targetUserId
+                ) {
+
+                    const targetSocket =
+                        io.sockets.sockets.get(sid);
+
+                    if (targetSocket) {
+
+                        targetSocket.isBlocked = false;
+                    }
+                }
+            }
+
+            console.log(
+                'USER DIBUKA BLOKIRNYA:',
+                targetUserId
+            );
+
+            // Kirim ulang daftar blokir terbaru ke admin ini
+            socket.emit(
+                'blocked_list',
+                Object.entries(
+                    blockedData.byClientId
+                ).map(
+                    ([id, info]) => ({
+                        clientId: id,
+                        username: info.username,
+                        blockedAt: info.blockedAt
+                    })
+                )
+            );
+        }
+    );
+
+    // ========================================================
+    // LIHAT DAFTAR BLOKIR (admin only, tidak perlu password
+    // karena cuma untuk melihat, bukan mengubah)
+    // ========================================================
+
+    socket.on(
+        'get_blocked_list',
+        () => {
+
+            const profile =
+                onlineUsers[socket.id];
+
+            if (
+                !profile ||
+                profile.username !== ADMIN_USERNAME
+            ) {
+                return;
+            }
+
+            socket.emit(
+                'blocked_list',
+                Object.entries(
+                    blockedData.byClientId
+                ).map(
+                    ([id, info]) => ({
+                        clientId: id,
+                        username: info.username,
+                        blockedAt: info.blockedAt
+                    })
+                )
+            );
+        }
+    );
+
+    // ========================================================
     // REACTION
     // ========================================================
 
@@ -1014,12 +1627,7 @@ io.on('connection', (socket) => {
                 socket.id
             ];
 
-            io.emit(
-                'update_users',
-                Object.values(
-                    onlineUsers
-                )
-            );
+            broadcastMemberStats();
         }
     );
 });
