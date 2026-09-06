@@ -868,10 +868,15 @@ io.on('connection', (socket) => {
 
             // Beritahu pengirim URL avatar final-nya,
             // supaya browser bisa simpan URL itu (bukan
-            // base64) untuk sesi berikutnya.
+            // base64) untuk sesi berikutnya. Sertakan juga
+            // status admin, supaya client tidak perlu
+            // menebak sendiri lewat cek nama.
             socket.emit(
                 'profile_registered',
-                { avatar: avatar }
+                {
+                    avatar: avatar,
+                    isAdmin: username === ADMIN_USERNAME
+                }
             );
 
             // Kirim riwayat channel yang sedang aktif,
