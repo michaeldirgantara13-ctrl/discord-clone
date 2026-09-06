@@ -496,6 +496,67 @@ function unblockIdentity(clientId) {
     saveBlocked();
 }
 
+function buildFullMemberList() {
+
+    const onlineByClientId = {};
+
+    Object.values(onlineUsers).forEach(
+        function(u) {
+
+            onlineByClientId[u.userId] = u;
+        }
+    );
+
+    const list =
+        Object.entries(registeredMembers)
+            .map(
+                function([clientId, info]) {
+
+                    const onlineInfo =
+                        onlineByClientId[clientId];
+
+                    return {
+                        clientId:
+                            clientId,
+
+                        username:
+                            onlineInfo?.username ||
+                            info.username,
+
+                        avatar:
+                            onlineInfo?.avatar ||
+                            info.avatar,
+
+                        online:
+                            Boolean(onlineInfo),
+
+                        blocked:
+                            Boolean(
+                                blockedData.byClientId[
+                                    clientId
+                                ]
+                            )
+                    };
+                }
+            );
+
+    list.sort(
+        function(a, b) {
+
+            if (a.online !== b.online) {
+
+                return a.online ? -1 : 1;
+            }
+
+            return a.username.localeCompare(
+                b.username
+            );
+        }
+    );
+
+    return list;
+}
+
 function broadcastMemberStats() {
 
     const onlineClientIds =
@@ -508,9 +569,7 @@ function broadcastMemberStats() {
         'update_users',
         {
             list:
-                Object.values(
-                    onlineUsers
-                ),
+                buildFullMemberList(),
 
             onlineCount:
                 onlineClientIds.size,
@@ -527,17 +586,17 @@ function broadcastMemberStats() {
 }
 
 // ============================================================
-// ============================================================
 // ADMIN
 // ============================================================
 
-// Username dan password admin diambil dari
-// Environment Variables Railway.
-
+// Bisa diganti lewat environment variable ADMIN_USERNAME
+// di Railway (tab Variables). Kalau tidak diset, defaultnya "Admin".
 const ADMIN_USERNAME =
     process.env.ADMIN_USERNAME ||
     'Admin';
 
+// PENTING: ganti ini lewat environment variable ADMIN_PASSWORD
+// di Railway (tab Variables), jangan andalkan nilai default ini.
 const ADMIN_PASSWORD =
     process.env.ADMIN_PASSWORD ||
     'ganti-password-ini';
@@ -634,8 +693,8 @@ io.on('connection', (socket) => {
         );
     }
 
-    // Kirim juga daftar user online saat ini,
-    // supaya tidak sempat kelihatan 0 kalau
+    // Kirim juga daftar anggota (semua + status online)
+    // saat ini, supaya tidak sempat kelihatan 0 kalau
     // ada delay saat registrasi profil.
     {
         const onlineClientIds =
@@ -648,9 +707,7 @@ io.on('connection', (socket) => {
             'update_users',
             {
                 list:
-                    Object.values(
-                        onlineUsers
-                    ),
+                    buildFullMemberList(),
 
                 onlineCount:
                     onlineClientIds.size,
@@ -1368,6 +1425,10 @@ io.on('connection', (socket) => {
                 }
             }
 
+            // Refresh status blokir di semua client
+            // (termasuk dialog Anggota admin).
+            broadcastMemberStats();
+
             console.log(
                 'USER DIBLOKIR ADMIN:',
                 targetUsername,
@@ -1438,57 +1499,12 @@ io.on('connection', (socket) => {
                 }
             }
 
+            // Refresh status blokir di semua client
+            broadcastMemberStats();
+
             console.log(
                 'USER DIBUKA BLOKIRNYA:',
                 targetUserId
-            );
-
-            // Kirim ulang daftar blokir terbaru ke admin ini
-            socket.emit(
-                'blocked_list',
-                Object.entries(
-                    blockedData.byClientId
-                ).map(
-                    ([id, info]) => ({
-                        clientId: id,
-                        username: info.username,
-                        blockedAt: info.blockedAt
-                    })
-                )
-            );
-        }
-    );
-
-    // ========================================================
-    // LIHAT DAFTAR BLOKIR (admin only, tidak perlu password
-    // karena cuma untuk melihat, bukan mengubah)
-    // ========================================================
-
-    socket.on(
-        'get_blocked_list',
-        () => {
-
-            const profile =
-                onlineUsers[socket.id];
-
-            if (
-                !profile ||
-                profile.username !== ADMIN_USERNAME
-            ) {
-                return;
-            }
-
-            socket.emit(
-                'blocked_list',
-                Object.entries(
-                    blockedData.byClientId
-                ).map(
-                    ([id, info]) => ({
-                        clientId: id,
-                        username: info.username,
-                        blockedAt: info.blockedAt
-                    })
-                )
             );
         }
     );
