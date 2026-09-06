@@ -1,0 +1,399 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <title>Edit Profil - Discord Clone</title>
+    <script src="/socket.io/socket.io.js"></script>
+
+    <style>
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
+            background: #313338;
+            color: #dbdee1;
+            margin: 0;
+            min-height: 100vh;
+            min-height: 100dvh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 24px;
+        }
+
+        .card {
+            background: #2b2d31;
+            width: 100%;
+            max-width: 360px;
+            padding: 28px;
+            border-radius: 8px;
+            border: 1px solid #1f2023;
+            box-shadow: 0 8px 24px rgba(0,0,0,0.5);
+        }
+
+        h2 {
+            color: white;
+            margin-top: 0;
+            margin-bottom: 20px;
+        }
+
+        .avatar-preview {
+            width: 80px;
+            height: 80px;
+            border-radius: 50%;
+            object-fit: cover;
+            display: block;
+            margin: 0 auto 16px auto;
+            border: 2px solid #4e5058;
+        }
+
+        label {
+            font-size: 12px;
+            display: block;
+            margin-bottom: 6px;
+            color: #b5bac1;
+            text-align: left;
+        }
+
+        input[type="text"],
+        input[type="file"] {
+            background: #1e1f22;
+            color: white;
+            border: 1px solid #1f2023;
+            padding: 10px;
+            border-radius: 4px;
+            width: 100%;
+            outline: none;
+            margin-bottom: 16px;
+            font-size: 14px;
+        }
+
+        .btn-primary {
+            background: #5865F2;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 4px;
+            font-weight: bold;
+            cursor: pointer;
+            width: 100%;
+            font-size: 14px;
+            margin-bottom: 10px;
+        }
+
+        .btn-primary:hover {
+            background: #4752c4;
+        }
+
+        .btn-secondary {
+            background: transparent;
+            color: #949ba4;
+            border: 1px solid #4e5058;
+            padding: 10px 20px;
+            border-radius: 4px;
+            cursor: pointer;
+            width: 100%;
+            font-size: 14px;
+        }
+
+        .btn-secondary:hover {
+            color: white;
+            border-color: #6d6f78;
+        }
+
+        #statusMsg {
+            font-size: 13px;
+            text-align: center;
+            margin-bottom: 12px;
+            min-height: 16px;
+        }
+
+        #statusMsg.success {
+            color: #23a55a;
+        }
+
+        #statusMsg.error {
+            color: #da373c;
+        }
+    </style>
+</head>
+
+<body>
+
+    <div class="card">
+
+        <h2>Edit Profil</h2>
+
+        <img
+            id="avatarPreview"
+            class="avatar-preview"
+            src="https://via.placeholder.com/80"
+        >
+
+        <div id="statusMsg"></div>
+
+        <label>Nama Tampilan</label>
+
+        <input
+            type="text"
+            id="usernameInput"
+            placeholder="Masukkan nama..."
+        >
+
+        <label>Ganti Foto Profil (opsional)</label>
+
+        <input
+            type="file"
+            id="avatarInput"
+            accept="image/*"
+        >
+
+        <button
+            class="btn-primary"
+            onclick="saveProfile()"
+        >
+            Simpan Perubahan
+        </button>
+
+        <button
+            class="btn-secondary"
+            onclick="window.location.href = 'index.html'"
+        >
+            Kembali ke Chat
+        </button>
+
+    </div>
+
+    <script>
+
+        const socket = io();
+
+        // clientId permanen (sama seperti yang dipakai index.html)
+        let clientId =
+            localStorage.getItem('chat_client_id');
+
+        if (!clientId) {
+
+            clientId =
+                (crypto.randomUUID
+                    ? crypto.randomUUID()
+                    : `${Date.now()}-${Math.random().toString(36).slice(2, 10)}`);
+
+            localStorage.setItem(
+                'chat_client_id',
+                clientId
+            );
+        }
+
+        let currentUsername =
+            localStorage.getItem('chat_username') || '';
+
+        let currentAvatar =
+            localStorage.getItem('chat_avatar') ||
+            'https://via.placeholder.com/80';
+
+        let newAvatarData = null;
+
+        // Isi form dengan data yang tersimpan
+        document.getElementById(
+            'usernameInput'
+        ).value = currentUsername;
+
+        document.getElementById(
+            'avatarPreview'
+        ).src = currentAvatar;
+
+
+        document.getElementById(
+            'avatarInput'
+        ).addEventListener(
+            'change',
+            function(e) {
+
+                const file =
+                    e.target.files[0];
+
+                if (!file) {
+                    return;
+                }
+
+                if (
+                    file.size > 1 * 1024 * 1024
+                ) {
+
+                    showStatus(
+                        'Foto terlalu besar (maksimal 1MB).',
+                        'error'
+                    );
+
+                    e.target.value = '';
+
+                    return;
+                }
+
+                const reader =
+                    new FileReader();
+
+                reader.onload =
+                    function(ev) {
+
+                        newAvatarData =
+                            ev.target.result;
+
+                        document.getElementById(
+                            'avatarPreview'
+                        ).src = newAvatarData;
+                    };
+
+                reader.readAsDataURL(file);
+            }
+        );
+
+
+        function showStatus(msg, type) {
+
+            const el =
+                document.getElementById(
+                    'statusMsg'
+                );
+
+            el.textContent = msg;
+            el.className = type || '';
+        }
+
+
+        function saveProfile() {
+
+            const newUsername =
+                document
+                    .getElementById(
+                        'usernameInput'
+                    )
+                    .value
+                    .trim();
+
+            if (!newUsername) {
+
+                showStatus(
+                    'Nama tidak boleh kosong.',
+                    'error'
+                );
+
+                return;
+            }
+
+            showStatus(
+                'Menyimpan...',
+                ''
+            );
+
+            const payload = {
+
+                username:
+                    newUsername,
+
+                avatar:
+                    newAvatarData ||
+                    currentAvatar,
+
+                clientId:
+                    clientId
+            };
+
+            if (socket.connected) {
+
+                socket.emit(
+                    'set_user_profile',
+                    payload
+                );
+
+            } else {
+
+                socket.once(
+                    'connect',
+                    function() {
+
+                        socket.emit(
+                            'set_user_profile',
+                            payload
+                        );
+                    }
+                );
+            }
+        }
+
+
+        socket.on(
+            'profile_registered',
+            function(payload) {
+
+                const finalAvatar =
+                    payload?.avatar ||
+                    newAvatarData ||
+                    currentAvatar;
+
+                const finalUsername =
+                    document
+                        .getElementById(
+                            'usernameInput'
+                        )
+                        .value
+                        .trim();
+
+                localStorage.setItem(
+                    'chat_username',
+                    finalUsername
+                );
+
+                localStorage.setItem(
+                    'chat_avatar',
+                    finalAvatar
+                );
+
+                showStatus(
+                    'Profil berhasil disimpan!',
+                    'success'
+                );
+
+                setTimeout(
+                    function() {
+
+                        window.location.href =
+                            'index.html';
+                    },
+                    900
+                );
+            }
+        );
+
+
+        socket.on(
+            'avatar_rejected',
+            function() {
+
+                showStatus(
+                    'Foto terlalu besar (maksimal 1MB). Profil disimpan tanpa foto baru.',
+                    'error'
+                );
+            }
+        );
+
+
+        socket.on(
+            'you_are_blocked',
+            function() {
+
+                showStatus(
+                    'Anda diblokir dan tidak bisa mengubah profil.',
+                    'error'
+                );
+            }
+        );
+
+    </script>
+
+</body>
+</html>
