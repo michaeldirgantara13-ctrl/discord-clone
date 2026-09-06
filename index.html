@@ -666,6 +666,64 @@
     </div>
 
 
+    <!-- KELOLA BLOKIR (ADMIN) -->
+    <div id="blockedDialog" class="modal-overlay">
+
+        <div class="dialog-box">
+
+            <button
+                class="close-dialog"
+                onclick="toggleBlockedDialog()"
+            >
+                &times;
+            </button>
+
+            <h3
+                style="margin-top:0;color:white;border-bottom:1px solid #3f4248;padding-bottom:10px;"
+            >
+                Daftar Diblokir
+            </h3>
+
+            <div
+                id="blocked-list"
+                style="margin-top:15px;"
+            >
+                <p style="color:#949ba4;font-size:13px;">
+                    Memuat...
+                </p>
+            </div>
+
+        </div>
+
+    </div>
+
+
+    <!-- LAYAR TERKUNCI (USER DIBLOKIR) -->
+    <div
+        id="blocked-screen"
+        style="display:none;position:fixed;top:0;left:0;width:100%;height:100%;background:#1e1f22;z-index:500;align-items:center;justify-content:center;text-align:center;padding:24px;"
+    >
+
+        <div>
+
+            <div style="font-size:48px;margin-bottom:16px;">
+                🚫
+            </div>
+
+            <h2 style="color:white;margin-bottom:8px;">
+                Anda Diblokir
+            </h2>
+
+            <p style="color:#b5bac1;max-width:320px;margin:0 auto;">
+                Admin telah memblokir akses Anda ke chat ini.
+                Anda tidak bisa masuk atau mengirim pesan lagi.
+            </p>
+
+        </div>
+
+    </div>
+
+
     <!-- CHAT -->
     <div
         id="app-container"
@@ -713,6 +771,14 @@
                     style="background:#35373c;color:#dbdee1;border:none;padding:8px 12px;border-radius:4px;font-size:13px;cursor:pointer;"
                 >
                     👥 (0)
+                </button>
+
+                <button
+                    onclick="toggleBlockedDialog()"
+                    id="blockManageBtn"
+                    style="display:none;background:#4e5058;color:white;border:none;padding:8px 12px;border-radius:4px;font-size:13px;cursor:pointer;"
+                >
+                    🚫 Kelola Blokir
                 </button>
 
                 <button
@@ -831,6 +897,8 @@
         let messageHistory = [];
         let typingTimeout = null;
         let replyingToId = null;
+        let currentOnlineUsers = [];
+        let youAreBlocked = false;
 
         /*
          * clientId permanen, disimpan di localStorage.
@@ -961,6 +1029,107 @@
 
 
         /* =========================
+           KELOLA BLOKIR (ADMIN)
+           ========================= */
+
+        function toggleBlockedDialog() {
+
+            const modal =
+                document.getElementById(
+                    'blockedDialog'
+                );
+
+            const willOpen =
+                modal.style.display !== 'block';
+
+            modal.style.display =
+                willOpen
+                    ? 'block'
+                    : 'none';
+
+            if (willOpen) {
+
+                document.getElementById(
+                    'blocked-list'
+                ).innerHTML =
+                    '<p style="color:#949ba4;font-size:13px;">Memuat...</p>';
+
+                socket.emit(
+                    'get_blocked_list'
+                );
+            }
+        }
+
+
+        function renderBlockedList(list) {
+
+            const container =
+                document.getElementById(
+                    'blocked-list'
+                );
+
+            if (
+                !Array.isArray(list) ||
+                list.length === 0
+            ) {
+
+                container.innerHTML =
+                    '<p style="color:#949ba4;font-size:13px;">Belum ada yang diblokir.</p>';
+
+                return;
+            }
+
+            container.innerHTML =
+                list.map(
+                    function(item) {
+
+                        return `
+                            <div
+                                style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;gap:10px;"
+                            >
+                                <span style="color:white;font-size:14px;">
+                                    ${escapeHtml(item.username)}
+                                </span>
+
+                                <button
+                                    type="button"
+                                    onclick='unblockUser(${JSON.stringify(item.clientId)}, ${JSON.stringify(item.username)})'
+                                    style="background:#248046;color:white;border:none;padding:6px 10px;border-radius:4px;font-size:12px;cursor:pointer;"
+                                >
+                                    Buka Blokir
+                                </button>
+                            </div>
+                        `;
+                    }
+                ).join('');
+        }
+
+
+        function unblockUser(
+            targetUserId,
+            targetUsername
+        ) {
+
+            const password =
+                prompt(
+                    `Masukkan password admin untuk membuka blokir "${targetUsername}":`
+                );
+
+            if (password === null) {
+                return;
+            }
+
+            socket.emit(
+                'unblock_user',
+                {
+                    targetUserId: targetUserId,
+                    password: password
+                }
+            );
+        }
+
+
+        /* =========================
            JOIN
            ========================= */
 
@@ -1046,6 +1215,10 @@
 
         function registerAndEnter() {
 
+            if (youAreBlocked) {
+                return;
+            }
+
             if (socket.connected) {
 
                 socket.emit(
@@ -1065,6 +1238,15 @@
             document.getElementById(
                 'app-container'
             ).style.display = 'flex';
+
+            if (username === 'Admin') {
+
+                document.getElementById(
+                    'blockManageBtn'
+                ).style.display = 'inline-block';
+            }
+
+            requestNotificationPermission();
         }
 
 
@@ -1309,6 +1491,71 @@
                 osc.stop(
                     audioCtx.currentTime + 0.15
                 );
+
+            } catch (e) {}
+        }
+
+
+        /* =========================
+           NOTIFIKASI BROWSER
+           ========================= */
+
+        function requestNotificationPermission() {
+
+            if (
+                'Notification' in window &&
+                Notification.permission === 'default'
+            ) {
+
+                Notification.requestPermission();
+            }
+        }
+
+
+        function showBrowserNotification(msg) {
+
+            // Cuma tampilkan notifikasi kalau tab sedang
+            // tidak aktif/terlihat, biar tidak mengganggu
+            // saat memang lagi buka chatnya.
+            if (
+                document.visibilityState === 'visible' &&
+                document.hasFocus()
+            ) {
+                return;
+            }
+
+            if (
+                !('Notification' in window) ||
+                Notification.permission !== 'granted'
+            ) {
+                return;
+            }
+
+            try {
+
+                const body =
+                    msg.original
+                        ? msg.original.slice(0, 120)
+                        : '📎 Mengirim gambar';
+
+                const notif =
+                    new Notification(
+                        msg.sender || 'Pesan baru',
+                        {
+                            body: body,
+                            icon:
+                                msg.avatar ||
+                                'https://via.placeholder.com/40'
+                        }
+                    );
+
+                notif.onclick =
+                    function() {
+
+                        window.focus();
+
+                        notif.close();
+                    };
 
             } catch (e) {}
         }
@@ -1859,6 +2106,24 @@
                 }
 
 
+                if (
+                    username === 'Admin' &&
+                    data.sender !== username
+                ) {
+
+                    actionButtonsHtml += `
+                        <button
+                            type="button"
+                            class="action-icon-btn"
+                            onclick='blockUser(${JSON.stringify(data.userId)}, ${JSON.stringify(data.sender)}, event)'
+                            title="Blokir pengguna ini"
+                        >
+                            🚫
+                        </button>
+                    `;
+                }
+
+
                 /* =========================
                    EMOJI PICKER
                    ========================= */
@@ -2261,6 +2526,51 @@
 
 
         /* =========================
+           BLOKIR USER
+           ========================= */
+
+        function blockUser(
+            targetUserId,
+            targetUsername,
+            event
+        ) {
+
+            if (event) {
+                event.preventDefault();
+                event.stopPropagation();
+            }
+
+            const password =
+                prompt(
+                    `Masukkan password admin untuk memblokir "${targetUsername}":`
+                );
+
+            if (password === null) {
+                return;
+            }
+
+            if (
+                !confirm(
+                    `Yakin ingin memblokir "${targetUsername}"? Mereka tidak akan bisa mengirim pesan lagi.`
+                )
+            ) {
+                return;
+            }
+
+            socket.emit(
+                'block_user',
+                {
+                    targetUserId: targetUserId,
+                    targetUsername: targetUsername,
+                    password: password
+                }
+            );
+
+            closeAllMessageActions();
+        }
+
+
+        /* =========================
            CLEAR
            ========================= */
 
@@ -2466,6 +2776,10 @@
                     ) {
 
                         playNotificationSound();
+
+                        showBrowserNotification(
+                            latestMsg
+                        );
                     }
                 }
 
@@ -2582,6 +2896,12 @@
                         'Gambar terlalu besar (maksimal 4MB). Pesan tidak terkirim.'
                     );
 
+                } else if (reason === 'blocked') {
+
+                    alert(
+                        'Anda diblokir dan tidak bisa mengirim pesan.'
+                    );
+
                 } else {
 
                     alert(
@@ -2590,6 +2910,53 @@
                 }
 
                 resetForm();
+            }
+        );
+
+
+        socket.on(
+            'you_are_blocked',
+            function() {
+
+                youAreBlocked = true;
+
+                // Sembunyikan semua tampilan chat/form profil,
+                // tampilkan layar terkunci penuh.
+                document.getElementById(
+                    'profile-modal'
+                ).style.display = 'none';
+
+                document.getElementById(
+                    'app-container'
+                ).style.display = 'none';
+
+                document.getElementById(
+                    'memberDialog'
+                ).style.display = 'none';
+
+                document.getElementById(
+                    'blockedDialog'
+                ).style.display = 'none';
+
+                document.getElementById(
+                    'blocked-screen'
+                ).style.display = 'flex';
+
+                // Putuskan koneksi dan jangan coba
+                // konek ulang otomatis, supaya benar-benar
+                // tidak bisa "masuk" lagi.
+                socket.io.opts.reconnection = false;
+
+                socket.disconnect();
+            }
+        );
+
+
+        socket.on(
+            'blocked_list',
+            function(list) {
+
+                renderBlockedList(list);
             }
         );
 
@@ -2631,20 +2998,32 @@
 
         socket.on(
             'update_users',
-            function(users) {
+            function(payload) {
 
-                users =
-                    Array.isArray(users)
-                        ? users
-                        : [];
+                const users =
+                    Array.isArray(payload?.list)
+                        ? payload.list
+                        : (
+                            Array.isArray(payload)
+                                ? payload
+                                : []
+                        );
 
                 const onlineCount =
+                    payload?.onlineCount ??
                     users.length;
+
+                const totalCount =
+                    payload?.totalCount ??
+                    onlineCount;
+
+                // Simpan supaya bisa dipakai tombol blokir
+                currentOnlineUsers = users;
 
                 document.getElementById(
                     'memberBtn'
                 ).innerText =
-                    `👥 (${onlineCount})`;
+                    `👥 ${onlineCount}/${totalCount}`;
 
 
                 const memberList =
