@@ -85,6 +85,109 @@
         }
 
         /* =========================
+           VOICE CHANNEL
+           ========================= */
+
+        .voice-channels-bar {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            padding: 10px 24px;
+            background: #2b2d31;
+            border-bottom: 2px solid #1f2023;
+            flex-shrink: 0;
+        }
+
+        .voice-channel-chip {
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+            background: #1e1f22;
+            border: 1px solid #3f4248;
+            border-radius: 6px;
+            padding: 8px 12px;
+            cursor: pointer;
+            min-width: 110px;
+            transition: border-color 0.15s;
+        }
+
+        .voice-channel-chip:hover {
+            border-color: #5865F2;
+        }
+
+        .voice-channel-chip.active {
+            border-color: #23a55a;
+        }
+
+        .voice-channel-chip.locked {
+            border-style: dashed;
+        }
+
+        .voice-channel-chip-name {
+            font-size: 13px;
+            font-weight: bold;
+            color: #dbdee1;
+        }
+
+        .voice-channel-chip-members {
+            display: flex;
+            flex-direction: column;
+            gap: 3px;
+        }
+
+        .voice-member {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 11px;
+            font-weight: normal;
+            color: #b5bac1;
+        }
+
+        .voice-member img {
+            width: 18px;
+            height: 18px;
+            border-radius: 50%;
+            object-fit: cover;
+        }
+
+        .voice-member.speaking img {
+            outline: 2px solid #23a55a;
+        }
+
+        #voice-status-bar {
+            display: none;
+            align-items: center;
+            justify-content: space-between;
+            gap: 12px;
+            padding: 10px 24px;
+            background: #21232a;
+            border-bottom: 2px solid #1f2023;
+            flex-shrink: 0;
+            font-size: 13px;
+        }
+
+        #voice-status-bar button {
+            background: #35373c;
+            color: #dbdee1;
+            border: none;
+            padding: 6px 10px;
+            border-radius: 4px;
+            font-size: 13px;
+            cursor: pointer;
+        }
+
+        #voice-status-bar button.muted {
+            background: #da373c;
+            color: white;
+        }
+
+        #voice-status-bar .voice-leave-btn {
+            background: #da373c;
+            color: white;
+        }
+
+        /* =========================
            PESAN
            ========================= */
 
@@ -719,6 +822,48 @@
     </div>
 
 
+    <!-- UNDANGAN VOICE ROOM -->
+    <div id="voiceInviteDialog" class="modal-overlay">
+
+        <div class="dialog-box" style="text-align:center;">
+
+            <h3
+                id="voiceInviteDialogTitle"
+                style="margin-top:0;color:white;"
+            >
+                Undangan Voice Room
+            </h3>
+
+            <p
+                id="voiceInviteDialogBody"
+                style="color:#b5bac1;font-size:14px;"
+            ></p>
+
+            <div style="display:flex;gap:10px;margin-top:16px;">
+
+                <button
+                    id="voiceInviteAcceptBtn"
+                    onclick="acceptVoiceInvite()"
+                    style="flex:1;background:#23a55a;color:white;border:none;padding:10px;border-radius:4px;font-weight:bold;cursor:pointer;"
+                >
+                    Gabung Sekarang
+                </button>
+
+                <button
+                    id="voiceInviteDeclineBtn"
+                    onclick="declineVoiceInvite()"
+                    style="flex:1;background:#35373c;color:#dbdee1;border:none;padding:10px;border-radius:4px;cursor:pointer;"
+                >
+                    Tolak
+                </button>
+
+            </div>
+
+        </div>
+
+    </div>
+
+
     <!-- LAYAR TERKUNCI (USER DIBLOKIR) -->
     <div
         id="blocked-screen"
@@ -762,10 +907,9 @@
                         id="channelSelect"
                         onchange="changeChannelHeader()"
                     >
-                        <option value="General"># General</option>
-                        <option value="Gaming"># Gaming</option>
-                        <option value="Musik"># Musik</option>
-                        <option value="LOJ"># LOJ</option>
+                        <option value="umum"># umum</option>
+                        <option value="gaming"># gaming</option>
+                        <option value="musik"># musik</option>
                     </select>
 
                     <select
@@ -846,6 +990,97 @@
             </div>
 
         </div>
+
+
+        <!-- VOICE CHANNELS -->
+        <div class="voice-channels-bar" id="voice-channels-bar">
+
+            <div
+                class="voice-channel-chip"
+                data-channel="voice-umum"
+                onclick="handleVoiceChannelClick('voice-umum')"
+            >
+                <span class="voice-channel-chip-name" id="voiceChannelLabel-voice-umum">
+                    🔊 Umum
+                </span>
+                <div
+                    class="voice-channel-chip-members"
+                    id="voice-members-voice-umum"
+                ></div>
+            </div>
+
+            <div
+                class="voice-channel-chip"
+                data-channel="voice-gaming"
+                onclick="handleVoiceChannelClick('voice-gaming')"
+            >
+                <span class="voice-channel-chip-name" id="voiceChannelLabel-voice-gaming">
+                    🔊 Gaming
+                </span>
+                <div
+                    class="voice-channel-chip-members"
+                    id="voice-members-voice-gaming"
+                ></div>
+            </div>
+
+            <div
+                class="voice-channel-chip"
+                data-channel="voice-musik"
+                onclick="handleVoiceChannelClick('voice-musik')"
+            >
+                <span class="voice-channel-chip-name" id="voiceChannelLabel-voice-musik">
+                    🔊 Musik
+                </span>
+                <div
+                    class="voice-channel-chip-members"
+                    id="voice-members-voice-musik"
+                ></div>
+            </div>
+
+            <div
+                class="voice-channel-chip locked"
+                data-channel="voice-room"
+                onclick="handleVoiceChannelClick('voice-room')"
+            >
+                <span class="voice-channel-chip-name" id="voiceChannelLabel-voice-room">
+                    🔒 Voice Room
+                </span>
+                <div
+                    class="voice-channel-chip-members"
+                    id="voice-members-voice-room"
+                ></div>
+            </div>
+
+        </div>
+
+        <!-- STATUS VOICE AKTIF -->
+        <div id="voice-status-bar">
+
+            <span id="voiceStatusText"></span>
+
+            <div style="display:flex;gap:8px;">
+
+                <button
+                    id="voiceMuteBtn"
+                    onclick="toggleMic()"
+                >
+                    🎤
+                </button>
+
+                <button
+                    class="voice-leave-btn"
+                    id="voiceLeaveBtn"
+                    onclick="leaveVoiceChannel()"
+                >
+                    📞
+                </button>
+
+            </div>
+
+        </div>
+
+        <!-- Container tersembunyi untuk elemen <audio> lawan bicara -->
+        <div id="voice-audio-container" style="display:none;"></div>
 
 
         <div id="chat-box"></div>
@@ -1510,7 +1745,25 @@
             clearChatDeniedAlert: 'Gagal menghapus chat: bukan admin atau password salah.',
             imageTooLargeSendAlert: 'Gambar terlalu besar (maksimal 4MB). Pesan tidak terkirim.',
             youAreBlockedAlert: 'Anda diblokir dan tidak bisa mengirim pesan.',
-            messageFailedAlert: 'Pesan gagal terkirim (format gambar tidak didukung).'
+            messageFailedAlert: 'Pesan gagal terkirim (format gambar tidak didukung).',
+            voiceChannelUmum: 'Umum',
+            voiceChannelGaming: 'Gaming',
+            voiceChannelMusik: 'Musik',
+            voiceChannelRoom: 'Voice Room',
+            voiceRoomInviteOnlyAlert: 'Voice Room khusus untuk yang diundang admin.',
+            voiceInviteBtn: 'Undang ke Voice Room',
+            voiceInviteDialogTitle: 'Undangan Voice Room',
+            voiceInviteDialogBody: '{admin} mengundang Anda untuk bergabung ke Voice Room.',
+            voiceInviteAcceptBtn: 'Gabung Sekarang',
+            voiceInviteDeclineBtn: 'Tolak',
+            promptVoiceInvitePassword: 'Masukkan password admin untuk mengundang',
+            voiceInviteDeniedAlert: 'Gagal mengundang: bukan admin atau password salah.',
+            voiceConnectedPrefix: 'Tersambung:',
+            voiceMuteTitle: 'Matikan mic',
+            voiceUnmuteTitle: 'Nyalakan mic',
+            voiceLeaveTitle: 'Keluar dari voice',
+            voiceMicPermissionError: 'Tidak bisa mengakses mikrofon. Pastikan izin mikrofon sudah diberikan ke browser ini.',
+            voiceYouAreBlockedAlert: 'Anda diblokir dan tidak bisa masuk voice channel.'
         };
 
         // Cache terjemahan UI per bahasa:
@@ -1655,6 +1908,57 @@
                 replyPreviewText.textContent =
                     t('replyPreviewDefault');
             }
+
+            const umumLabel =
+                document.getElementById(
+                    'voiceChannelLabel-voice-umum'
+                );
+            if (umumLabel) {
+                umumLabel.textContent =
+                    `🔊 ${t('voiceChannelUmum')}`;
+            }
+
+            const gamingLabel =
+                document.getElementById(
+                    'voiceChannelLabel-voice-gaming'
+                );
+            if (gamingLabel) {
+                gamingLabel.textContent =
+                    `🔊 ${t('voiceChannelGaming')}`;
+            }
+
+            const musikLabel =
+                document.getElementById(
+                    'voiceChannelLabel-voice-musik'
+                );
+            if (musikLabel) {
+                musikLabel.textContent =
+                    `🔊 ${t('voiceChannelMusik')}`;
+            }
+
+            const roomLabel =
+                document.getElementById(
+                    'voiceChannelLabel-voice-room'
+                );
+            if (roomLabel) {
+                roomLabel.textContent =
+                    `🔒 ${t('voiceChannelRoom')}`;
+            }
+
+            setText(
+                'voiceInviteDialogTitle',
+                'voiceInviteDialogTitle'
+            );
+            setText(
+                'voiceInviteAcceptBtn',
+                'voiceInviteAcceptBtn'
+            );
+            setText(
+                'voiceInviteDeclineBtn',
+                'voiceInviteDeclineBtn'
+            );
+
+            updateVoiceStatusBar();
         }
 
 
@@ -1706,6 +2010,684 @@
 
             } catch (e) {}
         }
+
+
+        /* =========================
+           VOICE CHANNEL (WebRTC, mesh P2P)
+           ========================= */
+        //
+        // Cara kerja: server (index.js) cuma jadi "penghubung"
+        // sinyal WebRTC (offer/answer/ICE candidate) lewat
+        // socket.io - audio-nya sendiri mengalir LANGSUNG antar
+        // browser (peer-to-peer), server tidak pernah menyentuh
+        // isi audio. Cocok untuk grup kecil (±5-8 orang per
+        // voice channel); STUN publik dipakai untuk NAT
+        // traversal, jadi kebanyakan jaringan rumahan/kantor
+        // biasa akan tetap bisa nyambung.
+
+        const VOICE_ICE_SERVERS = [
+            { urls: 'stun:stun.l.google.com:19302' },
+            { urls: 'stun:stun1.l.google.com:19302' }
+        ];
+
+        let localVoiceStream = null;
+        let currentVoiceChannel = null;
+        let isMicMuted = false;
+
+        // true kalau admin baru saja mengundang kita ke Voice
+        // Room dan undangan itu belum dipakai/ditolak.
+        let hasVoiceRoomInvite = false;
+
+        const INVITE_ONLY_VOICE_CHANNELS =
+            ['voice-room'];
+
+        // socketId -> RTCPeerConnection
+        const voicePeerConnections = {};
+
+        // socketId -> <audio> element (suara lawan bicara)
+        const voiceAudioElements = {};
+
+        // Snapshot state voice terakhir dari server, dipakai
+        // untuk render ulang chip channel saat ganti bahasa dsb.
+        let lastVoiceState = {};
+
+
+        function getVoiceChannelName(channelId) {
+
+            const map = {
+                'voice-umum': t('voiceChannelUmum'),
+                'voice-gaming': t('voiceChannelGaming'),
+                'voice-musik': t('voiceChannelMusik'),
+                'voice-room': t('voiceChannelRoom')
+            };
+
+            return map[channelId] || channelId;
+        }
+
+
+        async function handleVoiceChannelClick(channelId) {
+
+            if (currentVoiceChannel === channelId) {
+                // Klik channel yang lagi ditempati -> tidak
+                // ngapa-ngapain (dia sudah pakai tombol keluar
+                // di status bar).
+                return;
+            }
+
+            // Voice Room (dan channel undangan lain nantinya)
+            // cuma bisa diklik langsung oleh admin, atau oleh
+            // user yang sedang punya undangan valid. Selain
+            // itu, klik langsung ditolak di sisi tampilan -
+            // server juga menegakkan aturan yang sama sebagai
+            // baris pertahanan terakhir.
+            if (
+                INVITE_ONLY_VOICE_CHANNELS.includes(channelId) &&
+                !isAdmin &&
+                !hasVoiceRoomInvite
+            ) {
+                alert(
+                    t('voiceRoomInviteOnlyAlert')
+                );
+                return;
+            }
+
+            await joinVoiceChannel(channelId);
+        }
+
+
+        async function joinVoiceChannel(channelId) {
+
+            if (youAreBlocked) {
+                alert(
+                    t('voiceYouAreBlockedAlert')
+                );
+                return;
+            }
+
+            // Pindah channel: keluar dulu dari yang lama
+            // (koneksi WebRTC lama ditutup semua).
+            if (currentVoiceChannel) {
+                leaveVoiceChannel(
+                    /* silent */ true
+                );
+            }
+
+            if (!localVoiceStream) {
+
+                try {
+
+                    localVoiceStream =
+                        await navigator.mediaDevices.getUserMedia(
+                            { audio: true, video: false }
+                        );
+
+                } catch (err) {
+
+                    alert(
+                        t('voiceMicPermissionError')
+                    );
+                    return;
+                }
+            }
+
+            currentVoiceChannel = channelId;
+
+            // Undangan sekali pakai - habis begitu kita coba
+            // masuk (server juga menghapusnya di sisinya).
+            if (channelId === 'voice-room') {
+                hasVoiceRoomInvite = false;
+            }
+
+            socket.emit(
+                'voice_join',
+                channelId
+            );
+
+            updateVoiceStatusBar();
+        }
+
+
+        function leaveVoiceChannel(silent) {
+
+            if (!currentVoiceChannel) {
+                return;
+            }
+
+            socket.emit('voice_leave');
+
+            Object.keys(voicePeerConnections).forEach(
+                closeVoicePeerConnection
+            );
+
+            if (
+                localVoiceStream &&
+                !silent
+            ) {
+                // Kalau bukan cuma pindah channel (silent),
+                // matikan juga akses mic sepenuhnya.
+                localVoiceStream
+                    .getTracks()
+                    .forEach(t => t.stop());
+
+                localVoiceStream = null;
+            }
+
+            currentVoiceChannel = null;
+            isMicMuted = false;
+
+            updateVoiceStatusBar();
+        }
+
+
+        async function createVoicePeerConnection(
+            remoteSocketId,
+            isInitiator
+        ) {
+
+            if (voicePeerConnections[remoteSocketId]) {
+                return voicePeerConnections[remoteSocketId];
+            }
+
+            const pc =
+                new RTCPeerConnection(
+                    { iceServers: VOICE_ICE_SERVERS }
+                );
+
+            voicePeerConnections[remoteSocketId] = pc;
+
+            if (localVoiceStream) {
+                localVoiceStream
+                    .getTracks()
+                    .forEach(
+                        track => pc.addTrack(
+                            track,
+                            localVoiceStream
+                        )
+                    );
+            }
+
+            pc.onicecandidate = (e) => {
+
+                if (e.candidate) {
+
+                    socket.emit(
+                        'voice_signal',
+                        {
+                            to: remoteSocketId,
+                            data: {
+                                type: 'candidate',
+                                candidate: e.candidate
+                            }
+                        }
+                    );
+                }
+            };
+
+            pc.ontrack = (e) => {
+
+                let audioEl =
+                    voiceAudioElements[remoteSocketId];
+
+                if (!audioEl) {
+
+                    audioEl =
+                        document.createElement('audio');
+
+                    audioEl.autoplay = true;
+
+                    document
+                        .getElementById(
+                            'voice-audio-container'
+                        )
+                        .appendChild(audioEl);
+
+                    voiceAudioElements[remoteSocketId] =
+                        audioEl;
+                }
+
+                audioEl.srcObject =
+                    e.streams[0];
+            };
+
+            pc.onconnectionstatechange = () => {
+
+                if (
+                    [
+                        'disconnected',
+                        'failed',
+                        'closed'
+                    ].includes(pc.connectionState)
+                ) {
+                    closeVoicePeerConnection(
+                        remoteSocketId
+                    );
+                }
+            };
+
+            if (isInitiator) {
+
+                const offer =
+                    await pc.createOffer();
+
+                await pc.setLocalDescription(offer);
+
+                socket.emit(
+                    'voice_signal',
+                    {
+                        to: remoteSocketId,
+                        data: {
+                            type: 'offer',
+                            sdp: offer
+                        }
+                    }
+                );
+            }
+
+            return pc;
+        }
+
+
+        function closeVoicePeerConnection(socketId) {
+
+            const pc =
+                voicePeerConnections[socketId];
+
+            if (pc) {
+                pc.close();
+                delete voicePeerConnections[socketId];
+            }
+
+            const audioEl =
+                voiceAudioElements[socketId];
+
+            if (audioEl) {
+                audioEl.remove();
+                delete voiceAudioElements[socketId];
+            }
+        }
+
+
+        function toggleMic() {
+
+            if (!localVoiceStream) {
+                return;
+            }
+
+            isMicMuted = !isMicMuted;
+
+            localVoiceStream
+                .getAudioTracks()
+                .forEach(
+                    track => {
+                        track.enabled = !isMicMuted;
+                    }
+                );
+
+            socket.emit(
+                'voice_mute',
+                isMicMuted
+            );
+
+            updateVoiceStatusBar();
+        }
+
+
+        function updateVoiceStatusBar() {
+
+            const bar =
+                document.getElementById(
+                    'voice-status-bar'
+                );
+
+            if (!bar) {
+                return;
+            }
+
+            if (!currentVoiceChannel) {
+                bar.style.display = 'none';
+                return;
+            }
+
+            bar.style.display = 'flex';
+
+            document.getElementById(
+                'voiceStatusText'
+            ).textContent =
+                `🎙️ ${t('voiceConnectedPrefix')} ${getVoiceChannelName(currentVoiceChannel)}`;
+
+            const muteBtn =
+                document.getElementById(
+                    'voiceMuteBtn'
+                );
+
+            muteBtn.textContent =
+                isMicMuted ? '🔇' : '🎤';
+
+            muteBtn.title =
+                isMicMuted
+                    ? t('voiceUnmuteTitle')
+                    : t('voiceMuteTitle');
+
+            muteBtn.classList.toggle(
+                'muted',
+                isMicMuted
+            );
+
+            document.getElementById(
+                'voiceLeaveBtn'
+            ).title =
+                t('voiceLeaveTitle');
+
+            // Tandai chip channel yang sedang aktif
+            document
+                .querySelectorAll(
+                    '.voice-channel-chip'
+                )
+                .forEach(
+                    (chip) => {
+                        chip.classList.toggle(
+                            'active',
+                            chip.dataset.channel ===
+                                currentVoiceChannel
+                        );
+                    }
+                );
+        }
+
+
+        function renderVoiceChannels(state) {
+
+            lastVoiceState = state || {};
+
+            Object.keys(lastVoiceState).forEach(
+                (channelId) => {
+
+                    const container =
+                        document.getElementById(
+                            `voice-members-${channelId}`
+                        );
+
+                    if (!container) {
+                        return;
+                    }
+
+                    const participants =
+                        lastVoiceState[channelId] || [];
+
+                    container.innerHTML =
+                        participants.map(
+                            (p) => `
+                                <div class="voice-member">
+                                    <img src="${escapeHtml(p.avatar || 'https://via.placeholder.com/24')}">
+                                    <span>${escapeHtml(p.username)}${p.muted ? ' 🔇' : ''}</span>
+                                </div>
+                            `
+                        ).join('');
+                }
+            );
+
+            updateVoiceStatusBar();
+        }
+
+
+        socket.on(
+            'voice_state',
+            renderVoiceChannels
+        );
+
+
+        socket.on(
+            'voice_joined',
+            async ({ channelId, peers }) => {
+
+                if (channelId !== currentVoiceChannel) {
+                    return;
+                }
+
+                for (const peer of peers) {
+                    await createVoicePeerConnection(
+                        peer.socketId,
+                        true
+                    );
+                }
+            }
+        );
+
+
+        socket.on(
+            'voice_signal',
+            async ({ from, data }) => {
+
+                let pc =
+                    voicePeerConnections[from];
+
+                if (data.type === 'offer') {
+
+                    if (!pc) {
+                        pc =
+                            await createVoicePeerConnection(
+                                from,
+                                false
+                            );
+                    }
+
+                    await pc.setRemoteDescription(
+                        new RTCSessionDescription(
+                            data.sdp
+                        )
+                    );
+
+                    const answer =
+                        await pc.createAnswer();
+
+                    await pc.setLocalDescription(
+                        answer
+                    );
+
+                    socket.emit(
+                        'voice_signal',
+                        {
+                            to: from,
+                            data: {
+                                type: 'answer',
+                                sdp: answer
+                            }
+                        }
+                    );
+
+                } else if (data.type === 'answer') {
+
+                    if (pc) {
+                        await pc.setRemoteDescription(
+                            new RTCSessionDescription(
+                                data.sdp
+                            )
+                        );
+                    }
+
+                } else if (data.type === 'candidate') {
+
+                    if (pc) {
+
+                        try {
+
+                            await pc.addIceCandidate(
+                                new RTCIceCandidate(
+                                    data.candidate
+                                )
+                            );
+
+                        } catch (e) {}
+                    }
+                }
+            }
+        );
+
+
+        socket.on(
+            'voice_peer_left',
+            ({ socketId }) => {
+                closeVoicePeerConnection(socketId);
+            }
+        );
+
+
+        // Server menolak permintaan join (mis. coba masuk
+        // Voice Room tanpa undangan valid) - batalkan state
+        // client yang sudah kadung di-set optimis di
+        // joinVoiceChannel().
+        socket.on(
+            'voice_join_denied',
+            ({ channelId }) => {
+
+                alert(
+                    t('voiceRoomInviteOnlyAlert')
+                );
+
+                if (currentVoiceChannel === channelId) {
+
+                    Object.keys(
+                        voicePeerConnections
+                    ).forEach(
+                        closeVoicePeerConnection
+                    );
+
+                    if (localVoiceStream) {
+                        localVoiceStream
+                            .getTracks()
+                            .forEach(t => t.stop());
+                        localVoiceStream = null;
+                    }
+
+                    currentVoiceChannel = null;
+                    updateVoiceStatusBar();
+                }
+            }
+        );
+
+
+        // Admin mengundang kita ke voice channel khusus
+        // undangan -> tampilkan dialog terima/tolak.
+        socket.on(
+            'voice_invite',
+            ({ channelId, channelName, by }) => {
+
+                if (channelId !== 'voice-room') {
+                    return;
+                }
+
+                hasVoiceRoomInvite = true;
+
+                pendingVoiceInviteChannel = channelId;
+
+                document.getElementById(
+                    'voiceInviteDialogBody'
+                ).textContent =
+                    t('voiceInviteDialogBody')
+                        .replace(
+                            '{admin}',
+                            by || 'Admin'
+                        );
+
+                document.getElementById(
+                    'voiceInviteDialog'
+                ).style.display = 'block';
+            }
+        );
+
+
+        socket.on(
+            'voice_invite_denied',
+            () => {
+                alert(
+                    t('voiceInviteDeniedAlert')
+                );
+            }
+        );
+
+
+        let pendingVoiceInviteChannel = null;
+
+
+        async function acceptVoiceInvite() {
+
+            document.getElementById(
+                'voiceInviteDialog'
+            ).style.display = 'none';
+
+            const channelId =
+                pendingVoiceInviteChannel || 'voice-room';
+
+            pendingVoiceInviteChannel = null;
+
+            await joinVoiceChannel(channelId);
+        }
+
+
+        function declineVoiceInvite() {
+
+            document.getElementById(
+                'voiceInviteDialog'
+            ).style.display = 'none';
+
+            hasVoiceRoomInvite = false;
+            pendingVoiceInviteChannel = null;
+
+            socket.emit(
+                'voice_invite_decline'
+            );
+        }
+
+
+        // Dipanggil admin lewat tombol di daftar anggota.
+        function inviteToVoiceRoom(
+            targetUserId,
+            targetUsername
+        ) {
+
+            const password =
+                prompt(
+                    `${t('promptVoiceInvitePassword')} "${targetUsername}":`
+                );
+
+            if (password === null) {
+                return;
+            }
+
+            socket.emit(
+                'voice_invite_user',
+                {
+                    channelId: 'voice-room',
+                    targetUserId: targetUserId,
+                    password: password
+                }
+            );
+        }
+
+
+        // Kalau koneksi socket sempat putus & sambung lagi
+        // (mis. jaringan sempat hilang), socket.id di server
+        // berubah - semua koneksi WebRTC lama sudah pasti mati,
+        // jadi bersihkan dan coba join ulang channel yang sama.
+        socket.on(
+            'connect',
+            () => {
+
+                if (currentVoiceChannel) {
+
+                    Object.keys(
+                        voicePeerConnections
+                    ).forEach(
+                        closeVoicePeerConnection
+                    );
+
+                    socket.emit(
+                        'voice_join',
+                        currentVoiceChannel
+                    );
+                }
+            }
+        );
 
 
         /* =========================
@@ -3197,6 +4179,28 @@
                     'blocked-screen'
                 ).style.display = 'flex';
 
+                // Tutup juga voice call yang mungkin sedang
+                // aktif - user yang diblokir tidak boleh tetap
+                // punya jalur audio ke channel manapun.
+                if (currentVoiceChannel) {
+
+                    Object.keys(
+                        voicePeerConnections
+                    ).forEach(
+                        closeVoicePeerConnection
+                    );
+
+                    if (localVoiceStream) {
+                        localVoiceStream
+                            .getTracks()
+                            .forEach(t => t.stop());
+                        localVoiceStream = null;
+                    }
+
+                    currentVoiceChannel = null;
+                    updateVoiceStatusBar();
+                }
+
                 // Putuskan koneksi dan jangan coba
                 // konek ulang otomatis, supaya benar-benar
                 // tidak bisa "masuk" lagi.
@@ -3281,6 +4285,7 @@
                                 : '#4e5058';
 
                         let actionBtn = '';
+                        let inviteBtn = '';
 
                         // Tombol blokir/buka blokir cuma
                         // muncul untuk Admin, dan tidak
@@ -3314,6 +4319,26 @@
                                     </button>
                                 `;
                             }
+
+                            // Undang ke Voice Room cuma masuk
+                            // akal untuk yang sedang online &
+                            // belum diblokir.
+                            if (
+                                isOnline &&
+                                !user.blocked
+                            ) {
+
+                                inviteBtn = `
+                                    <button
+                                        type="button"
+                                        onclick='inviteToVoiceRoom(${JSON.stringify(user.clientId)}, ${JSON.stringify(user.username)})'
+                                        style="background:#5865F2;color:white;border:none;padding:5px 9px;border-radius:4px;font-size:11px;cursor:pointer;"
+                                        title="${escapeHtml(t('voiceInviteBtn'))}"
+                                    >
+                                        🔒🎙️
+                                    </button>
+                                `;
+                            }
                         }
 
                         return `
@@ -3341,7 +4366,10 @@
 
                                 </div>
 
-                                ${actionBtn}
+                                <div style="display:flex;gap:6px;flex-wrap:wrap;">
+                                    ${actionBtn}
+                                    ${inviteBtn}
+                                </div>
 
                             </div>
                         `;
