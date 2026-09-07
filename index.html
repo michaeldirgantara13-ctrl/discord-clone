@@ -996,48 +996,6 @@
         <div class="voice-channels-bar" id="voice-channels-bar">
 
             <div
-                class="voice-channel-chip"
-                data-channel="voice-umum"
-                onclick="handleVoiceChannelClick('voice-umum')"
-            >
-                <span class="voice-channel-chip-name" id="voiceChannelLabel-voice-umum">
-                    🔊 Umum
-                </span>
-                <div
-                    class="voice-channel-chip-members"
-                    id="voice-members-voice-umum"
-                ></div>
-            </div>
-
-            <div
-                class="voice-channel-chip"
-                data-channel="voice-gaming"
-                onclick="handleVoiceChannelClick('voice-gaming')"
-            >
-                <span class="voice-channel-chip-name" id="voiceChannelLabel-voice-gaming">
-                    🔊 Gaming
-                </span>
-                <div
-                    class="voice-channel-chip-members"
-                    id="voice-members-voice-gaming"
-                ></div>
-            </div>
-
-            <div
-                class="voice-channel-chip"
-                data-channel="voice-musik"
-                onclick="handleVoiceChannelClick('voice-musik')"
-            >
-                <span class="voice-channel-chip-name" id="voiceChannelLabel-voice-musik">
-                    🔊 Musik
-                </span>
-                <div
-                    class="voice-channel-chip-members"
-                    id="voice-members-voice-musik"
-                ></div>
-            </div>
-
-            <div
                 class="voice-channel-chip locked"
                 data-channel="voice-room"
                 onclick="handleVoiceChannelClick('voice-room')"
@@ -1746,9 +1704,6 @@
             imageTooLargeSendAlert: 'Gambar terlalu besar (maksimal 4MB). Pesan tidak terkirim.',
             youAreBlockedAlert: 'Anda diblokir dan tidak bisa mengirim pesan.',
             messageFailedAlert: 'Pesan gagal terkirim (format gambar tidak didukung).',
-            voiceChannelUmum: 'Umum',
-            voiceChannelGaming: 'Gaming',
-            voiceChannelMusik: 'Musik',
             voiceChannelRoom: 'Voice Room',
             voiceRoomInviteOnlyAlert: 'Voice Room khusus untuk yang diundang admin.',
             voiceInviteBtn: 'Undang ke Voice Room',
@@ -1909,33 +1864,6 @@
                     t('replyPreviewDefault');
             }
 
-            const umumLabel =
-                document.getElementById(
-                    'voiceChannelLabel-voice-umum'
-                );
-            if (umumLabel) {
-                umumLabel.textContent =
-                    `🔊 ${t('voiceChannelUmum')}`;
-            }
-
-            const gamingLabel =
-                document.getElementById(
-                    'voiceChannelLabel-voice-gaming'
-                );
-            if (gamingLabel) {
-                gamingLabel.textContent =
-                    `🔊 ${t('voiceChannelGaming')}`;
-            }
-
-            const musikLabel =
-                document.getElementById(
-                    'voiceChannelLabel-voice-musik'
-                );
-            if (musikLabel) {
-                musikLabel.textContent =
-                    `🔊 ${t('voiceChannelMusik')}`;
-            }
-
             const roomLabel =
                 document.getElementById(
                     'voiceChannelLabel-voice-room'
@@ -2047,6 +1975,41 @@
         // socketId -> <audio> element (suara lawan bicara)
         const voiceAudioElements = {};
 
+        // socketId -> array kandidat ICE yang sempat datang
+        // SEBELUM remote description (offer/answer) selesai
+        // di-set. Ini race condition umum di WebRTC - kandidat
+        // ICE sering datang lebih cepat daripada proses
+        // signaling offer/answer selesai, jadi kalau langsung
+        // dipasang bisa gagal diam-diam. Ditampung dulu di sini,
+        // baru dipasang setelah remote description siap.
+        const pendingIceCandidates = {};
+
+        async function flushPendingIceCandidates(
+            socketId,
+            pc
+        ) {
+
+            const queue =
+                pendingIceCandidates[socketId];
+
+            if (!queue) {
+                return;
+            }
+
+            for (const candidate of queue) {
+
+                try {
+
+                    await pc.addIceCandidate(
+                        new RTCIceCandidate(candidate)
+                    );
+
+                } catch (e) {}
+            }
+
+            delete pendingIceCandidates[socketId];
+        }
+
         // Snapshot state voice terakhir dari server, dipakai
         // untuk render ulang chip channel saat ganti bahasa dsb.
         let lastVoiceState = {};
@@ -2055,9 +2018,6 @@
         function getVoiceChannelName(channelId) {
 
             const map = {
-                'voice-umum': t('voiceChannelUmum'),
-                'voice-gaming': t('voiceChannelGaming'),
-                'voice-musik': t('voiceChannelMusik'),
                 'voice-room': t('voiceChannelRoom')
             };
 
@@ -2098,51 +2058,57 @@
         async function joinVoiceChannel(channelId) {
 
             if (youAreBlocked) {
-                alert(
-                    t('voiceYouAreBlockedAlert')
-                );
+                alert(t('voiceYouAreBlockedAlert'));
                 return;
             }
 
-            // Pindah channel: keluar dulu dari yang lama
-            // (koneksi WebRTC lama ditutup semua).
             if (currentVoiceChannel) {
-                leaveVoiceChannel(
-                    /* silent */ true
-                );
+                leaveVoiceChannel(true);
             }
 
+            // Meminta akses mikrofon. Constraint ini dibuat lebih aman
+            // untuk HP/browser mobile agar echo dan noise berkurang.
             if (!localVoiceStream) {
-
                 try {
+                    if (!navigator.mediaDevices ||
+                        !navigator.mediaDevices.getUserMedia) {
+                        alert('Browser tidak mendukung akses mikrofon/WebRTC.');
+                        return;
+                    }
 
-                    localVoiceStream =
-                        await navigator.mediaDevices.getUserMedia(
-                            { audio: true, video: false }
-                        );
+                    localVoiceStream = await navigator.mediaDevices.getUserMedia({
+                        audio: {
+                            echoCancellation: true,
+                            noiseSuppression: true,
+                            autoGainControl: true,
+                            channelCount: 1
+                        },
+                        video: false
+                    });
 
                 } catch (err) {
-
-                    alert(
-                        t('voiceMicPermissionError')
-                    );
+                    console.error('Voice getUserMedia error:', err);
+                    alert(t('voiceMicPermissionError'));
                     return;
                 }
             }
 
             currentVoiceChannel = channelId;
 
-            // Undangan sekali pakai - habis begitu kita coba
-            // masuk (server juga menghapusnya di sisinya).
             if (channelId === 'voice-room') {
                 hasVoiceRoomInvite = false;
             }
 
-            socket.emit(
-                'voice_join',
-                channelId
-            );
+            // Resume AudioContext bila browser mobile sebelumnya
+            // membuatnya berada pada status suspended.
+            try {
+                if (window.voiceAudioContext &&
+                    window.voiceAudioContext.state === 'suspended') {
+                    await window.voiceAudioContext.resume();
+                }
+            } catch (e) {}
 
+            socket.emit('voice_join', channelId);
             updateVoiceStatusBar();
         }
 
@@ -2159,16 +2125,10 @@
                 closeVoicePeerConnection
             );
 
-            if (
-                localVoiceStream &&
-                !silent
-            ) {
-                // Kalau bukan cuma pindah channel (silent),
-                // matikan juga akses mic sepenuhnya.
-                localVoiceStream
-                    .getTracks()
-                    .forEach(t => t.stop());
-
+            if (localVoiceStream && !silent) {
+                localVoiceStream.getTracks().forEach(
+                    track => track.stop()
+                );
                 localVoiceStream = null;
             }
 
@@ -2188,99 +2148,200 @@
                 return voicePeerConnections[remoteSocketId];
             }
 
-            const pc =
-                new RTCPeerConnection(
-                    { iceServers: VOICE_ICE_SERVERS }
-                );
+            const pc = new RTCPeerConnection({
+                iceServers: VOICE_ICE_SERVERS
+            });
 
             voicePeerConnections[remoteSocketId] = pc;
 
+            // Kirim track mikrofon kita ke peer.
             if (localVoiceStream) {
-                localVoiceStream
-                    .getTracks()
-                    .forEach(
-                        track => pc.addTrack(
-                            track,
-                            localVoiceStream
-                        )
-                    );
+                localVoiceStream.getTracks().forEach(track => {
+                    try {
+                        pc.addTrack(track, localVoiceStream);
+                    } catch (err) {
+                        console.error('Voice addTrack error:', err);
+                    }
+                });
             }
 
-            pc.onicecandidate = (e) => {
+            pc.onicecandidate = (event) => {
+                if (!event.candidate) {
+                    return;
+                }
 
-                if (e.candidate) {
+                socket.emit('voice_signal', {
+                    to: remoteSocketId,
+                    data: {
+                        type: 'candidate',
+                        candidate: event.candidate
+                    }
+                });
+            };
 
-                    socket.emit(
-                        'voice_signal',
-                        {
-                            to: remoteSocketId,
-                            data: {
-                                type: 'candidate',
-                                candidate: e.candidate
-                            }
+            // Inilah bagian penerima suara dari peer.
+            pc.ontrack = (event) => {
+                try {
+                    let audioEl = voiceAudioElements[remoteSocketId];
+
+                    if (!audioEl) {
+                        audioEl = document.createElement('audio');
+
+                        audioEl.autoplay = true;
+                        audioEl.controls = false;
+                        audioEl.muted = false;
+                        audioEl.volume = 1.0;
+                        audioEl.playsInline = true;
+                        audioEl.setAttribute('playsinline', '');
+                        audioEl.setAttribute('autoplay', '');
+                        audioEl.style.display = 'none';
+
+                        const container = document.getElementById(
+                            'voice-audio-container'
+                        );
+
+                        if (container) {
+                            container.appendChild(audioEl);
+                        } else {
+                            document.body.appendChild(audioEl);
                         }
-                    );
+
+                        voiceAudioElements[remoteSocketId] = audioEl;
+                    }
+
+                    // Jangan hanya mengandalkan event.streams[0].
+                    // Beberapa browser mobile dapat mengirim track
+                    // tanpa stream pada event pertama.
+                    let remoteStream = audioEl.srcObject;
+
+                    if (!(remoteStream instanceof MediaStream)) {
+                        remoteStream = new MediaStream();
+                        audioEl.srcObject = remoteStream;
+                    }
+
+                    if (event.streams && event.streams[0]) {
+                        const stream = event.streams[0];
+
+                        stream.getTracks().forEach(track => {
+                            if (!remoteStream.getTracks().some(
+                                oldTrack => oldTrack.id === track.id
+                            )) {
+                                remoteStream.addTrack(track);
+                            }
+                        });
+                    }
+
+                    if (event.track &&
+                        !remoteStream.getTracks().some(
+                            track => track.id === event.track.id
+                        )) {
+                        remoteStream.addTrack(event.track);
+                    }
+
+                    audioEl.muted = false;
+                    audioEl.volume = 1.0;
+
+                    const playAudio = () => {
+                        const promise = audioEl.play();
+
+                        if (promise &&
+                            typeof promise.catch === 'function') {
+                            promise.catch(err => {
+                                console.warn(
+                                    'Voice audio.play() gagal:',
+                                    err
+                                );
+                            });
+                        }
+                    };
+
+                    playAudio();
+
+                    // Jika autoplay diblokir, coba lagi ketika user
+                    // menyentuh layar. Listener hanya dipasang sekali.
+                    if (!audioEl.dataset.voiceUnlockBound) {
+                        audioEl.dataset.voiceUnlockBound = '1';
+
+                        const unlock = () => {
+                            playAudio();
+
+                            try {
+                                if (window.voiceAudioContext &&
+                                    window.voiceAudioContext.state === 'suspended') {
+                                    window.voiceAudioContext.resume();
+                                }
+                            } catch (e) {}
+                        };
+
+                        document.addEventListener(
+                            'click',
+                            unlock,
+                            { passive: true }
+                        );
+
+                        document.addEventListener(
+                            'touchstart',
+                            unlock,
+                            { passive: true }
+                        );
+                    }
+
+                } catch (err) {
+                    console.error('Voice ontrack error:', err);
                 }
             };
 
-            pc.ontrack = (e) => {
+            pc.oniceconnectionstatechange = () => {
+                console.log(
+                    'Voice ICE state ke',
+                    remoteSocketId,
+                    ':',
+                    pc.iceConnectionState
+                );
 
-                let audioEl =
-                    voiceAudioElements[remoteSocketId];
-
-                if (!audioEl) {
-
-                    audioEl =
-                        document.createElement('audio');
-
-                    audioEl.autoplay = true;
-
-                    document
-                        .getElementById(
-                            'voice-audio-container'
-                        )
-                        .appendChild(audioEl);
-
-                    voiceAudioElements[remoteSocketId] =
-                        audioEl;
+                if (pc.iceConnectionState === 'failed') {
+                    try {
+                        pc.restartIce();
+                    } catch (e) {}
                 }
-
-                audioEl.srcObject =
-                    e.streams[0];
             };
 
             pc.onconnectionstatechange = () => {
+                console.log(
+                    'Voice connection state ke',
+                    remoteSocketId,
+                    ':',
+                    pc.connectionState
+                );
 
-                if (
-                    [
-                        'disconnected',
-                        'failed',
-                        'closed'
-                    ].includes(pc.connectionState)
-                ) {
-                    closeVoicePeerConnection(
-                        remoteSocketId
-                    );
+                if ([
+                    'disconnected',
+                    'failed',
+                    'closed'
+                ].includes(pc.connectionState)) {
+                    closeVoicePeerConnection(remoteSocketId);
                 }
             };
 
             if (isInitiator) {
+                try {
+                    const offer = await pc.createOffer({
+                        offerToReceiveAudio: true
+                    });
 
-                const offer =
-                    await pc.createOffer();
+                    await pc.setLocalDescription(offer);
 
-                await pc.setLocalDescription(offer);
-
-                socket.emit(
-                    'voice_signal',
-                    {
+                    socket.emit('voice_signal', {
                         to: remoteSocketId,
                         data: {
                             type: 'offer',
-                            sdp: offer
+                            sdp: pc.localDescription
                         }
-                    }
-                );
+                    });
+
+                } catch (err) {
+                    console.error('Voice create offer error:', err);
+                }
             }
 
             return pc;
@@ -2289,21 +2350,59 @@
 
         function closeVoicePeerConnection(socketId) {
 
-            const pc =
-                voicePeerConnections[socketId];
+            const pc = voicePeerConnections[socketId];
 
             if (pc) {
-                pc.close();
+                try {
+                    pc.ontrack = null;
+                    pc.onicecandidate = null;
+                    pc.close();
+                } catch (e) {}
+
                 delete voicePeerConnections[socketId];
             }
 
-            const audioEl =
-                voiceAudioElements[socketId];
+            const audioEl = voiceAudioElements[socketId];
 
             if (audioEl) {
-                audioEl.remove();
+                try {
+                    audioEl.pause();
+                    audioEl.srcObject = null;
+                    audioEl.remove();
+                } catch (e) {}
+
                 delete voiceAudioElements[socketId];
             }
+
+            delete pendingIceCandidates[socketId];
+        }
+
+
+        async function flushPendingIceCandidates(
+            socketId,
+            pc
+        ) {
+
+            const queue = pendingIceCandidates[socketId];
+
+            if (!queue || !queue.length) {
+                return;
+            }
+
+            for (const candidate of queue) {
+                try {
+                    await pc.addIceCandidate(
+                        new RTCIceCandidate(candidate)
+                    );
+                } catch (err) {
+                    console.warn(
+                        'Voice add queued ICE candidate gagal:',
+                        err
+                    );
+                }
+            }
+
+            delete pendingIceCandidates[socketId];
         }
 
 
@@ -2315,29 +2414,20 @@
 
             isMicMuted = !isMicMuted;
 
-            localVoiceStream
-                .getAudioTracks()
-                .forEach(
-                    track => {
-                        track.enabled = !isMicMuted;
-                    }
-                );
+            localVoiceStream.getAudioTracks().forEach(track => {
+                track.enabled = !isMicMuted;
+            });
 
-            socket.emit(
-                'voice_mute',
-                isMicMuted
-            );
-
+            socket.emit('voice_mute', isMicMuted);
             updateVoiceStatusBar();
         }
 
 
         function updateVoiceStatusBar() {
 
-            const bar =
-                document.getElementById(
-                    'voice-status-bar'
-                );
+            const bar = document.getElementById(
+                'voice-status-bar'
+            );
 
             if (!bar) {
                 return;
@@ -2350,48 +2440,43 @@
 
             bar.style.display = 'flex';
 
-            document.getElementById(
+            const statusText = document.getElementById(
                 'voiceStatusText'
-            ).textContent =
-                `🎙️ ${t('voiceConnectedPrefix')} ${getVoiceChannelName(currentVoiceChannel)}`;
-
-            const muteBtn =
-                document.getElementById(
-                    'voiceMuteBtn'
-                );
-
-            muteBtn.textContent =
-                isMicMuted ? '🔇' : '🎤';
-
-            muteBtn.title =
-                isMicMuted
-                    ? t('voiceUnmuteTitle')
-                    : t('voiceMuteTitle');
-
-            muteBtn.classList.toggle(
-                'muted',
-                isMicMuted
             );
 
-            document.getElementById(
-                'voiceLeaveBtn'
-            ).title =
-                t('voiceLeaveTitle');
+            if (statusText) {
+                statusText.textContent =
+                    `🎙️ ${t('voiceConnectedPrefix')} ${getVoiceChannelName(currentVoiceChannel)}`;
+            }
 
-            // Tandai chip channel yang sedang aktif
-            document
-                .querySelectorAll(
-                    '.voice-channel-chip'
-                )
-                .forEach(
-                    (chip) => {
-                        chip.classList.toggle(
-                            'active',
-                            chip.dataset.channel ===
-                                currentVoiceChannel
-                        );
-                    }
+            const muteBtn = document.getElementById(
+                'voiceMuteBtn'
+            );
+
+            if (muteBtn) {
+                muteBtn.textContent = isMicMuted ? '🔇' : '🎤';
+                muteBtn.title = isMicMuted
+                    ? t('voiceUnmuteTitle')
+                    : t('voiceMuteTitle');
+                muteBtn.classList.toggle('muted', isMicMuted);
+            }
+
+            const leaveBtn = document.getElementById(
+                'voiceLeaveBtn'
+            );
+
+            if (leaveBtn) {
+                leaveBtn.title = t('voiceLeaveTitle');
+            }
+
+            document.querySelectorAll(
+                '.voice-channel-chip'
+            ).forEach(chip => {
+                chip.classList.toggle(
+                    'active',
+                    chip.dataset.channel === currentVoiceChannel
                 );
+            });
         }
 
 
@@ -2399,32 +2484,25 @@
 
             lastVoiceState = state || {};
 
-            Object.keys(lastVoiceState).forEach(
-                (channelId) => {
+            Object.keys(lastVoiceState).forEach(channelId => {
+                const container = document.getElementById(
+                    `voice-members-${channelId}`
+                );
 
-                    const container =
-                        document.getElementById(
-                            `voice-members-${channelId}`
-                        );
-
-                    if (!container) {
-                        return;
-                    }
-
-                    const participants =
-                        lastVoiceState[channelId] || [];
-
-                    container.innerHTML =
-                        participants.map(
-                            (p) => `
-                                <div class="voice-member">
-                                    <img src="${escapeHtml(p.avatar || 'https://via.placeholder.com/24')}">
-                                    <span>${escapeHtml(p.username)}${p.muted ? ' 🔇' : ''}</span>
-                                </div>
-                            `
-                        ).join('');
+                if (!container) {
+                    return;
                 }
-            );
+
+                const participants =
+                    lastVoiceState[channelId] || [];
+
+                container.innerHTML = participants.map(p => `
+                    <div class="voice-member">
+                        <img src="${escapeHtml(p.avatar || 'https://via.placeholder.com/24')}">
+                        <span>${escapeHtml(p.username)}${p.muted ? ' 🔇' : ''}</span>
+                    </div>
+                `).join('');
+            });
 
             updateVoiceStatusBar();
         }
@@ -2444,11 +2522,18 @@
                     return;
                 }
 
-                for (const peer of peers) {
-                    await createVoicePeerConnection(
-                        peer.socketId,
-                        true
-                    );
+                for (const peer of (peers || [])) {
+                    try {
+                        await createVoicePeerConnection(
+                            peer.socketId,
+                            true
+                        );
+                    } catch (err) {
+                        console.error(
+                            'Voice peer creation error:',
+                            err
+                        );
+                    }
                 }
             }
         );
@@ -2458,67 +2543,105 @@
             'voice_signal',
             async ({ from, data }) => {
 
-                let pc =
-                    voicePeerConnections[from];
+                if (!data || !from) {
+                    return;
+                }
 
-                if (data.type === 'offer') {
+                try {
+                    let pc = voicePeerConnections[from];
 
-                    if (!pc) {
-                        pc =
-                            await createVoicePeerConnection(
+                    if (data.type === 'offer') {
+
+                        if (!pc) {
+                            pc = await createVoicePeerConnection(
                                 from,
                                 false
                             );
-                    }
+                        }
 
-                    await pc.setRemoteDescription(
-                        new RTCSessionDescription(
-                            data.sdp
-                        )
-                    );
+                        await pc.setRemoteDescription(
+                            new RTCSessionDescription(data.sdp)
+                        );
 
-                    const answer =
-                        await pc.createAnswer();
+                        await flushPendingIceCandidates(
+                            from,
+                            pc
+                        );
 
-                    await pc.setLocalDescription(
-                        answer
-                    );
+                        const answer = await pc.createAnswer({
+                            offerToReceiveAudio: true
+                        });
 
-                    socket.emit(
-                        'voice_signal',
-                        {
+                        await pc.setLocalDescription(answer);
+
+                        socket.emit('voice_signal', {
                             to: from,
                             data: {
                                 type: 'answer',
-                                sdp: answer
+                                sdp: pc.localDescription
                             }
+                        });
+
+                    } else if (data.type === 'answer') {
+
+                        if (!pc) {
+                            return;
                         }
-                    );
 
-                } else if (data.type === 'answer') {
-
-                    if (pc) {
                         await pc.setRemoteDescription(
-                            new RTCSessionDescription(
-                                data.sdp
-                            )
+                            new RTCSessionDescription(data.sdp)
                         );
-                    }
 
-                } else if (data.type === 'candidate') {
+                        await flushPendingIceCandidates(
+                            from,
+                            pc
+                        );
 
-                    if (pc) {
+                    } else if (data.type === 'candidate') {
 
-                        try {
+                        if (!pc) {
+                            if (!pendingIceCandidates[from]) {
+                                pendingIceCandidates[from] = [];
+                            }
 
-                            await pc.addIceCandidate(
-                                new RTCIceCandidate(
-                                    data.candidate
-                                )
+                            pendingIceCandidates[from].push(
+                                data.candidate
                             );
+                            return;
+                        }
 
-                        } catch (e) {}
+                        if (
+                            pc.remoteDescription &&
+                            pc.remoteDescription.type
+                        ) {
+                            try {
+                                await pc.addIceCandidate(
+                                    new RTCIceCandidate(
+                                        data.candidate
+                                    )
+                                );
+                            } catch (err) {
+                                console.warn(
+                                    'Voice addIceCandidate error:',
+                                    err
+                                );
+                            }
+                        } else {
+                            if (!pendingIceCandidates[from]) {
+                                pendingIceCandidates[from] = [];
+                            }
+
+                            pendingIceCandidates[from].push(
+                                data.candidate
+                            );
+                        }
                     }
+
+                } catch (err) {
+                    console.error(
+                        'Voice signaling error:',
+                        err
+                    );
                 }
             }
         );
@@ -2532,42 +2655,33 @@
         );
 
 
-        // Server menolak permintaan join (mis. coba masuk
-        // Voice Room tanpa undangan valid) - batalkan state
-        // client yang sudah kadung di-set optimis di
-        // joinVoiceChannel().
+        // Server menolak permintaan join.
         socket.on(
             'voice_join_denied',
             ({ channelId }) => {
 
-                alert(
-                    t('voiceRoomInviteOnlyAlert')
-                );
+                alert(t('voiceRoomInviteOnlyAlert'));
 
                 if (currentVoiceChannel === channelId) {
 
                     Object.keys(
                         voicePeerConnections
-                    ).forEach(
-                        closeVoicePeerConnection
-                    );
+                    ).forEach(closeVoicePeerConnection);
 
                     if (localVoiceStream) {
-                        localVoiceStream
-                            .getTracks()
-                            .forEach(t => t.stop());
+                        localVoiceStream.getTracks().forEach(
+                            track => track.stop()
+                        );
                         localVoiceStream = null;
                     }
 
                     currentVoiceChannel = null;
+                    isMicMuted = false;
                     updateVoiceStatusBar();
                 }
             }
         );
 
-
-        // Admin mengundang kita ke voice channel khusus
-        // undangan -> tampilkan dialog terima/tolak.
         socket.on(
             'voice_invite',
             ({ channelId, channelName, by }) => {
