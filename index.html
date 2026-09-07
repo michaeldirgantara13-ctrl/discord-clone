@@ -600,7 +600,57 @@
     <!-- PROFIL -->
     <div id="profile-modal">
 
-        <h3 style="color:white;margin-top:0;">
+        <select
+            id="targetLangJoin"
+            onchange="changeLanguage(this)"
+            title="Pilih Bahasa Terjemahan"
+            style="margin-bottom:16px;width:100%;"
+        >
+            <option value="id">🇮🇩 Indonesia</option>
+            <option value="en">🇬🇧 English</option>
+            <option value="tr">🇹🇷 Türkçe</option>
+            <option value="ms">🇲🇾 Melayu</option>
+            <option value="jv">Jawa</option>
+            <option value="su">Sunda</option>
+
+            <option value="zh-CN">🇨🇳 中文 (简体)</option>
+            <option value="zh-TW">🇹🇼 中文 (繁體)</option>
+            <option value="ja">🇯🇵 日本語</option>
+            <option value="ko">🇰🇷 한국어</option>
+
+            <option value="ar">🇸🇦 العربية</option>
+            <option value="fa">🇮🇷 فارسی</option>
+            <option value="he">🇮🇱 עברית</option>
+            <option value="hi">🇮🇳 हिन्दी</option>
+            <option value="bn">🇧🇩 বাংলা</option>
+            <option value="ur">🇵🇰 اردو</option>
+
+            <option value="es">🇪🇸 Español</option>
+            <option value="fr">🇫🇷 Français</option>
+            <option value="de">🇩🇪 Deutsch</option>
+            <option value="it">🇮🇹 Italiano</option>
+            <option value="pt">🇵🇹 Português</option>
+            <option value="nl">🇳🇱 Nederlands</option>
+
+            <option value="ru">🇷🇺 Русский</option>
+            <option value="uk">🇺🇦 Українська</option>
+            <option value="pl">🇵🇱 Polski</option>
+            <option value="el">🇬🇷 Ελληνικά</option>
+
+            <option value="th">🇹🇭 ไทย</option>
+            <option value="vi">🇻🇳 Tiếng Việt</option>
+            <option value="tl">🇵🇭 Filipino</option>
+
+            <option value="sv">🇸🇪 Svenska</option>
+            <option value="da">🇩🇰 Dansk</option>
+            <option value="no">🇳🇴 Norsk</option>
+            <option value="fi">🇫🇮 Suomi</option>
+            <option value="cs">🇨🇿 Čeština</option>
+            <option value="ro">🇷🇴 Română</option>
+            <option value="hu">🇭🇺 Magyar</option>
+        </select>
+
+        <h3 id="profileModalTitle" style="color:white;margin-top:0;">
             Atur Profil Anda
         </h3>
 
@@ -614,6 +664,7 @@
         <br>
 
         <label
+            id="avatarLabel"
             style="font-size:12px;display:block;margin-bottom:6px;color:#b5bac1;text-align:left;"
         >
             Pilih Foto Profil:
@@ -629,6 +680,7 @@
         <br>
 
         <button
+            id="joinChatBtn"
             onclick="joinChat()"
             style="background:#5865F2;color:white;border:none;padding:10px 20px;border-radius:4px;font-weight:bold;cursor:pointer;width:100%;"
         >
@@ -651,6 +703,7 @@
             </button>
 
             <h3
+                id="memberDialogTitle"
                 style="margin-top:0;color:white;border-bottom:1px solid #3f4248;padding-bottom:10px;"
             >
                 Anggota Online
@@ -678,11 +731,11 @@
                 🚫
             </div>
 
-            <h2 style="color:white;margin-bottom:8px;">
+            <h2 id="blockedTitle" style="color:white;margin-bottom:8px;">
                 Anda Diblokir
             </h2>
 
-            <p style="color:#b5bac1;max-width:320px;margin:0 auto;">
+            <p id="blockedDesc" style="color:#b5bac1;max-width:320px;margin:0 auto;">
                 Admin telah memblokir akses Anda ke chat ini.
                 Anda tidak bisa masuk atau mengirim pesan lagi.
             </p>
@@ -716,7 +769,7 @@
 
                     <select
     id="targetLang"
-    onchange="changeLanguage()"
+    onchange="changeLanguage(this)"
     title="Pilih Bahasa Terjemahan"
 >
     <option value="id">🇮🇩 Indonesia</option>
@@ -774,6 +827,7 @@
                 </button>
 
                 <button
+                    id="editProfileBtn"
                     onclick="window.location.href = 'profile.html'"
                     style="background:#35373c;color:#dbdee1;border:none;padding:8px 12px;border-radius:4px;font-size:13px;cursor:pointer;"
                 >
@@ -781,6 +835,7 @@
                 </button>
 
                 <button
+                    id="clearChatBtn"
                     onclick="clearAllChat()"
                     style="background:#da373c;color:white;border:none;padding:8px 12px;border-radius:4px;font-size:13px;cursor:pointer;"
                 >
@@ -851,7 +906,7 @@
                                 id="fileBtn"
                                 class="file-upload-btn"
                             >
-                                📎 Unggah Gambar
+                                📎 <span id="fileBtnLabel">Unggah Gambar</span>
                             </label>
 
                             <span
@@ -984,7 +1039,7 @@
            LOAD PROFIL
            ========================= */
 
-        window.onload = function() {
+        window.onload = async function() {
 
             const savedName =
                 localStorage.getItem(
@@ -995,6 +1050,40 @@
                 localStorage.getItem(
                     'chat_avatar'
                 );
+
+            const savedLang =
+                localStorage.getItem(
+                    'chat_target_lang'
+                );
+
+            if (savedLang) {
+
+                myTargetLang = savedLang;
+
+                const langSelect =
+                    document.getElementById(
+                        'targetLang'
+                    );
+
+                const joinLangSelect =
+                    document.getElementById(
+                        'targetLangJoin'
+                    );
+
+                if (langSelect) {
+                    langSelect.value = savedLang;
+                }
+
+                if (joinLangSelect) {
+                    joinLangSelect.value = savedLang;
+                }
+
+                await loadUITranslations(
+                    myTargetLang
+                );
+
+                applyStaticUITranslations();
+            }
 
             if (savedName) {
 
@@ -1073,7 +1162,7 @@
             if (!nameVal) {
 
                 alert(
-                    'Nama tidak boleh kosong!'
+                    t('nameEmptyAlert')
                 );
 
                 return;
@@ -1099,7 +1188,7 @@
             ) {
 
                 alert(
-                    'Foto profil terlalu besar (maksimal 1MB). Silakan pilih foto lain.'
+                    t('avatarTooBigJoin')
                 );
 
                 return;
@@ -1184,7 +1273,10 @@
             document.getElementById(
                 'messageInput'
             ).placeholder =
-                `Kirim pesan ke #${channelName}...`;
+                t('channelPlaceholder').replace(
+                    '{channel}',
+                    channelName
+                );
 
             closeAllMessageActions();
 
@@ -1225,7 +1317,7 @@
                 ) {
 
                     alert(
-                        'Gambar terlalu besar (maksimal 4MB). Silakan pilih gambar lain.'
+                        t('imageTooBigAlert')
                     );
 
                     imageInput.value = '';
@@ -1362,6 +1454,205 @@
                 // Gagal/timeout: jangan macetkan render,
                 // tampilkan teks asli saja.
                 return text;
+            }
+        }
+
+
+        /* =========================
+           TERJEMAHAN UI (SELURUH TAMPILAN)
+           ========================= */
+        //
+        // Semua teks statis di tampilan (tombol, judul, label,
+        // placeholder, notifikasi, dsb) didaftarkan di sini
+        // dalam bahasa Indonesia (bahasa master). Saat pengguna
+        // ganti bahasa di dropdown, semua teks ini otomatis
+        // diterjemahkan lewat translateText() yang sama dipakai
+        // untuk pesan chat, lalu diterapkan ke elemen terkait.
+
+        const UI_TEXT_ID = {
+            profileModalTitle: 'Atur Profil Anda',
+            namePlaceholder: 'Masukkan nama...',
+            avatarLabel: 'Pilih Foto Profil:',
+            joinChatBtn: 'Gabung Chat',
+            memberDialogTitle: 'Anggota Online',
+            blockedTitle: 'Anda Diblokir',
+            blockedDesc: 'Admin telah memblokir akses Anda ke chat ini. Anda tidak bisa masuk atau mengirim pesan lagi.',
+            langSelectTitle: 'Pilih Bahasa Terjemahan',
+            editProfileBtn: 'Edit Profil',
+            clearChatBtn: 'Hapus',
+            replyPreviewDefault: 'Membalas ke...',
+            messagePlaceholder: 'Ketik pesan...',
+            channelPlaceholder: 'Kirim pesan ke #{channel}...',
+            uploadImageBtn: 'Unggah Gambar',
+            sendBtn: 'Kirim',
+            replyTitle: 'Balas',
+            reactionTitle: 'Reaksi',
+            copyTitle: 'Salin',
+            editTitle: 'Edit',
+            deleteTitle: 'Hapus',
+            blockUserTitle: 'Blokir pengguna ini',
+            editedLabel: 'diedit',
+            imagePlaceholder: '[Gambar]',
+            replyingToPrefix: 'Membalas ke',
+            typingSuffix: 'sedang mengetik...',
+            noMembers: 'Belum ada anggota.',
+            unblockBtn: 'Buka Blokir',
+            blockBtn: 'Blokir',
+            nameEmptyAlert: 'Nama tidak boleh kosong!',
+            avatarTooBigJoin: 'Foto profil terlalu besar (maksimal 1MB). Silakan pilih foto lain.',
+            imageTooBigAlert: 'Gambar terlalu besar (maksimal 4MB). Silakan pilih gambar lain.',
+            avatarRejectedAlert: 'Foto profil terlalu besar (maksimal 1MB). Memakai foto default.',
+            promptBlockPassword: 'Masukkan password admin untuk memblokir',
+            confirmBlockUser: 'Yakin ingin memblokir "{name}"? Mereka tidak akan bisa mengirim pesan lagi.',
+            promptClearPassword: 'Masukkan password admin untuk menghapus seluruh chat:',
+            confirmClearChat: 'Yakin ingin menghapus seluruh riwayat chat di channel ini?',
+            clearChatDeniedAlert: 'Gagal menghapus chat: bukan admin atau password salah.',
+            imageTooLargeSendAlert: 'Gambar terlalu besar (maksimal 4MB). Pesan tidak terkirim.',
+            youAreBlockedAlert: 'Anda diblokir dan tidak bisa mengirim pesan.',
+            messageFailedAlert: 'Pesan gagal terkirim (format gambar tidak didukung).'
+        };
+
+        // Cache terjemahan UI per bahasa:
+        // { [lang]: { [key]: teksTerjemahan } }
+        const uiTranslationCache = {};
+
+        // Ambil teks UI sesuai bahasa aktif (myTargetLang).
+        // Sinkron - langsung pakai hasil cache, fallback ke
+        // teks Indonesia master kalau belum sempat diterjemahkan.
+        function t(key) {
+
+            const master =
+                UI_TEXT_ID[key] || key;
+
+            if (myTargetLang === 'id') {
+                return master;
+            }
+
+            return (
+                uiTranslationCache[myTargetLang] &&
+                uiTranslationCache[myTargetLang][key]
+            ) || master;
+        }
+
+        // Terjemahkan seluruh kamus UI_TEXT_ID ke bahasa target,
+        // sekali jalan (paralel), lalu simpan di cache supaya
+        // ganti bahasa berikutnya (kalau balik lagi) jadi instan.
+        async function loadUITranslations(targetLang) {
+
+            if (targetLang === 'id') {
+                return;
+            }
+
+            if (!uiTranslationCache[targetLang]) {
+                uiTranslationCache[targetLang] = {};
+            }
+
+            const cache =
+                uiTranslationCache[targetLang];
+
+            await Promise.all(
+                Object.entries(UI_TEXT_ID).map(
+                    async ([key, text]) => {
+
+                        if (cache[key]) {
+                            return;
+                        }
+
+                        const translated =
+                            await translateText(
+                                text,
+                                targetLang,
+                                `ui:${key}`
+                            );
+
+                        cache[key] =
+                            translated || text;
+                    }
+                )
+            );
+        }
+
+        // Terapkan t() ke elemen-elemen statis (yang tidak
+        // dibangun ulang lewat innerHTML setiap render, seperti
+        // renderChat()/member-list).
+        function applyStaticUITranslations() {
+
+            const setText =
+                (id, key) => {
+                    const el =
+                        document.getElementById(id);
+                    if (el) {
+                        el.textContent = t(key);
+                    }
+                };
+
+            setText('profileModalTitle', 'profileModalTitle');
+            setText('avatarLabel', 'avatarLabel');
+            setText('joinChatBtn', 'joinChatBtn');
+            setText('memberDialogTitle', 'memberDialogTitle');
+            setText('blockedTitle', 'blockedTitle');
+            setText('blockedDesc', 'blockedDesc');
+            setText('fileBtnLabel', 'uploadImageBtn');
+            setText('sendBtn', 'sendBtn');
+
+            const editBtn =
+                document.getElementById('editProfileBtn');
+            if (editBtn) {
+                editBtn.textContent =
+                    `✏️ ${t('editProfileBtn')}`;
+            }
+
+            const clearBtn =
+                document.getElementById('clearChatBtn');
+            if (clearBtn) {
+                clearBtn.textContent =
+                    `🗑️ ${t('clearChatBtn')}`;
+            }
+
+            const usernameInput =
+                document.getElementById('usernameInput');
+            if (usernameInput) {
+                usernameInput.placeholder =
+                    t('namePlaceholder');
+            }
+
+            const langSelect =
+                document.getElementById('targetLang');
+            if (langSelect) {
+                langSelect.title =
+                    t('langSelectTitle');
+            }
+
+            // Placeholder input pesan: kalau sedang menampilkan
+            // placeholder khusus channel, ikutkan nama channel-nya.
+            const messageInput =
+                document.getElementById('messageInput');
+            if (messageInput) {
+
+                const channelSelect =
+                    document.getElementById('channelSelect');
+
+                const channelName =
+                    channelSelect
+                        ? channelSelect.value
+                        : null;
+
+                messageInput.placeholder =
+                    channelName
+                        ? t('channelPlaceholder')
+                            .replace('{channel}', channelName)
+                        : t('messagePlaceholder');
+            }
+
+            // Preview balasan, kalau sedang tidak membalas siapa pun
+            const replyPreviewText =
+                document.getElementById('replyPreviewText');
+            if (
+                replyPreviewText &&
+                !replyingToId
+            ) {
+                replyPreviewText.textContent =
+                    t('replyPreviewDefault');
             }
         }
 
@@ -1522,7 +1813,7 @@
             ) {
 
                 previewText.textContent =
-                    `Membalas ke ${msg.sender}: ${msg.original || '[Gambar]'}`;
+                    `${t('replyingToPrefix')} ${msg.sender}: ${msg.original || t('imagePlaceholder')}`;
 
                 previewBar.style.display =
                     'flex';
@@ -1832,7 +2123,7 @@
                         <div class="reply-indicator">
                             ↪️
                             <b>${escapeHtml(parentMsg.sender)}</b>:
-                            ${escapeHtml(parentMsg.original || '[Gambar]')}
+                            ${escapeHtml(parentMsg.original || t('imagePlaceholder'))}
                         </div>
                     `;
                 }
@@ -1855,7 +2146,7 @@
                         <div
                             class="message-text"
                             id="msg-text-${escapeHtml(id)}"
-                        >${linkify(data.original)}${data.edited ? ' <small>(diedit)</small>' : ''}</div>
+                        >${linkify(data.original)}${data.edited ? ` <small>(${escapeHtml(t('editedLabel'))})</small>` : ''}</div>
                     `;
 
                     if (
@@ -1960,7 +2251,7 @@
                         type="button"
                         class="action-icon-btn"
                         onclick='startReply(${JSON.stringify(id)}, event)'
-                        title="Balas"
+                        title="${escapeHtml(t('replyTitle'))}"
                     >
                         ↩️
                     </button>
@@ -1972,7 +2263,7 @@
                         type="button"
                         class="action-icon-btn"
                         onclick='toggleEmojiPicker(${JSON.stringify(id)}, event)'
-                        title="Reaksi"
+                        title="${escapeHtml(t('reactionTitle'))}"
                     >
                         😀
                     </button>
@@ -1984,7 +2275,7 @@
                         type="button"
                         class="action-icon-btn"
                         onclick='copyText(${JSON.stringify(data.original || '')}, this); event.stopPropagation();'
-                        title="Salin"
+                        title="${escapeHtml(t('copyTitle'))}"
                     >
                         📋
                     </button>
@@ -2001,7 +2292,7 @@
                             type="button"
                             class="action-icon-btn"
                             onclick='enableEdit(${JSON.stringify(id)}, event)'
-                            title="Edit"
+                            title="${escapeHtml(t('editTitle'))}"
                         >
                             ✏️
                         </button>
@@ -2018,7 +2309,7 @@
                             type="button"
                             class="action-icon-btn"
                             onclick='deleteMessage(${JSON.stringify(id)}, event)'
-                            title="Hapus"
+                            title="${escapeHtml(t('deleteTitle'))}"
                         >
                             🗑️
                         </button>
@@ -2036,7 +2327,7 @@
                             type="button"
                             class="action-icon-btn"
                             onclick='blockUser(${JSON.stringify(data.userId)}, ${JSON.stringify(data.sender)}, event)'
-                            title="Blokir pengguna ini"
+                            title="${escapeHtml(t('blockUserTitle'))}"
                         >
                             🚫
                         </button>
@@ -2411,14 +2702,54 @@
            LANGUAGE
            ========================= */
 
-        async function changeLanguage() {
+        async function changeLanguage(sourceEl) {
 
             myTargetLang =
-                document.getElementById(
-                    'targetLang'
-                ).value;
+                sourceEl
+                    ? sourceEl.value
+                    : document.getElementById(
+                        'targetLang'
+                    ).value;
+
+            localStorage.setItem(
+                'chat_target_lang',
+                myTargetLang
+            );
+
+            // Sinkronkan kedua dropdown bahasa (layar
+            // profil awal & header chat) supaya selalu sama.
+            const headerSelect =
+                document.getElementById('targetLang');
+
+            const joinSelect =
+                document.getElementById('targetLangJoin');
+
+            if (headerSelect) {
+                headerSelect.value = myTargetLang;
+            }
+
+            if (joinSelect) {
+                joinSelect.value = myTargetLang;
+            }
+
+            await loadUITranslations(
+                myTargetLang
+            );
+
+            applyStaticUITranslations();
 
             await renderChat();
+
+            // Refresh daftar anggota juga (tombol Blokir/Buka
+            // Blokir & pesan "Belum ada anggota" ikut berubah).
+            if (
+                Array.isArray(currentOnlineUsers) &&
+                currentOnlineUsers.length >= 0
+            ) {
+                renderMemberList(
+                    currentOnlineUsers
+                );
+            }
         }
 
 
@@ -2462,7 +2793,7 @@
 
             const password =
                 prompt(
-                    `Masukkan password admin untuk memblokir "${targetUsername}":`
+                    `${t('promptBlockPassword')} "${targetUsername}":`
                 );
 
             if (password === null) {
@@ -2471,7 +2802,10 @@
 
             if (
                 !confirm(
-                    `Yakin ingin memblokir "${targetUsername}"? Mereka tidak akan bisa mengirim pesan lagi.`
+                    t('confirmBlockUser').replace(
+                        '{name}',
+                        targetUsername
+                    )
                 )
             ) {
                 return;
@@ -2498,7 +2832,7 @@
 
             const password =
                 prompt(
-                    'Masukkan password admin untuk menghapus seluruh chat:'
+                    t('promptClearPassword')
                 );
 
             if (password === null) {
@@ -2507,7 +2841,7 @@
 
             if (
                 confirm(
-                    'Yakin ingin menghapus seluruh riwayat chat di channel ini?'
+                    t('confirmClearChat')
                 )
             ) {
 
@@ -2771,7 +3105,7 @@
                 document.getElementById(
                     'typing-indicator'
                 ).innerText =
-                    `${typingUser} sedang mengetik...`;
+                    `${typingUser} ${t('typingSuffix')}`;
             }
         );
 
@@ -2797,7 +3131,7 @@
             function() {
 
                 alert(
-                    'Gagal menghapus chat: bukan admin atau password salah.'
+                    t('clearChatDeniedAlert')
                 );
             }
         );
@@ -2813,19 +3147,19 @@
                 if (reason === 'image_too_large') {
 
                     alert(
-                        'Gambar terlalu besar (maksimal 4MB). Pesan tidak terkirim.'
+                        t('imageTooLargeSendAlert')
                     );
 
                 } else if (reason === 'blocked') {
 
                     alert(
-                        'Anda diblokir dan tidak bisa mengirim pesan.'
+                        t('youAreBlockedAlert')
                     );
 
                 } else {
 
                     alert(
-                        'Pesan gagal terkirim (format gambar tidak didukung).'
+                        t('messageFailedAlert')
                     );
                 }
 
@@ -2877,7 +3211,7 @@
             function() {
 
                 alert(
-                    'Foto profil terlalu besar (maksimal 1MB). Memakai foto default.'
+                    t('avatarRejectedAlert')
                 );
             }
         );
@@ -2911,6 +3245,110 @@
            USERS
            ========================= */
 
+        function renderMemberList(users) {
+
+            const memberList =
+                document.getElementById(
+                    'member-list'
+                );
+
+            if (!memberList) {
+                return;
+            }
+
+            if (users.length === 0) {
+
+                memberList.innerHTML =
+                    `<p style="color:#949ba4;font-size:13px;">${escapeHtml(t('noMembers'))}</p>`;
+
+                return;
+            }
+
+            memberList.innerHTML =
+                users.map(
+                    function(user) {
+
+                        const isMe =
+                            user.username === username;
+
+                        const isOnline =
+                            user.online !== false;
+
+                        const dotColor =
+                            isOnline
+                                ? '#23a55a'
+                                : '#4e5058';
+
+                        let actionBtn = '';
+
+                        // Tombol blokir/buka blokir cuma
+                        // muncul untuk Admin, dan tidak
+                        // untuk diri sendiri.
+                        if (
+                            isAdmin &&
+                            !isMe
+                        ) {
+
+                            if (user.blocked) {
+
+                                actionBtn = `
+                                    <button
+                                        type="button"
+                                        onclick='unblockUser(${JSON.stringify(user.clientId)}, ${JSON.stringify(user.username)})'
+                                        style="background:#248046;color:white;border:none;padding:5px 9px;border-radius:4px;font-size:11px;cursor:pointer;"
+                                    >
+                                        ${escapeHtml(t('unblockBtn'))}
+                                    </button>
+                                `;
+
+                            } else {
+
+                                actionBtn = `
+                                    <button
+                                        type="button"
+                                        onclick='blockUser(${JSON.stringify(user.clientId)}, ${JSON.stringify(user.username)})'
+                                        style="background:#da373c;color:white;border:none;padding:5px 9px;border-radius:4px;font-size:11px;cursor:pointer;"
+                                    >
+                                        🚫 ${escapeHtml(t('blockBtn'))}
+                                    </button>
+                                `;
+                            }
+                        }
+
+                        return `
+                            <div
+                                style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;gap:10px;${isOnline ? '' : 'opacity:0.55;'}"
+                            >
+
+                                <div style="display:flex;align-items:center;gap:10px;min-width:0;">
+
+                                    <span
+                                        style="width:8px;height:8px;flex-shrink:0;background-color:${dotColor};border-radius:50%;"
+                                    ></span>
+
+                                    <img
+                                        src="${escapeHtml(user.avatar || 'https://via.placeholder.com/40')}"
+                                        class="avatar"
+                                        style="width:30px;height:30px;margin-top:0;flex-shrink:0;"
+                                    >
+
+                                    <span
+                                        style="color:white;font-size:14px;font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;"
+                                    >
+                                        ${escapeHtml(user.username)}${user.blocked ? ' 🚫' : ''}
+                                    </span>
+
+                                </div>
+
+                                ${actionBtn}
+
+                            </div>
+                        `;
+                    }
+                ).join('');
+        }
+
+
         socket.on(
             'update_users',
             function(payload) {
@@ -2933,6 +3371,7 @@
                     users.length;
 
                 // Simpan supaya bisa dipakai tombol blokir
+                // dan dipakai lagi saat ganti bahasa.
                 currentOnlineUsers = users;
 
                 document.getElementById(
@@ -2940,102 +3379,7 @@
                 ).innerText =
                     `👥 ${onlineCount}/${totalCount}`;
 
-
-                const memberList =
-                    document.getElementById(
-                        'member-list'
-                    );
-
-                if (users.length === 0) {
-
-                    memberList.innerHTML =
-                        '<p style="color:#949ba4;font-size:13px;">Belum ada anggota.</p>';
-
-                    return;
-                }
-
-                memberList.innerHTML =
-                    users.map(
-                        function(user) {
-
-                            const isMe =
-                                user.username === username;
-
-                            const isOnline =
-                                user.online !== false;
-
-                            const dotColor =
-                                isOnline
-                                    ? '#23a55a'
-                                    : '#4e5058';
-
-                            let actionBtn = '';
-
-                            // Tombol blokir/buka blokir cuma
-                            // muncul untuk Admin, dan tidak
-                            // untuk diri sendiri.
-                            if (
-                                isAdmin &&
-                                !isMe
-                            ) {
-
-                                if (user.blocked) {
-
-                                    actionBtn = `
-                                        <button
-                                            type="button"
-                                            onclick='unblockUser(${JSON.stringify(user.clientId)}, ${JSON.stringify(user.username)})'
-                                            style="background:#248046;color:white;border:none;padding:5px 9px;border-radius:4px;font-size:11px;cursor:pointer;"
-                                        >
-                                            Buka Blokir
-                                        </button>
-                                    `;
-
-                                } else {
-
-                                    actionBtn = `
-                                        <button
-                                            type="button"
-                                            onclick='blockUser(${JSON.stringify(user.clientId)}, ${JSON.stringify(user.username)})'
-                                            style="background:#da373c;color:white;border:none;padding:5px 9px;border-radius:4px;font-size:11px;cursor:pointer;"
-                                        >
-                                            🚫 Blokir
-                                        </button>
-                                    `;
-                                }
-                            }
-
-                            return `
-                                <div
-                                    style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;gap:10px;${isOnline ? '' : 'opacity:0.55;'}"
-                                >
-
-                                    <div style="display:flex;align-items:center;gap:10px;min-width:0;">
-
-                                        <span
-                                            style="width:8px;height:8px;flex-shrink:0;background-color:${dotColor};border-radius:50%;"
-                                        ></span>
-
-                                        <img
-                                            src="${escapeHtml(user.avatar || 'https://via.placeholder.com/40')}"
-                                            class="avatar"
-                                            style="width:30px;height:30px;margin-top:0;flex-shrink:0;"
-                                        >
-
-                                        <span
-                                            style="color:white;font-size:14px;font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;"
-                                        >
-                                            ${escapeHtml(user.username)}${user.blocked ? ' 🚫' : ''}
-                                        </span>
-
-                                    </div>
-
-                                    ${actionBtn}
-
-                                </div>
-                            `;
-                        }
-                    ).join('');
+                renderMemberList(users);
             }
         );
 
