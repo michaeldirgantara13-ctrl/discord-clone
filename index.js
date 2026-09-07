@@ -272,6 +272,120 @@ const channels = loadChannels();
 const onlineUsers = {};
 
 // ============================================================
+// VOICE CHANNEL (state sesi aktif, tidak disimpan ke disk -
+// sama seperti Discord, presence voice tidak perlu permanen)
+// ============================================================
+
+const VOICE_CHANNEL_DEFS = [
+    { id: 'voice-umum', name: 'Umum' },
+    { id: 'voice-gaming', name: 'Gaming' },
+    { id: 'voice-musik', name: 'Musik' },
+    { id: 'voice-room', name: 'Voice Room', inviteOnly: true }
+];
+
+// channelId -> true kalau channel tsb butuh undangan admin
+// untuk bisa dimasuki (selain admin sendiri, yang selalu bebas
+// masuk ke channel undangannya sendiri).
+const INVITE_ONLY_VOICE_CHANNELS = new Set(
+    VOICE_CHANNEL_DEFS
+        .filter(def => def.inviteOnly)
+        .map(def => def.id)
+);
+
+// clientId -> true, undangan sekali pakai ke voice channel
+// khusus undangan (habis dipakai sekali join / ditolak /
+// kedaluwarsa).
+const voiceRoomInvites = new Set();
+
+const VOICE_INVITE_EXPIRY_MS = 2 * 60 * 1000; // 2 menit
+
+// { [channelId]: { [socketId]: { userId, username, avatar, muted } } }
+const voiceChannels = {};
+
+VOICE_CHANNEL_DEFS.forEach(function(def) {
+    voiceChannels[def.id] = {};
+});
+
+function isValidVoiceChannel(channelId) {
+    return (
+        typeof channelId === 'string' &&
+        Object.prototype.hasOwnProperty.call(
+            voiceChannels,
+            channelId
+        )
+    );
+}
+
+function buildVoiceState() {
+
+    const state = {};
+
+    Object.keys(voiceChannels).forEach(
+        function(channelId) {
+
+            state[channelId] =
+                Object.entries(
+                    voiceChannels[channelId]
+                ).map(
+                    function([socketId, info]) {
+
+                        return {
+                            socketId: socketId,
+                            userId: info.userId,
+                            username: info.username,
+                            avatar: info.avatar,
+                            muted: Boolean(info.muted)
+                        };
+                    }
+                );
+        }
+    );
+
+    return state;
+}
+
+function broadcastVoiceState() {
+
+    io.emit(
+        'voice_state',
+        buildVoiceState()
+    );
+}
+
+// Keluarkan socket dari voice channel manapun yang sedang
+// ditempatinya (dipanggil saat pindah channel, leave manual,
+// atau disconnect).
+function removeFromVoiceChannel(socket) {
+
+    const channelId =
+        socket.voiceChannel;
+
+    if (
+        !channelId ||
+        !voiceChannels[channelId]
+    ) {
+        return;
+    }
+
+    delete voiceChannels[channelId][
+        socket.id
+    ];
+
+    socket.leave(
+        `voice:${channelId}`
+    );
+
+    socket
+        .to(`voice:${channelId}`)
+        .emit(
+            'voice_peer_left',
+            { socketId: socket.id }
+        );
+
+    socket.voiceChannel = null;
+}
+
+// ============================================================
 // REGISTRY ANGGOTA (permanen, untuk hitung total anggota)
 // ============================================================
 
@@ -722,6 +836,13 @@ io.on('connection', (socket) => {
             }
         );
     }
+
+    // Kirim juga state voice channel saat ini, supaya
+    // tampilan langsung tahu siapa saja yang sedang di voice.
+    socket.emit(
+        'voice_state',
+        buildVoiceState()
+    );
 
     // ========================================================
     // SET USER PROFILE
@@ -1597,6 +1718,295 @@ io.on('connection', (socket) => {
     );
 
     // ========================================================
+    // VOICE CHANNEL
+    // ========================================================
+
+    socket.on(
+        'voice_join',
+        (channelId) => {
+
+            if (socket.isBlocked) {
+                return;
+            }
+
+            if (
+                !isValidVoiceChannel(channelId)
+            ) {
+                return;
+            }
+
+            const profile =
+                onlineUsers[socket.id];
+
+            if (!profile) {
+                // Belum registrasi profil, jangan izinkan
+                // join voice dulu.
+                return;
+            }
+
+            const userId =
+                socket.clientId ||
+                socket.userId;
+
+            const isAdminUser =
+                profile.username === ADMIN_USERNAME;
+
+            // Channel undangan (mis. Voice Room): cuma admin
+            // (bebas) atau user yang sedang punya undangan
+            // valid yang boleh masuk.
+            if (
+                INVITE_ONLY_VOICE_CHANNELS.has(channelId) &&
+                !isAdminUser &&
+                !voiceRoomInvites.has(userId)
+            ) {
+
+                socket.emit(
+                    'voice_join_denied',
+                    { channelId: channelId }
+                );
+
+                return;
+            }
+
+            // Undangan sekali pakai - habis dipakai begitu
+            // berhasil join.
+            if (
+                INVITE_ONLY_VOICE_CHANNELS.has(channelId)
+            ) {
+                voiceRoomInvites.delete(userId);
+            }
+
+            // Cuma boleh di satu voice channel sekaligus,
+            // sama seperti Discord.
+            if (socket.voiceChannel) {
+                removeFromVoiceChannel(socket);
+            }
+
+            // Daftar peer yang SUDAH ada di channel ini
+            // sebelum socket ini join, supaya client tahu
+            // ke siapa saja dia harus mulai koneksi WebRTC.
+            const existingPeers =
+                Object.entries(
+                    voiceChannels[channelId]
+                ).map(
+                    function([socketId, info]) {
+
+                        return {
+                            socketId: socketId,
+                            userId: info.userId,
+                            username: info.username,
+                            avatar: info.avatar
+                        };
+                    }
+                );
+
+            voiceChannels[channelId][
+                socket.id
+            ] = {
+                userId:
+                    socket.clientId ||
+                    socket.userId,
+                username: profile.username,
+                avatar: profile.avatar,
+                muted: false
+            };
+
+            socket.voiceChannel = channelId;
+            socket.join(`voice:${channelId}`);
+
+            socket.emit(
+                'voice_joined',
+                {
+                    channelId: channelId,
+                    peers: existingPeers
+                }
+            );
+
+            broadcastVoiceState();
+
+            console.log(
+                'Voice join:',
+                profile.username,
+                '->',
+                channelId
+            );
+        }
+    );
+
+    socket.on(
+        'voice_leave',
+        () => {
+
+            if (!socket.voiceChannel) {
+                return;
+            }
+
+            removeFromVoiceChannel(socket);
+            broadcastVoiceState();
+        }
+    );
+
+    // Relay sinyal WebRTC (offer/answer/ICE candidate) ke
+    // peer tujuan. Server tidak menyentuh isi audio sama
+    // sekali - audio mengalir langsung antar browser (P2P).
+    socket.on(
+        'voice_signal',
+        (payload = {}) => {
+
+            const targetSocketId =
+                payload.to;
+
+            if (
+                typeof targetSocketId !== 'string'
+            ) {
+                return;
+            }
+
+            io.to(targetSocketId).emit(
+                'voice_signal',
+                {
+                    from: socket.id,
+                    data: payload.data
+                }
+            );
+        }
+    );
+
+    socket.on(
+        'voice_mute',
+        (muted) => {
+
+            const channelId =
+                socket.voiceChannel;
+
+            if (
+                !channelId ||
+                !voiceChannels[channelId] ||
+                !voiceChannels[channelId][socket.id]
+            ) {
+                return;
+            }
+
+            voiceChannels[channelId][
+                socket.id
+            ].muted = Boolean(muted);
+
+            broadcastVoiceState();
+        }
+    );
+
+    // Admin mengundang user tertentu ke voice channel khusus
+    // undangan (Voice Room). Pakai password admin, sama seperti
+    // aksi admin lain (block/unblock/hapus chat), supaya nama
+    // "Admin" tidak bisa dipalsukan begitu saja dari client.
+    socket.on(
+        'voice_invite_user',
+        (payload = {}) => {
+
+            const profile =
+                onlineUsers[socket.id];
+
+            if (
+                !profile ||
+                profile.username !== ADMIN_USERNAME
+            ) {
+                socket.emit(
+                    'voice_invite_denied'
+                );
+                return;
+            }
+
+            if (
+                payload.password !== ADMIN_PASSWORD
+            ) {
+                socket.emit(
+                    'voice_invite_denied'
+                );
+                return;
+            }
+
+            const channelId =
+                typeof payload.channelId === 'string'
+                    ? payload.channelId
+                    : 'voice-room';
+
+            if (
+                !INVITE_ONLY_VOICE_CHANNELS.has(channelId)
+            ) {
+                return;
+            }
+
+            const targetUserId =
+                String(payload.targetUserId || '');
+
+            if (!targetUserId) {
+                return;
+            }
+
+            // Cari socket target yang sedang online
+            // (undangan cuma masuk akal untuk yang online).
+            const targetSocketId =
+                Object.keys(onlineUsers).find(
+                    sid =>
+                        onlineUsers[sid].userId ===
+                        targetUserId
+                );
+
+            if (!targetSocketId) {
+                return;
+            }
+
+            voiceRoomInvites.add(targetUserId);
+
+            // Undangan otomatis kedaluwarsa kalau tidak
+            // dipakai, supaya tidak menumpuk selamanya.
+            setTimeout(
+                function() {
+                    voiceRoomInvites.delete(
+                        targetUserId
+                    );
+                },
+                VOICE_INVITE_EXPIRY_MS
+            );
+
+            const channelDef =
+                VOICE_CHANNEL_DEFS.find(
+                    def => def.id === channelId
+                );
+
+            io.to(targetSocketId).emit(
+                'voice_invite',
+                {
+                    channelId: channelId,
+                    channelName:
+                        channelDef?.name || channelId,
+                    by: profile.username
+                }
+            );
+
+            console.log(
+                'Voice invite:',
+                profile.username,
+                '->',
+                targetUserId,
+                channelId
+            );
+        }
+    );
+
+    socket.on(
+        'voice_invite_decline',
+        () => {
+
+            const userId =
+                socket.clientId ||
+                socket.userId;
+
+            voiceRoomInvites.delete(userId);
+        }
+    );
+
+    // ========================================================
     // TYPING
     // ========================================================
 
@@ -1651,6 +2061,11 @@ io.on('connection', (socket) => {
             delete onlineUsers[
                 socket.id
             ];
+
+            if (socket.voiceChannel) {
+                removeFromVoiceChannel(socket);
+                broadcastVoiceState();
+            }
 
             broadcastMemberStats();
         }
