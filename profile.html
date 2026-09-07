@@ -1,1680 +1,649 @@
-const express = require('express');
-const app = express();
-const http = require('http').createServer(app);
-const io = require('socket.io')(http);
-const path = require('path');
-const fs = require('fs');
-const crypto = require('crypto');
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <title>Edit Profil - Discord Clone</title>
+    <script src="/socket.io/socket.io.js"></script>
 
-app.use(express.static(__dirname));
-
-app.get('/', (req, res) => {
-    res.sendFile(path.join(__dirname, 'index.html'));
-});
-
-// ============================================================
-// LOKASI DATA PERMANEN
-// ============================================================
-//
-// Kalau kamu sudah pasang Railway Volume, Railway otomatis
-// menyediakan environment variable RAILWAY_VOLUME_MOUNT_PATH
-// yang menunjuk ke folder permanen tersebut. Kalau belum ada
-// Volume, data akan tetap tersimpan di folder project seperti
-// biasa, tapi BISA HILANG setiap kali Railway redeploy/restart.
-
-const DATA_DIR =
-    process.env.RAILWAY_VOLUME_MOUNT_PATH ||
-    __dirname;
-
-function ensureDir(dir) {
-
-    if (!fs.existsSync(dir)) {
-
-        fs.mkdirSync(
-            dir,
-            { recursive: true }
-        );
-    }
-}
-
-ensureDir(DATA_DIR);
-
-const DATA_FILE =
-    path.join(
-        DATA_DIR,
-        'chat-data.json'
-    );
-
-// ============================================================
-// FOLDER UPLOAD GAMBAR (terpisah dari chat-data.json,
-// supaya file data tidak membengkak oleh base64)
-// ============================================================
-
-const UPLOAD_DIR =
-    path.join(DATA_DIR, 'uploads');
-
-const AVATAR_DIR =
-    path.join(UPLOAD_DIR, 'avatars');
-
-const IMAGE_DIR =
-    path.join(UPLOAD_DIR, 'images');
-
-ensureDir(UPLOAD_DIR);
-ensureDir(AVATAR_DIR);
-ensureDir(IMAGE_DIR);
-
-app.use(
-    '/uploads',
-    express.static(UPLOAD_DIR)
-);
-
-const MAX_AVATAR_BYTES = 1 * 1024 * 1024;   // 1MB
-const MAX_IMAGE_BYTES = 4 * 1024 * 1024;    // 4MB
-
-// Simpan data URL base64 (data:image/...;base64,....) sebagai
-// file di disk. Nama file dari hash isinya, jadi gambar yang
-// sama tidak disimpan berkali-kali (hemat tempat).
-function saveBase64File(
-    dataUrl,
-    dir,
-    urlPrefix,
-    maxBytes
-) {
-
-    if (typeof dataUrl !== 'string') {
-        return null;
-    }
-
-    const match =
-        dataUrl.match(
-            /^data:image\/(png|jpe?g|gif|webp);base64,(.+)$/i
-        );
-
-    if (!match) {
-        return null;
-    }
-
-    const ext =
-        match[1].toLowerCase() === 'jpg'
-            ? 'jpeg'
-            : match[1].toLowerCase();
-
-    let buffer;
-
-    try {
-
-        buffer =
-            Buffer.from(
-                match[2],
-                'base64'
-            );
-
-    } catch (e) {
-
-        return null;
-    }
-
-    if (buffer.length > maxBytes) {
-
-        return { error: 'too_large' };
-    }
-
-    const hash =
-        crypto
-            .createHash('sha1')
-            .update(buffer)
-            .digest('hex');
-
-    const filename =
-        `${hash}.${ext}`;
-
-    const filePath =
-        path.join(dir, filename);
-
-    if (!fs.existsSync(filePath)) {
-
-        fs.writeFileSync(
-            filePath,
-            buffer
-        );
-    }
-
-    return {
-        url: `${urlPrefix}/${filename}`
-    };
-}
-
-// ============================================================
-// DEFAULT DATA
-// ============================================================
-
-const DEFAULT_CHANNELS = {
-    umum: [],
-    gaming: [],
-    musik: []
-};
-
-// ============================================================
-// LOAD DATA
-// ============================================================
-
-function loadChannels() {
-
-    try {
-
-        if (!fs.existsSync(DATA_FILE)) {
-
-            fs.writeFileSync(
-                DATA_FILE,
-                JSON.stringify(
-                    DEFAULT_CHANNELS,
-                    null,
-                    2
-                ),
-                'utf8'
-            );
-
-            console.log(
-                'chat-data.json dibuat.'
-            );
-
-            return {
-                umum: [],
-                gaming: [],
-                musik: []
-            };
+    <style>
+        * {
+            box-sizing: border-box;
         }
 
-        const raw =
-            fs.readFileSync(
-                DATA_FILE,
-                'utf8'
-            );
+        body {
+            font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
+            background: #313338;
+            color: #dbdee1;
+            margin: 0;
+            min-height: 100vh;
+            min-height: 100dvh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 24px;
+        }
 
-        const data =
-            JSON.parse(raw);
+        .card {
+            background: #2b2d31;
+            width: 100%;
+            max-width: 360px;
+            padding: 28px;
+            border-radius: 8px;
+            border: 1px solid #1f2023;
+            box-shadow: 0 8px 24px rgba(0,0,0,0.5);
+        }
 
-        // Pastikan semua channel tetap ada
-        return {
-            umum: Array.isArray(data.umum)
-                ? data.umum
-                : [],
+        h2 {
+            color: white;
+            margin-top: 0;
+            margin-bottom: 20px;
+        }
 
-            gaming: Array.isArray(data.gaming)
-                ? data.gaming
-                : [],
+        .avatar-preview {
+            width: 80px;
+            height: 80px;
+            border-radius: 50%;
+            object-fit: cover;
+            display: block;
+            margin: 0 auto 16px auto;
+            border: 2px solid #4e5058;
+        }
 
-            musik: Array.isArray(data.musik)
-                ? data.musik
-                : []
+        label {
+            font-size: 12px;
+            display: block;
+            margin-bottom: 6px;
+            color: #b5bac1;
+            text-align: left;
+        }
+
+        input[type="text"],
+        input[type="file"] {
+            background: #1e1f22;
+            color: white;
+            border: 1px solid #1f2023;
+            padding: 10px;
+            border-radius: 4px;
+            width: 100%;
+            outline: none;
+            margin-bottom: 16px;
+            font-size: 14px;
+        }
+
+        .btn-primary {
+            background: #5865F2;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 4px;
+            font-weight: bold;
+            cursor: pointer;
+            width: 100%;
+            font-size: 14px;
+            margin-bottom: 10px;
+        }
+
+        .btn-primary:hover {
+            background: #4752c4;
+        }
+
+        .btn-secondary {
+            background: transparent;
+            color: #949ba4;
+            border: 1px solid #4e5058;
+            padding: 10px 20px;
+            border-radius: 4px;
+            cursor: pointer;
+            width: 100%;
+            font-size: 14px;
+        }
+
+        .btn-secondary:hover {
+            color: white;
+            border-color: #6d6f78;
+        }
+
+        #statusMsg {
+            font-size: 13px;
+            text-align: center;
+            margin-bottom: 12px;
+            min-height: 16px;
+        }
+
+        #statusMsg.success {
+            color: #23a55a;
+        }
+
+        #statusMsg.error {
+            color: #da373c;
+        }
+    </style>
+</head>
+
+<body>
+
+    <div class="card">
+
+        <select
+            id="targetLang"
+            onchange="changeLanguage(this)"
+            title="Pilih Bahasa Terjemahan"
+            style="margin-bottom:16px;width:100%;background:#1e1f22;color:white;border:1px solid #1f2023;padding:8px;border-radius:4px;"
+        >
+            <option value="id">🇮🇩 Indonesia</option>
+            <option value="en">🇬🇧 English</option>
+            <option value="tr">🇹🇷 Türkçe</option>
+            <option value="ms">🇲🇾 Melayu</option>
+            <option value="jv">Jawa</option>
+            <option value="su">Sunda</option>
+
+            <option value="zh-CN">🇨🇳 中文 (简体)</option>
+            <option value="zh-TW">🇹🇼 中文 (繁體)</option>
+            <option value="ja">🇯🇵 日本語</option>
+            <option value="ko">🇰🇷 한국어</option>
+
+            <option value="ar">🇸🇦 العربية</option>
+            <option value="fa">🇮🇷 فارسی</option>
+            <option value="he">🇮🇱 עברית</option>
+            <option value="hi">🇮🇳 हिन्दी</option>
+            <option value="bn">🇧🇩 বাংলা</option>
+            <option value="ur">🇵🇰 اردو</option>
+
+            <option value="es">🇪🇸 Español</option>
+            <option value="fr">🇫🇷 Français</option>
+            <option value="de">🇩🇪 Deutsch</option>
+            <option value="it">🇮🇹 Italiano</option>
+            <option value="pt">🇵🇹 Português</option>
+            <option value="nl">🇳🇱 Nederlands</option>
+
+            <option value="ru">🇷🇺 Русский</option>
+            <option value="uk">🇺🇦 Українська</option>
+            <option value="pl">🇵🇱 Polski</option>
+            <option value="el">🇬🇷 Ελληνικά</option>
+
+            <option value="th">🇹🇭 ไทย</option>
+            <option value="vi">🇻🇳 Tiếng Việt</option>
+            <option value="tl">🇵🇭 Filipino</option>
+
+            <option value="sv">🇸🇪 Svenska</option>
+            <option value="da">🇩🇰 Dansk</option>
+            <option value="no">🇳🇴 Norsk</option>
+            <option value="fi">🇫🇮 Suomi</option>
+            <option value="cs">🇨🇿 Čeština</option>
+            <option value="ro">🇷🇴 Română</option>
+            <option value="hu">🇭🇺 Magyar</option>
+        </select>
+
+        <h2 id="pageTitle">Edit Profil</h2>
+
+        <img
+            id="avatarPreview"
+            class="avatar-preview"
+            src="https://via.placeholder.com/80"
+        >
+
+        <div id="statusMsg"></div>
+
+        <label id="nameLabel">Nama Tampilan</label>
+
+        <input
+            type="text"
+            id="usernameInput"
+            placeholder="Masukkan nama..."
+        >
+
+        <label id="avatarChangeLabel">Ganti Foto Profil (opsional)</label>
+
+        <input
+            type="file"
+            id="avatarInput"
+            accept="image/*"
+        >
+
+        <button
+            id="saveBtn"
+            class="btn-primary"
+            onclick="saveProfile()"
+        >
+            Simpan Perubahan
+        </button>
+
+        <button
+            id="backBtn"
+            class="btn-secondary"
+            onclick="window.location.href = 'index.html'"
+        >
+            Kembali ke Chat
+        </button>
+
+    </div>
+
+    <script>
+
+        const socket = io();
+
+        /* =========================
+           BAHASA (ikut bahasa yang dipilih di index.html)
+           ========================= */
+
+        let myTargetLang =
+            localStorage.getItem('chat_target_lang') || 'id';
+
+        const UI_TEXT_ID = {
+            pageTitle: 'Edit Profil',
+            nameLabel: 'Nama Tampilan',
+            namePlaceholder: 'Masukkan nama...',
+            avatarChangeLabel: 'Ganti Foto Profil (opsional)',
+            saveBtn: 'Simpan Perubahan',
+            backBtn: 'Kembali ke Chat',
+            langSelectTitle: 'Pilih Bahasa Terjemahan',
+            avatarTooBigError: 'Foto terlalu besar (maksimal 1MB).',
+            nameEmptyError: 'Nama tidak boleh kosong.',
+            savingStatus: 'Menyimpan...',
+            savedStatus: 'Profil berhasil disimpan!',
+            avatarRejectedError: 'Foto terlalu besar (maksimal 1MB). Profil disimpan tanpa foto baru.',
+            blockedError: 'Anda diblokir dan tidak bisa mengubah profil.'
         };
 
-    } catch (error) {
+        const translationCache = new Map();
 
-        console.error(
-            'Gagal membaca chat-data.json:',
-            error
-        );
-
-        return {
-            umum: [],
-            gaming: [],
-            musik: []
-        };
-    }
-}
-
-// ============================================================
-// SAVE DATA
-// ============================================================
-
-function saveChannels() {
-
-    try {
-
-        const tempFile =
-            DATA_FILE + '.tmp';
-
-        fs.writeFileSync(
-            tempFile,
-            JSON.stringify(
-                channels,
-                null,
-                2
-            ),
-            'utf8'
-        );
-
-        fs.renameSync(
-            tempFile,
-            DATA_FILE
-        );
-
-    } catch (error) {
-
-        console.error(
-            'Gagal menyimpan chat:',
-            error
-        );
-    }
-}
-
-// ============================================================
-// CHANNEL DATA
-// ============================================================
-
-const channels = loadChannels();
-
-// ============================================================
-// ONLINE USERS (sesi aktif saat ini)
-// ============================================================
-
-const onlineUsers = {};
-
-// ============================================================
-// REGISTRY ANGGOTA (permanen, untuk hitung total anggota)
-// ============================================================
-
-const MEMBERS_FILE =
-    path.join(
-        DATA_DIR,
-        'members.json'
-    );
-
-function loadMembers() {
-
-    try {
-
-        if (
-            fs.existsSync(MEMBERS_FILE)
+        async function translateText(
+            text,
+            targetLang,
+            cacheKey
         ) {
 
-            return JSON.parse(
-                fs.readFileSync(
-                    MEMBERS_FILE,
-                    'utf8'
-                )
-            );
-        }
-
-    } catch (e) {
-
-        console.error(
-            'Gagal load members:',
-            e
-        );
-    }
-
-    return {};
-}
-
-function saveMembers() {
-
-    try {
-
-        fs.writeFileSync(
-            MEMBERS_FILE,
-            JSON.stringify(
-                registeredMembers,
-                null,
-                2
-            )
-        );
-
-    } catch (e) {
-
-        console.error(
-            'Gagal simpan members:',
-            e
-        );
-    }
-}
-
-// key = clientId permanen -> { username, avatar, firstSeen, lastSeen }
-const registeredMembers =
-    loadMembers();
-
-// ============================================================
-// DAFTAR BLOKIR (permanen)
-// ============================================================
-
-const BLOCKED_FILE =
-    path.join(
-        DATA_DIR,
-        'blocked-users.json'
-    );
-
-function loadBlocked() {
-
-    try {
-
-        if (
-            fs.existsSync(BLOCKED_FILE)
-        ) {
-
-            const parsed =
-                JSON.parse(
-                    fs.readFileSync(
-                        BLOCKED_FILE,
-                        'utf8'
-                    )
-                );
-
-            // Migrasi dari format lama (flat object
-            // clientId -> info) ke format baru
-            // { byClientId, byIp }.
-            if (
-                parsed &&
-                !parsed.byClientId &&
-                !parsed.byIp
-            ) {
-
-                return {
-                    byClientId: parsed,
-                    byIp: {}
-                };
+            if (!text) {
+                return '';
             }
 
-            return {
-                byClientId:
-                    parsed.byClientId || {},
-                byIp:
-                    parsed.byIp || {}
-            };
-        }
+            const key =
+                `${cacheKey}|${targetLang}|${text}`;
 
-    } catch (e) {
-
-        console.error(
-            'Gagal load blocked:',
-            e
-        );
-    }
-
-    return {
-        byClientId: {},
-        byIp: {}
-    };
-}
-
-function saveBlocked() {
-
-    try {
-
-        fs.writeFileSync(
-            BLOCKED_FILE,
-            JSON.stringify(
-                blockedData,
-                null,
-                2
-            )
-        );
-
-    } catch (e) {
-
-        console.error(
-            'Gagal simpan blocked:',
-            e
-        );
-    }
-}
-
-// { byClientId: { clientId -> {username, ip, blockedAt} },
-//   byIp: { ip -> {username, clientId, blockedAt} } }
-const blockedData =
-    loadBlocked();
-
-function isIdentityBlocked(
-    clientId,
-    ip
-) {
-
-    return Boolean(
-        (
-            clientId &&
-            blockedData.byClientId[clientId]
-        ) ||
-        (
-            ip &&
-            blockedData.byIp[ip]
-        )
-    );
-}
-
-function blockIdentity(
-    clientId,
-    ip,
-    username
-) {
-
-    blockedData.byClientId[clientId] = {
-
-        username:
-            username,
-
-        ip:
-            ip || null,
-
-        blockedAt:
-            Date.now()
-    };
-
-    if (ip) {
-
-        blockedData.byIp[ip] = {
-
-            username:
-                username,
-
-            clientId:
-                clientId,
-
-            blockedAt:
-                Date.now()
-        };
-    }
-
-    saveBlocked();
-}
-
-function unblockIdentity(clientId) {
-
-    const entry =
-        blockedData.byClientId[clientId];
-
-    if (entry?.ip) {
-
-        delete blockedData.byIp[
-            entry.ip
-        ];
-    }
-
-    delete blockedData.byClientId[
-        clientId
-    ];
-
-    saveBlocked();
-}
-
-function buildFullMemberList() {
-
-    const onlineByClientId = {};
-
-    Object.values(onlineUsers).forEach(
-        function(u) {
-
-            onlineByClientId[u.userId] = u;
-        }
-    );
-
-    const list =
-        Object.entries(registeredMembers)
-            .map(
-                function([clientId, info]) {
-
-                    const onlineInfo =
-                        onlineByClientId[clientId];
-
-                    return {
-                        clientId:
-                            clientId,
-
-                        username:
-                            onlineInfo?.username ||
-                            info.username,
-
-                        avatar:
-                            onlineInfo?.avatar ||
-                            info.avatar,
-
-                        online:
-                            Boolean(onlineInfo),
-
-                        blocked:
-                            Boolean(
-                                blockedData.byClientId[
-                                    clientId
-                                ]
-                            )
-                    };
-                }
-            );
-
-    list.sort(
-        function(a, b) {
-
-            if (a.online !== b.online) {
-
-                return a.online ? -1 : 1;
+            if (translationCache.has(key)) {
+                return translationCache.get(key);
             }
 
-            return a.username.localeCompare(
-                b.username
-            );
-        }
-    );
+            try {
 
-    return list;
-}
+                const controller =
+                    new AbortController();
 
-function broadcastMemberStats() {
+                const timeoutId =
+                    setTimeout(
+                        () => controller.abort(),
+                        4000
+                    );
 
-    const onlineClientIds =
-        new Set(
-            Object.values(onlineUsers)
-                .map(u => u.userId)
-        );
+                const res =
+                    await fetch(
+                        `https://translate.googleapis.com/translate_a/single?client=gtx&sl=auto&tl=${targetLang}&dt=t&q=${encodeURIComponent(text)}`,
+                        { signal: controller.signal }
+                    );
 
-    io.emit(
-        'update_users',
-        {
-            list:
-                buildFullMemberList(),
+                clearTimeout(timeoutId);
 
-            onlineCount:
-                onlineClientIds.size,
+                const data =
+                    await res.json();
 
-            totalCount:
-                Math.max(
-                    Object.keys(
-                        registeredMembers
-                    ).length,
-                    onlineClientIds.size
-                )
-        }
-    );
-}
+                const result =
+                    data[0]
+                        .map(item => item[0])
+                        .join('');
 
-// ============================================================
-// ADMIN
-// ============================================================
+                translationCache.set(key, result);
 
-// Bisa diganti lewat environment variable ADMIN_USERNAME
-// di Railway (tab Variables). Kalau tidak diset, defaultnya "Admin".
-const ADMIN_USERNAME =
-    process.env.ADMIN_USERNAME ||
-    'Admin';
+                return result;
 
-// PENTING: ganti ini lewat environment variable ADMIN_PASSWORD
-// di Railway (tab Variables), jangan andalkan nilai default ini.
-const ADMIN_PASSWORD =
-    process.env.ADMIN_PASSWORD ||
-    'ganti-password-ini';
+            } catch (err) {
 
-// ============================================================
-// HELPER
-// ============================================================
-
-function validChannel(channel) {
-
-    return (
-        typeof channel === 'string' &&
-        Object.prototype.hasOwnProperty.call(
-            channels,
-            channel
-        )
-    );
-}
-
-function broadcastChannel(
-    channel,
-    event = 'receive_history'
-) {
-
-    if (!validChannel(channel)) {
-        return;
-    }
-
-    io
-        .to(`channel:${channel}`)
-        .emit(
-            event,
-            channels[channel]
-        );
-}
-
-// ============================================================
-// SOCKET CONNECTION
-// ============================================================
-
-io.on('connection', (socket) => {
-
-    socket.currentChannel = 'umum';
-
-    // ID sementara (fallback sebelum clientId permanen diterima)
-    socket.userId = socket.id;
-
-    // Deteksi alamat IP (dukung app di belakang proxy Railway
-    // yang meneruskan header x-forwarded-for).
-    const forwardedFor =
-        socket.handshake.headers['x-forwarded-for'];
-
-    const rawIp =
-        (
-            typeof forwardedFor === 'string' &&
-            forwardedFor.split(',')[0].trim()
-        ) ||
-        socket.handshake.address ||
-        '';
-
-    socket.clientIp =
-        rawIp.replace('::ffff:', '');
-
-    // Cek blokir berbasis IP dari awal, sebelum profil
-    // apapun didaftarkan (menutup celah "buat akun baru").
-    socket.isBlocked =
-        isIdentityBlocked(
-            null,
-            socket.clientIp
-        );
-
-    socket.join('channel:umum');
-
-    console.log(
-        'User terhubung:',
-        socket.id,
-        '| IP:',
-        socket.clientIp,
-        socket.isBlocked ? '(DIBLOKIR)' : ''
-    );
-
-    if (socket.isBlocked) {
-
-        socket.emit(
-            'you_are_blocked'
-        );
-
-    } else {
-
-        // Kirim history channel umum
-        socket.emit(
-            'receive_history',
-            channels.umum
-        );
-    }
-
-    // Kirim juga daftar anggota (semua + status online)
-    // saat ini, supaya tidak sempat kelihatan 0 kalau
-    // ada delay saat registrasi profil.
-    {
-        const onlineClientIds =
-            new Set(
-                Object.values(onlineUsers)
-                    .map(u => u.userId)
-            );
-
-        socket.emit(
-            'update_users',
-            {
-                list:
-                    buildFullMemberList(),
-
-                onlineCount:
-                    onlineClientIds.size,
-
-                totalCount:
-                    Math.max(
-                        Object.keys(
-                            registeredMembers
-                        ).length,
-                        onlineClientIds.size
-                    )
+                return text;
             }
-        );
-    }
+        }
 
-    // ========================================================
-    // SET USER PROFILE
-    // ========================================================
+        const uiTranslationCache = {};
 
-    socket.on(
-        'set_user_profile',
-        (profile = {}) => {
+        function t(key) {
 
-            const username =
-                String(
-                    profile.username || 'User'
-                )
-                .trim()
-                .slice(0, 50);
+            const master =
+                UI_TEXT_ID[key] || key;
 
-            // clientId permanen dari localStorage browser.
-            // Ini yang dipakai untuk kepemilikan pesan,
-            // supaya tetap valid walau socket reconnect
-            // dan mendapat socket.id baru.
-            const clientId =
-                typeof profile.clientId === 'string' &&
-                profile.clientId.trim()
-                    ? profile.clientId.trim().slice(0, 100)
-                    : socket.id;
+            if (myTargetLang === 'id') {
+                return master;
+            }
 
-            socket.clientId = clientId;
-            socket.userId = clientId;
+            return (
+                uiTranslationCache[myTargetLang] &&
+                uiTranslationCache[myTargetLang][key]
+            ) || master;
+        }
 
-            // Cek blokir SEBELUM apapun diproses (termasuk
-            // upload avatar), berdasarkan clientId ATAU IP.
-            // Dua-duanya dicek supaya reset localStorage
-            // (dapat clientId baru) saja tidak cukup untuk
-            // lolos blokir selama IP-nya sama.
-            if (
-                isIdentityBlocked(
-                    clientId,
-                    socket.clientIp
-                )
-            ) {
+        async function loadUITranslations(targetLang) {
 
-                socket.isBlocked = true;
-
-                socket.emit(
-                    'you_are_blocked'
-                );
-
-                console.log(
-                    'Profil ditolak (diblokir):',
-                    username,
-                    '| clientId:',
-                    clientId,
-                    '| IP:',
-                    socket.clientIp
-                );
-
+            if (targetLang === 'id') {
                 return;
             }
 
-            socket.isBlocked = false;
-
-            let avatar =
-                'https://via.placeholder.com/40';
-
-            if (
-                typeof profile.avatar === 'string' &&
-                profile.avatar.startsWith('data:')
-            ) {
-
-                // Foto baru diunggah (base64) -> simpan
-                // sebagai file, bukan disimpan mentah.
-                const saved =
-                    saveBase64File(
-                        profile.avatar,
-                        AVATAR_DIR,
-                        '/uploads/avatars',
-                        MAX_AVATAR_BYTES
-                    );
-
-                if (saved?.url) {
-
-                    avatar = saved.url;
-
-                } else if (
-                    saved?.error === 'too_large'
-                ) {
-
-                    socket.emit(
-                        'avatar_rejected',
-                        { reason: 'too_large' }
-                    );
-                }
-
-            } else if (
-                typeof profile.avatar === 'string' &&
-                profile.avatar.startsWith('/uploads/')
-            ) {
-
-                // Sudah berupa URL dari sesi sebelumnya
-                // (disimpan di localStorage browser).
-                avatar = profile.avatar;
-
-            } else if (
-                typeof profile.avatar === 'string' &&
-                profile.avatar.startsWith('http')
-            ) {
-
-                avatar = profile.avatar;
+            if (!uiTranslationCache[targetLang]) {
+                uiTranslationCache[targetLang] = {};
             }
 
-            onlineUsers[socket.id] = {
+            const cache =
+                uiTranslationCache[targetLang];
 
-                userId:
-                    clientId,
+            await Promise.all(
+                Object.entries(UI_TEXT_ID).map(
+                    async ([key, text]) => {
 
-                username:
-                    username,
+                        if (cache[key]) {
+                            return;
+                        }
 
-                avatar:
-                    avatar
-            };
+                        const translated =
+                            await translateText(
+                                text,
+                                targetLang,
+                                `ui:${key}`
+                            );
 
-            // Daftarkan/update ke registry anggota permanen
-            registeredMembers[clientId] = {
+                        cache[key] =
+                            translated || text;
+                    }
+                )
+            );
+        }
 
-                username:
-                    username,
+        function applyStaticUITranslations() {
 
-                avatar:
-                    avatar,
+            const setText =
+                (id, key) => {
+                    const el =
+                        document.getElementById(id);
+                    if (el) {
+                        el.textContent = t(key);
+                    }
+                };
 
-                firstSeen:
-                    registeredMembers[clientId]?.firstSeen ||
-                    Date.now(),
+            setText('pageTitle', 'pageTitle');
+            setText('nameLabel', 'nameLabel');
+            setText('avatarChangeLabel', 'avatarChangeLabel');
+            setText('saveBtn', 'saveBtn');
+            setText('backBtn', 'backBtn');
 
-                lastSeen:
-                    Date.now(),
+            const usernameInput =
+                document.getElementById('usernameInput');
+            if (usernameInput) {
+                usernameInput.placeholder =
+                    t('namePlaceholder');
+            }
 
-                lastIp:
-                    socket.clientIp || null
-            };
+            const langSelect =
+                document.getElementById('targetLang');
+            if (langSelect) {
+                langSelect.title = t('langSelectTitle');
+                langSelect.value = myTargetLang;
+            }
+        }
 
-            saveMembers();
+        async function changeLanguage(sourceEl) {
 
-            // Beritahu pengirim URL avatar final-nya,
-            // supaya browser bisa simpan URL itu (bukan
-            // base64) untuk sesi berikutnya. Sertakan juga
-            // status admin, supaya client tidak perlu
-            // menebak sendiri lewat cek nama.
-            socket.emit(
-                'profile_registered',
-                {
-                    avatar: avatar,
-                    isAdmin: username === ADMIN_USERNAME
-                }
+            myTargetLang =
+                sourceEl
+                    ? sourceEl.value
+                    : document.getElementById('targetLang').value;
+
+            localStorage.setItem(
+                'chat_target_lang',
+                myTargetLang
             );
 
-            // Kirim riwayat channel yang sedang aktif,
-            // karena tadi belum tentu terkirim kalau
-            // sebelumnya sempat dianggap berpotensi
-            // diblokir berbasis IP saja.
-            socket.emit(
-                'receive_history',
-                channels[socket.currentChannel] || []
-            );
+            await loadUITranslations(myTargetLang);
 
-            broadcastMemberStats();
+            applyStaticUITranslations();
+        }
 
-            console.log(
-                'Profile:',
-                username,
-                '| clientId:',
+
+        // clientId permanen (sama seperti yang dipakai index.html)
+        let clientId =
+            localStorage.getItem('chat_client_id');
+
+        if (!clientId) {
+
+            clientId =
+                (crypto.randomUUID
+                    ? crypto.randomUUID()
+                    : `${Date.now()}-${Math.random().toString(36).slice(2, 10)}`);
+
+            localStorage.setItem(
+                'chat_client_id',
                 clientId
             );
         }
-    );
 
-    // ========================================================
-    // SWITCH CHANNEL
-    // ========================================================
+        let currentUsername =
+            localStorage.getItem('chat_username') || '';
 
-    socket.on(
-        'switch_channel',
-        (channel) => {
+        let currentAvatar =
+            localStorage.getItem('chat_avatar') ||
+            'https://via.placeholder.com/80';
 
-            if (
-                !validChannel(channel)
-            ) {
-                return;
+        let newAvatarData = null;
+
+        // Isi form dengan data yang tersimpan
+        document.getElementById(
+            'usernameInput'
+        ).value = currentUsername;
+
+        document.getElementById(
+            'avatarPreview'
+        ).src = currentAvatar;
+
+        // Terapkan bahasa yang sudah dipilih sebelumnya
+        // (disimpan dari index.html)
+        (async function initLanguage() {
+
+            const langSelect =
+                document.getElementById('targetLang');
+
+            if (langSelect) {
+                langSelect.value = myTargetLang;
             }
 
-            if (socket.isBlocked) {
+            await loadUITranslations(myTargetLang);
 
-                socket.emit(
-                    'you_are_blocked'
-                );
+            applyStaticUITranslations();
 
-                return;
-            }
+        })();
 
-            if (
-                socket.currentChannel ===
-                channel
-            ) {
 
-                socket.emit(
-                    'receive_history',
-                    channels[channel]
-                );
+        document.getElementById(
+            'avatarInput'
+        ).addEventListener(
+            'change',
+            function(e) {
 
-                return;
-            }
+                const file =
+                    e.target.files[0];
 
-            socket.leave(
-                `channel:${socket.currentChannel}`
-            );
+                if (!file) {
+                    return;
+                }
 
-            socket.currentChannel =
-                channel;
-
-            socket.join(
-                `channel:${channel}`
-            );
-
-            socket.emit(
-                'receive_history',
-                channels[channel]
-            );
-        }
-    );
-
-    // ========================================================
-    // SEND MESSAGE
-    // ========================================================
-
-    socket.on(
-        'send_message',
-        (data = {}) => {
-
-            const channel =
-                socket.currentChannel;
-
-            if (
-                !validChannel(channel)
-            ) {
-                return;
-            }
-
-            // Ditolak kalau user ini diblokir admin
-            if (socket.isBlocked) {
-
-                socket.emit(
-                    'message_rejected',
-                    { reason: 'blocked' }
-                );
-
-                return;
-            }
-
-            // ANTI-SPAM: batasi 1 pesan per 400ms per koneksi.
-            const now = Date.now();
-
-            if (
-                socket.lastMessageAt &&
-                now - socket.lastMessageAt < 400
-            ) {
-
-                return;
-            }
-
-            socket.lastMessageAt = now;
-
-            const profile =
-                onlineUsers[socket.id];
-
-            const sender =
-                profile?.username ||
-                'User';
-
-            const avatar =
-                profile?.avatar ||
-                'https://via.placeholder.com/40';
-
-            const replyTo =
-                data.replyTo ||
-                null;
-
-            // Pastikan reply memang ada
-            if (
-                replyTo &&
-                !channels[channel].some(
-                    m => m.id === replyTo
-                )
-            ) {
-                return;
-            }
-
-            // Simpan gambar sebagai file terpisah,
-            // bukan base64 mentah di chat-data.json.
-            let imageUrl = null;
-
-            if (
-                typeof data.image === 'string' &&
-                data.image.startsWith('data:')
-            ) {
-
-                const saved =
-                    saveBase64File(
-                        data.image,
-                        IMAGE_DIR,
-                        '/uploads/images',
-                        MAX_IMAGE_BYTES
-                    );
-
-                if (saved?.url) {
-
-                    imageUrl = saved.url;
-
-                } else if (
-                    saved?.error === 'too_large'
+                if (
+                    file.size > 1 * 1024 * 1024
                 ) {
 
-                    socket.emit(
-                        'message_rejected',
-                        { reason: 'image_too_large' }
+                    showStatus(
+                        t('avatarTooBigError'),
+                        'error'
                     );
 
-                    return;
-
-                } else {
-
-                    socket.emit(
-                        'message_rejected',
-                        { reason: 'invalid_image' }
-                    );
+                    e.target.value = '';
 
                     return;
                 }
+
+                const reader =
+                    new FileReader();
+
+                reader.onload =
+                    function(ev) {
+
+                        newAvatarData =
+                            ev.target.result;
+
+                        document.getElementById(
+                            'avatarPreview'
+                        ).src = newAvatarData;
+                    };
+
+                reader.readAsDataURL(file);
+            }
+        );
+
+
+        function showStatus(msg, type) {
+
+            const el =
+                document.getElementById(
+                    'statusMsg'
+                );
+
+            el.textContent = msg;
+            el.className = type || '';
+        }
+
+
+        function saveProfile() {
+
+            const newUsername =
+                document
+                    .getElementById(
+                        'usernameInput'
+                    )
+                    .value
+                    .trim();
+
+            if (!newUsername) {
+
+                showStatus(
+                    t('nameEmptyError'),
+                    'error'
+                );
+
+                return;
             }
 
-            const newMessage = {
+            showStatus(
+                t('savingStatus'),
+                ''
+            );
 
-                id:
-                    `${Date.now()}-${Math.random()
-                    .toString(36)
-                    .slice(2, 10)}`,
+            const payload = {
 
-                userId:
-                    socket.clientId || socket.userId,
-
-                sender:
-                    sender,
+                username:
+                    newUsername,
 
                 avatar:
-                    avatar,
+                    newAvatarData ||
+                    currentAvatar,
 
-                original:
-                    String(
-                        data.original || ''
-                    ).slice(0, 5000),
-
-                image:
-                    imageUrl,
-
-                replyTo:
-                    replyTo,
-
-                reactions:
-                    {},
-
-                edited:
-                    false
+                clientId:
+                    clientId
             };
 
-            if (
-                !newMessage.original &&
-                !newMessage.image
-            ) {
-                return;
-            }
-
-            channels[channel].push(
-                newMessage
-            );
-
-            // SIMPAN
-            saveChannels();
-
-            broadcastChannel(
-                channel
-            );
-        }
-    );
-
-    // ========================================================
-    // EDIT MESSAGE
-    // ========================================================
-
-    socket.on(
-        'edit_message',
-        (data = {}) => {
-
-            const list =
-                channels[
-                    socket.currentChannel
-                ];
-
-            const msg =
-                list?.find(
-                    m => m.id === data.id
-                );
-
-            if (!msg) {
-                return;
-            }
-
-            // Hanya pemilik
-            if (
-                msg.userId !==
-                (socket.clientId || socket.userId)
-            ) {
-
-                console.log(
-                    'Edit ditolak:',
-                    socket.id
-                );
-
-                return;
-            }
-
-            const newText =
-                String(
-                    data.newText || ''
-                )
-                .trim()
-                .slice(0, 5000);
-
-            if (!newText) {
-                return;
-            }
-
-            msg.original =
-                newText;
-
-            msg.edited =
-                true;
-
-            // SIMPAN
-            saveChannels();
-
-            broadcastChannel(
-                socket.currentChannel,
-                'message_edited'
-            );
-        }
-    );
-
-    // ========================================================
-    // DELETE MESSAGE
-    // ========================================================
-
-    socket.on(
-        'delete_message',
-        (id) => {
-
-            const list =
-                channels[
-                    socket.currentChannel
-                ];
-
-            if (!list) {
-                return;
-            }
-
-            const index =
-                list.findIndex(
-                    m => m.id === id
-                );
-
-            if (index < 0) {
-                return;
-            }
-
-            const msg =
-                list[index];
-
-            // Hanya pemilik
-            if (
-                msg.userId !==
-                (socket.clientId || socket.userId)
-            ) {
-
-                console.log(
-                    'Delete ditolak:',
-                    socket.id
-                );
-
-                return;
-            }
-
-            list.splice(
-                index,
-                1
-            );
-
-            // Hapus reply yang menunjuk
-            // ke pesan yang sudah dihapus
-            list.forEach(
-                m => {
-
-                    if (
-                        m.replyTo === id
-                    ) {
-                        m.replyTo = null;
-                    }
-
-                }
-            );
-
-            // SIMPAN
-            saveChannels();
-
-            broadcastChannel(
-                socket.currentChannel,
-                'message_deleted'
-            );
-        }
-    );
-
-    // ========================================================
-    // CLEAR ALL CHAT
-    // ========================================================
-
-    socket.on(
-        'clear_all_chat',
-        (payload = {}) => {
-
-            const profile =
-                onlineUsers[socket.id];
-
-            if (!profile) {
-                return;
-            }
-
-            // Hanya admin
-            if (
-                profile.username !==
-                ADMIN_USERNAME
-            ) {
-
-                console.log(
-                    'Clear chat ditolak (bukan admin):',
-                    profile.username
-                );
+            if (socket.connected) {
 
                 socket.emit(
-                    'clear_chat_denied'
-                );
-
-                return;
-            }
-
-            const passwordGiven =
-                typeof payload === 'string'
-                    ? payload
-                    : payload?.password;
-
-            if (
-                passwordGiven !==
-                ADMIN_PASSWORD
-            ) {
-
-                console.log(
-                    'Clear chat ditolak (password salah):',
-                    profile.username
-                );
-
-                socket.emit(
-                    'clear_chat_denied'
-                );
-
-                return;
-            }
-
-            const channel =
-                socket.currentChannel;
-
-            if (
-                !validChannel(channel)
-            ) {
-                return;
-            }
-
-            channels[channel] =
-                [];
-
-            // SIMPAN
-            saveChannels();
-
-            broadcastChannel(
-                channel
-            );
-
-            console.log(
-                'CHAT DIHAPUS ADMIN:',
-                profile.username,
-                channel
-            );
-        }
-    );
-
-    // ========================================================
-    // BLOKIR / BUKA BLOKIR USER (admin only)
-    // ========================================================
-
-    socket.on(
-        'block_user',
-        (payload = {}) => {
-
-            const profile =
-                onlineUsers[socket.id];
-
-            if (
-                !profile ||
-                profile.username !== ADMIN_USERNAME
-            ) {
-
-                socket.emit(
-                    'clear_chat_denied'
-                );
-
-                return;
-            }
-
-            if (
-                payload.password !==
-                ADMIN_PASSWORD
-            ) {
-
-                socket.emit(
-                    'clear_chat_denied'
-                );
-
-                return;
-            }
-
-            const targetUserId =
-                String(
-                    payload.targetUserId || ''
-                );
-
-            if (!targetUserId) {
-                return;
-            }
-
-            if (
-                targetUserId === socket.clientId
-            ) {
-
-                // Admin tidak bisa blokir diri sendiri
-                return;
-            }
-
-            const targetUsername =
-                String(
-                    payload.targetUsername || 'User'
-                ).slice(0, 50);
-
-            // Ambil IP terakhir yang diketahui dari target,
-            // baik dia sedang online maupun tidak, supaya
-            // blokir tetap efektif walau dia reset clientId
-            // (selama IP-nya belum ganti).
-            const targetIp =
-                registeredMembers[targetUserId]?.lastIp ||
-                null;
-
-            blockIdentity(
-                targetUserId,
-                targetIp,
-                targetUsername
-            );
-
-            // Kalau target sedang online, putus akses
-            // chat-nya seketika.
-            for (
-                const sid
-                of Object.keys(onlineUsers)
-            ) {
-
-                if (
-                    onlineUsers[sid].userId ===
-                    targetUserId
-                ) {
-
-                    const targetSocket =
-                        io.sockets.sockets.get(sid);
-
-                    if (targetSocket) {
-
-                        targetSocket.isBlocked = true;
-
-                        targetSocket.emit(
-                            'you_are_blocked'
-                        );
-                    }
-                }
-            }
-
-            // Refresh status blokir di semua client
-            // (termasuk dialog Anggota admin).
-            broadcastMemberStats();
-
-            console.log(
-                'USER DIBLOKIR ADMIN:',
-                targetUsername,
-                targetUserId,
-                '| IP:',
-                targetIp
-            );
-        }
-    );
-
-    socket.on(
-        'unblock_user',
-        (payload = {}) => {
-
-            const profile =
-                onlineUsers[socket.id];
-
-            if (
-                !profile ||
-                profile.username !== ADMIN_USERNAME
-            ) {
-
-                socket.emit(
-                    'clear_chat_denied'
-                );
-
-                return;
-            }
-
-            if (
-                payload.password !==
-                ADMIN_PASSWORD
-            ) {
-
-                socket.emit(
-                    'clear_chat_denied'
-                );
-
-                return;
-            }
-
-            const targetUserId =
-                String(
-                    payload.targetUserId || ''
-                );
-
-            unblockIdentity(
-                targetUserId
-            );
-
-            for (
-                const sid
-                of Object.keys(onlineUsers)
-            ) {
-
-                if (
-                    onlineUsers[sid].userId ===
-                    targetUserId
-                ) {
-
-                    const targetSocket =
-                        io.sockets.sockets.get(sid);
-
-                    if (targetSocket) {
-
-                        targetSocket.isBlocked = false;
-                    }
-                }
-            }
-
-            // Refresh status blokir di semua client
-            broadcastMemberStats();
-
-            console.log(
-                'USER DIBUKA BLOKIRNYA:',
-                targetUserId
-            );
-        }
-    );
-
-    // ========================================================
-    // REACTION
-    // ========================================================
-
-    socket.on(
-        'add_reaction',
-        ({ id, emoji } = {}) => {
-
-            const list =
-                channels[
-                    socket.currentChannel
-                ];
-
-            const msg =
-                list?.find(
-                    m => m.id === id
-                );
-
-            const user =
-                onlineUsers[socket.id];
-
-            if (
-                !msg ||
-                !user ||
-                typeof emoji !== 'string' ||
-                emoji.length > 10
-            ) {
-                return;
-            }
-
-            if (!msg.reactions) {
-                msg.reactions = {};
-            }
-
-            if (
-                !msg.reactions[emoji]
-            ) {
-                msg.reactions[emoji] =
-                    [];
-            }
-
-            const users =
-                msg.reactions[emoji];
-
-            const pos =
-                users.indexOf(
-                    user.username
-                );
-
-            if (pos >= 0) {
-
-                users.splice(
-                    pos,
-                    1
+                    'set_user_profile',
+                    payload
                 );
 
             } else {
 
-                users.push(
-                    user.username
+                socket.once(
+                    'connect',
+                    function() {
+
+                        socket.emit(
+                            'set_user_profile',
+                            payload
+                        );
+                    }
                 );
             }
-
-            if (
-                users.length === 0
-            ) {
-
-                delete msg.reactions[
-                    emoji
-                ];
-            }
-
-            // SIMPAN
-            saveChannels();
-
-            broadcastChannel(
-                socket.currentChannel,
-                'reaction_updated'
-            );
         }
-    );
 
-    // ========================================================
-    // TYPING
-    // ========================================================
 
-    socket.on(
-        'typing',
-        (username) => {
+        socket.on(
+            'profile_registered',
+            function(payload) {
 
-            socket
-                .to(
-                    `channel:${socket.currentChannel}`
-                )
-                .emit(
-                    'display_typing',
-                    username
+                const finalAvatar =
+                    payload?.avatar ||
+                    newAvatarData ||
+                    currentAvatar;
+
+                const finalUsername =
+                    document
+                        .getElementById(
+                            'usernameInput'
+                        )
+                        .value
+                        .trim();
+
+                localStorage.setItem(
+                    'chat_username',
+                    finalUsername
                 );
-        }
-    );
 
-    socket.on(
-        'stop_typing',
-        () => {
-
-            socket
-                .to(
-                    `channel:${socket.currentChannel}`
-                )
-                .emit(
-                    'hide_typing'
+                localStorage.setItem(
+                    'chat_avatar',
+                    finalAvatar
                 );
-        }
-    );
 
-    // ========================================================
-    // DISCONNECT
-    // ========================================================
+                showStatus(
+                    t('savedStatus'),
+                    'success'
+                );
 
-    socket.on(
-        'disconnect',
-        () => {
+                setTimeout(
+                    function() {
 
-            const profile =
-                onlineUsers[socket.id];
-
-            if (profile) {
-
-                console.log(
-                    'User terputus:',
-                    profile.username
+                        window.location.href =
+                            'index.html';
+                    },
+                    900
                 );
             }
-
-            delete onlineUsers[
-                socket.id
-            ];
-
-            broadcastMemberStats();
-        }
-    );
-});
-
-// ============================================================
-// START SERVER
-// ============================================================
-
-const PORT =
-    process.env.PORT || 3000;
-
-http.listen(
-    PORT,
-    () => {
-
-        console.log(
-            `Server Node.js berjalan di port ${PORT}`
         );
 
-        console.log(
-            'Database chat:',
-            DATA_FILE
+
+        socket.on(
+            'avatar_rejected',
+            function() {
+
+                showStatus(
+                    t('avatarRejectedError'),
+                    'error'
+                );
+            }
         );
-    }
-);
+
+
+        socket.on(
+            'you_are_blocked',
+            function() {
+
+                showStatus(
+                    t('blockedError'),
+                    'error'
+                );
+            }
+        );
+
+    </script>
+
+</body>
+</html>
