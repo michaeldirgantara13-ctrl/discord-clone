@@ -277,9 +277,6 @@ const onlineUsers = {};
 // ============================================================
 
 const VOICE_CHANNEL_DEFS = [
-    { id: 'voice-umum', name: 'Umum' },
-    { id: 'voice-gaming', name: 'Gaming' },
-    { id: 'voice-musik', name: 'Musik' },
     { id: 'voice-room', name: 'Voice Room', inviteOnly: true }
 ];
 
