@@ -1573,17 +1573,25 @@
 
 
         /* =========================
-           LINKIFY
+           LINKIFY (YOUTUBE EMBED & LINKS)
            ========================= */
 
         function linkify(text) {
+            const escaped = escapeHtml(text);
+            
+            // Regex untuk mendeteksi link YouTube (biasa / youtu.be / shorts)
+            const youtubeRegex = /(?:https?:\/\/)?(?:www\.)?(?:youtube\.com\/(?:[^\/\n\s]+\/\S+\/|(?:v|e(?:mbed)?)\/|\S*?[?&]v=)|youtu\.be\/)([a-zA-Z0-9_-]{11})/g;
+            
+            // Ubah link YouTube menjadi embedded iframe
+            let processed = escaped.replace(youtubeRegex, function(match, videoId) {
+                return `<div style="margin-top: 8px; max-width: 100%;">
+                            <iframe width="100%" height="200" src="https://www.youtube.com/embed/${videoId}" frameborder="0" allowfullscreen style="border-radius: 8px;"></iframe>
+                        </div>`;
+            });
 
-            const escaped =
-                escapeHtml(text);
-
-            return escaped.replace(
+            // Ubah sisa link biasa menjadi tautan teks
+            return processed.replace(
                 /(\b(https?|ftp|file):\/\/[-A-Z0-9+&@#\/%?=~_|!:,.;]*[-A-Z0-9+&@#\/%=~_|])/ig,
-
                 '<a href="$1" target="_blank" rel="noopener noreferrer" style="color:#00b0f4;text-decoration:underline;">$1</a>'
             );
         }
@@ -4031,7 +4039,6 @@
                     'memberDialog'
                 ).style.display = 'none';
 
-                // Diperbaiki: Menggunakan blocked-screen sesuai ID elemen HTML
                 document.getElementById(
                     'blocked-screen'
                 ).style.display = 'flex';
