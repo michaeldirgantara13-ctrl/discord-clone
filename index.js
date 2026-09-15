@@ -5,7 +5,6 @@ const io = require('socket.io')(http);
 const path = require('path');
 const fs = require('fs');
 const crypto = require('crypto');
-const webpush = require('web-push'); // <-- TAMBAHAN UNTUK PUSH NOTIFICATION
 
 app.use(express.static(__dirname));
 
@@ -14,29 +13,23 @@ app.get('/', (req, res) => {
 });
 
 // ============================================================
-// WEB PUSH CONFIGURATION
-// ============================================================
-const vapidKeys = webpush.generateVAPIDKeys();
-const PUBLIC_VAPID_KEY = process.env.VAPID_PUBLIC_KEY || vapidKeys.publicKey;
-const PRIVATE_VAPID_KEY = process.env.VAPID_PRIVATE_KEY || vapidKeys.privateKey;
-
-webpush.setVapidDetails(
-    'mailto:admin@example.com',
-    PUBLIC_VAPID_KEY,
-    PRIVATE_VAPID_KEY
-);
-
-const pushSubscriptions = {};
-
-// ============================================================
 // LOKASI DATA PERMANEN
 // ============================================================
+//
+// Kalau kamu sudah pasang Railway Volume, Railway otomatis
+// menyediakan environment variable RAILWAY_VOLUME_MOUNT_PATH
+// yang menunjuk ke folder permanen tersebut. Kalau belum ada
+// Volume, data akan tetap tersimpan di folder project seperti
+// biasa, tapi BISA HILANG setiap kali Railway redeploy/restart.
+
 const DATA_DIR =
     process.env.RAILWAY_VOLUME_MOUNT_PATH ||
     __dirname;
 
 function ensureDir(dir) {
+
     if (!fs.existsSync(dir)) {
+
         fs.mkdirSync(
             dir,
             { recursive: true }
@@ -53,8 +46,10 @@ const DATA_FILE =
     );
 
 // ============================================================
-// FOLDER UPLOAD GAMBAR
+// FOLDER UPLOAD GAMBAR (terpisah dari chat-data.json,
+// supaya file data tidak membengkak oleh base64)
 // ============================================================
+
 const UPLOAD_DIR =
     path.join(DATA_DIR, 'uploads');
 
@@ -76,12 +71,16 @@ app.use(
 const MAX_AVATAR_BYTES = 1 * 1024 * 1024;   // 1MB
 const MAX_IMAGE_BYTES = 4 * 1024 * 1024;    // 4MB
 
+// Simpan data URL base64 (data:image/...;base64,....) sebagai
+// file di disk. Nama file dari hash isinya, jadi gambar yang
+// sama tidak disimpan berkali-kali (hemat tempat).
 function saveBase64File(
     dataUrl,
     dir,
     urlPrefix,
     maxBytes
 ) {
+
     if (typeof dataUrl !== 'string') {
         return null;
     }
@@ -103,16 +102,20 @@ function saveBase64File(
     let buffer;
 
     try {
+
         buffer =
             Buffer.from(
                 match[2],
                 'base64'
             );
+
     } catch (e) {
+
         return null;
     }
 
     if (buffer.length > maxBytes) {
+
         return { error: 'too_large' };
     }
 
@@ -129,6 +132,7 @@ function saveBase64File(
         path.join(dir, filename);
 
     if (!fs.existsSync(filePath)) {
+
         fs.writeFileSync(
             filePath,
             buffer
@@ -143,6 +147,7 @@ function saveBase64File(
 // ============================================================
 // DEFAULT DATA
 // ============================================================
+
 const DEFAULT_CHANNELS = {
     umum: [],
     gaming: [],
@@ -152,9 +157,13 @@ const DEFAULT_CHANNELS = {
 // ============================================================
 // LOAD DATA
 // ============================================================
+
 function loadChannels() {
+
     try {
+
         if (!fs.existsSync(DATA_FILE)) {
+
             fs.writeFileSync(
                 DATA_FILE,
                 JSON.stringify(
@@ -185,6 +194,7 @@ function loadChannels() {
         const data =
             JSON.parse(raw);
 
+        // Pastikan semua channel tetap ada
         return {
             umum: Array.isArray(data.umum)
                 ? data.umum
@@ -200,6 +210,7 @@ function loadChannels() {
         };
 
     } catch (error) {
+
         console.error(
             'Gagal membaca chat-data.json:',
             error
@@ -216,8 +227,11 @@ function loadChannels() {
 // ============================================================
 // SAVE DATA
 // ============================================================
+
 function saveChannels() {
+
     try {
+
         const tempFile =
             DATA_FILE + '.tmp';
 
@@ -237,6 +251,7 @@ function saveChannels() {
         );
 
     } catch (error) {
+
         console.error(
             'Gagal menyimpan chat:',
             error
@@ -244,24 +259,44 @@ function saveChannels() {
     }
 }
 
+// ============================================================
+// CHANNEL DATA
+// ============================================================
+
 const channels = loadChannels();
+
+// ============================================================
+// ONLINE USERS (sesi aktif saat ini)
+// ============================================================
+
 const onlineUsers = {};
 
 // ============================================================
-// VOICE CHANNEL
+// VOICE CHANNEL (state sesi aktif, tidak disimpan ke disk -
+// sama seperti Discord, presence voice tidak perlu permanen)
 // ============================================================
+
 const VOICE_CHANNEL_DEFS = [
     { id: 'voice-room', name: 'Voice Room', inviteOnly: true }
 ];
 
+// channelId -> true kalau channel tsb butuh undangan admin
+// untuk bisa dimasuki (selain admin sendiri, yang selalu bebas
+// masuk ke channel undangannya sendiri).
 const INVITE_ONLY_VOICE_CHANNELS = new Set(
     VOICE_CHANNEL_DEFS
         .filter(def => def.inviteOnly)
         .map(def => def.id)
 );
 
+// clientId -> true, undangan sekali pakai ke voice channel
+// khusus undangan (habis dipakai sekali join / ditolak /
+// kedaluwarsa).
 const voiceRoomInvites = new Set();
-const VOICE_INVITE_EXPIRY_MS = 2 * 60 * 1000;
+
+const VOICE_INVITE_EXPIRY_MS = 2 * 60 * 1000; // 2 menit
+
+// { [channelId]: { [socketId]: { userId, username, avatar, muted } } }
 const voiceChannels = {};
 
 VOICE_CHANNEL_DEFS.forEach(function(def) {
@@ -279,15 +314,18 @@ function isValidVoiceChannel(channelId) {
 }
 
 function buildVoiceState() {
+
     const state = {};
 
     Object.keys(voiceChannels).forEach(
         function(channelId) {
+
             state[channelId] =
                 Object.entries(
                     voiceChannels[channelId]
                 ).map(
                     function([socketId, info]) {
+
                         return {
                             socketId: socketId,
                             userId: info.userId,
@@ -304,13 +342,18 @@ function buildVoiceState() {
 }
 
 function broadcastVoiceState() {
+
     io.emit(
         'voice_state',
         buildVoiceState()
     );
 }
 
+// Keluarkan socket dari voice channel manapun yang sedang
+// ditempatinya (dipanggil saat pindah channel, leave manual,
+// atau disconnect).
 function removeFromVoiceChannel(socket) {
+
     const channelId =
         socket.voiceChannel;
 
@@ -340,8 +383,9 @@ function removeFromVoiceChannel(socket) {
 }
 
 // ============================================================
-// REGISTRY ANGGOTA
+// REGISTRY ANGGOTA (permanen, untuk hitung total anggota)
 // ============================================================
+
 const MEMBERS_FILE =
     path.join(
         DATA_DIR,
@@ -349,10 +393,13 @@ const MEMBERS_FILE =
     );
 
 function loadMembers() {
+
     try {
+
         if (
             fs.existsSync(MEMBERS_FILE)
         ) {
+
             return JSON.parse(
                 fs.readFileSync(
                     MEMBERS_FILE,
@@ -360,7 +407,9 @@ function loadMembers() {
                 )
             );
         }
+
     } catch (e) {
+
         console.error(
             'Gagal load members:',
             e
@@ -371,7 +420,9 @@ function loadMembers() {
 }
 
 function saveMembers() {
+
     try {
+
         fs.writeFileSync(
             MEMBERS_FILE,
             JSON.stringify(
@@ -380,7 +431,9 @@ function saveMembers() {
                 2
             )
         );
+
     } catch (e) {
+
         console.error(
             'Gagal simpan members:',
             e
@@ -388,12 +441,14 @@ function saveMembers() {
     }
 }
 
+// key = clientId permanen -> { username, avatar, firstSeen, lastSeen }
 const registeredMembers =
     loadMembers();
 
 // ============================================================
-// DAFTAR BLOKIR
+// DAFTAR BLOKIR (permanen)
 // ============================================================
+
 const BLOCKED_FILE =
     path.join(
         DATA_DIR,
@@ -401,10 +456,13 @@ const BLOCKED_FILE =
     );
 
 function loadBlocked() {
+
     try {
+
         if (
             fs.existsSync(BLOCKED_FILE)
         ) {
+
             const parsed =
                 JSON.parse(
                     fs.readFileSync(
@@ -413,11 +471,15 @@ function loadBlocked() {
                     )
                 );
 
+            // Migrasi dari format lama (flat object
+            // clientId -> info) ke format baru
+            // { byClientId, byIp }.
             if (
                 parsed &&
                 !parsed.byClientId &&
                 !parsed.byIp
             ) {
+
                 return {
                     byClientId: parsed,
                     byIp: {}
@@ -431,7 +493,9 @@ function loadBlocked() {
                     parsed.byIp || {}
             };
         }
+
     } catch (e) {
+
         console.error(
             'Gagal load blocked:',
             e
@@ -445,7 +509,9 @@ function loadBlocked() {
 }
 
 function saveBlocked() {
+
     try {
+
         fs.writeFileSync(
             BLOCKED_FILE,
             JSON.stringify(
@@ -454,7 +520,9 @@ function saveBlocked() {
                 2
             )
         );
+
     } catch (e) {
+
         console.error(
             'Gagal simpan blocked:',
             e
@@ -462,6 +530,8 @@ function saveBlocked() {
     }
 }
 
+// { byClientId: { clientId -> {username, ip, blockedAt} },
+//   byIp: { ip -> {username, clientId, blockedAt} } }
 const blockedData =
     loadBlocked();
 
@@ -469,6 +539,7 @@ function isIdentityBlocked(
     clientId,
     ip
 ) {
+
     return Boolean(
         (
             clientId &&
@@ -486,7 +557,9 @@ function blockIdentity(
     ip,
     username
 ) {
+
     blockedData.byClientId[clientId] = {
+
         username:
             username,
 
@@ -498,7 +571,9 @@ function blockIdentity(
     };
 
     if (ip) {
+
         blockedData.byIp[ip] = {
+
             username:
                 username,
 
@@ -514,10 +589,12 @@ function blockIdentity(
 }
 
 function unblockIdentity(clientId) {
+
     const entry =
         blockedData.byClientId[clientId];
 
     if (entry?.ip) {
+
         delete blockedData.byIp[
             entry.ip
         ];
@@ -531,10 +608,12 @@ function unblockIdentity(clientId) {
 }
 
 function buildFullMemberList() {
+
     const onlineByClientId = {};
 
     Object.values(onlineUsers).forEach(
         function(u) {
+
             onlineByClientId[u.userId] = u;
         }
     );
@@ -543,6 +622,7 @@ function buildFullMemberList() {
         Object.entries(registeredMembers)
             .map(
                 function([clientId, info]) {
+
                     const onlineInfo =
                         onlineByClientId[clientId];
 
@@ -573,7 +653,9 @@ function buildFullMemberList() {
 
     list.sort(
         function(a, b) {
+
             if (a.online !== b.online) {
+
                 return a.online ? -1 : 1;
             }
 
@@ -587,6 +669,7 @@ function buildFullMemberList() {
 }
 
 function broadcastMemberStats() {
+
     const onlineClientIds =
         new Set(
             Object.values(onlineUsers)
@@ -616,10 +699,15 @@ function broadcastMemberStats() {
 // ============================================================
 // ADMIN
 // ============================================================
+
+// Bisa diganti lewat environment variable ADMIN_USERNAME
+// di Railway (tab Variables). Kalau tidak diset, defaultnya "Admin".
 const ADMIN_USERNAME =
     process.env.ADMIN_USERNAME ||
     'Admin';
 
+// PENTING: ganti ini lewat environment variable ADMIN_PASSWORD
+// di Railway (tab Variables), jangan andalkan nilai default ini.
 const ADMIN_PASSWORD =
     process.env.ADMIN_PASSWORD ||
     'ganti-password-ini';
@@ -627,7 +715,9 @@ const ADMIN_PASSWORD =
 // ============================================================
 // HELPER
 // ============================================================
+
 function validChannel(channel) {
+
     return (
         typeof channel === 'string' &&
         Object.prototype.hasOwnProperty.call(
@@ -641,6 +731,7 @@ function broadcastChannel(
     channel,
     event = 'receive_history'
 ) {
+
     if (!validChannel(channel)) {
         return;
     }
@@ -656,10 +747,16 @@ function broadcastChannel(
 // ============================================================
 // SOCKET CONNECTION
 // ============================================================
+
 io.on('connection', (socket) => {
+
     socket.currentChannel = 'umum';
+
+    // ID sementara (fallback sebelum clientId permanen diterima)
     socket.userId = socket.id;
 
+    // Deteksi alamat IP (dukung app di belakang proxy Railway
+    // yang meneruskan header x-forwarded-for).
     const forwardedFor =
         socket.handshake.headers['x-forwarded-for'];
 
@@ -674,6 +771,8 @@ io.on('connection', (socket) => {
     socket.clientIp =
         rawIp.replace('::ffff:', '');
 
+    // Cek blokir berbasis IP dari awal, sebelum profil
+    // apapun didaftarkan (menutup celah "buat akun baru").
     socket.isBlocked =
         isIdentityBlocked(
             null,
@@ -682,27 +781,32 @@ io.on('connection', (socket) => {
 
     socket.join('channel:umum');
 
-    // <-- TAMBAHAN KIRIM KUNCI VAPID & MENANGKAP SUBSCRIPTION PUSH
-    socket.emit('vapid_public_key', PUBLIC_VAPID_KEY);
-
-    socket.on('subscribe_push', (subscription) => {
-        const userId = socket.clientId || socket.userId;
-        if (userId && subscription) {
-            pushSubscriptions[userId] = subscription;
-        }
-    });
+    console.log(
+        'User terhubung:',
+        socket.id,
+        '| IP:',
+        socket.clientIp,
+        socket.isBlocked ? '(DIBLOKIR)' : ''
+    );
 
     if (socket.isBlocked) {
+
         socket.emit(
             'you_are_blocked'
         );
+
     } else {
+
+        // Kirim history channel umum
         socket.emit(
             'receive_history',
             channels.umum
         );
     }
 
+    // Kirim juga daftar anggota (semua + status online)
+    // saat ini, supaya tidak sempat kelihatan 0 kalau
+    // ada delay saat registrasi profil.
     {
         const onlineClientIds =
             new Set(
@@ -730,6 +834,8 @@ io.on('connection', (socket) => {
         );
     }
 
+    // Kirim juga state voice channel saat ini, supaya
+    // tampilan langsung tahu siapa saja yang sedang di voice.
     socket.emit(
         'voice_state',
         buildVoiceState()
@@ -738,9 +844,11 @@ io.on('connection', (socket) => {
     // ========================================================
     // SET USER PROFILE
     // ========================================================
+
     socket.on(
         'set_user_profile',
         (profile = {}) => {
+
             const username =
                 String(
                     profile.username || 'User'
@@ -748,6 +856,10 @@ io.on('connection', (socket) => {
                 .trim()
                 .slice(0, 50);
 
+            // clientId permanen dari localStorage browser.
+            // Ini yang dipakai untuk kepemilikan pesan,
+            // supaya tetap valid walau socket reconnect
+            // dan mendapat socket.id baru.
             const clientId =
                 typeof profile.clientId === 'string' &&
                 profile.clientId.trim()
@@ -757,16 +869,31 @@ io.on('connection', (socket) => {
             socket.clientId = clientId;
             socket.userId = clientId;
 
+            // Cek blokir SEBELUM apapun diproses (termasuk
+            // upload avatar), berdasarkan clientId ATAU IP.
+            // Dua-duanya dicek supaya reset localStorage
+            // (dapat clientId baru) saja tidak cukup untuk
+            // lolos blokir selama IP-nya sama.
             if (
                 isIdentityBlocked(
                     clientId,
                     socket.clientIp
                 )
             ) {
+
                 socket.isBlocked = true;
 
                 socket.emit(
                     'you_are_blocked'
+                );
+
+                console.log(
+                    'Profil ditolak (diblokir):',
+                    username,
+                    '| clientId:',
+                    clientId,
+                    '| IP:',
+                    socket.clientIp
                 );
 
                 return;
@@ -781,6 +908,9 @@ io.on('connection', (socket) => {
                 typeof profile.avatar === 'string' &&
                 profile.avatar.startsWith('data:')
             ) {
+
+                // Foto baru diunggah (base64) -> simpan
+                // sebagai file, bukan disimpan mentah.
                 const saved =
                     saveBase64File(
                         profile.avatar,
@@ -790,28 +920,38 @@ io.on('connection', (socket) => {
                     );
 
                 if (saved?.url) {
+
                     avatar = saved.url;
+
                 } else if (
                     saved?.error === 'too_large'
                 ) {
+
                     socket.emit(
                         'avatar_rejected',
                         { reason: 'too_large' }
                     );
                 }
+
             } else if (
                 typeof profile.avatar === 'string' &&
                 profile.avatar.startsWith('/uploads/')
             ) {
+
+                // Sudah berupa URL dari sesi sebelumnya
+                // (disimpan di localStorage browser).
                 avatar = profile.avatar;
+
             } else if (
                 typeof profile.avatar === 'string' &&
                 profile.avatar.startsWith('http')
             ) {
+
                 avatar = profile.avatar;
             }
 
             onlineUsers[socket.id] = {
+
                 userId:
                     clientId,
 
@@ -822,7 +962,9 @@ io.on('connection', (socket) => {
                     avatar
             };
 
+            // Daftarkan/update ke registry anggota permanen
             registeredMembers[clientId] = {
+
                 username:
                     username,
 
@@ -842,6 +984,11 @@ io.on('connection', (socket) => {
 
             saveMembers();
 
+            // Beritahu pengirim URL avatar final-nya,
+            // supaya browser bisa simpan URL itu (bukan
+            // base64) untuk sesi berikutnya. Sertakan juga
+            // status admin, supaya client tidak perlu
+            // menebak sendiri lewat cek nama.
             socket.emit(
                 'profile_registered',
                 {
@@ -850,21 +997,34 @@ io.on('connection', (socket) => {
                 }
             );
 
+            // Kirim riwayat channel yang sedang aktif,
+            // karena tadi belum tentu terkirim kalau
+            // sebelumnya sempat dianggap berpotensi
+            // diblokir berbasis IP saja.
             socket.emit(
                 'receive_history',
                 channels[socket.currentChannel] || []
             );
 
             broadcastMemberStats();
+
+            console.log(
+                'Profile:',
+                username,
+                '| clientId:',
+                clientId
+            );
         }
     );
 
     // ========================================================
     // SWITCH CHANNEL
     // ========================================================
+
     socket.on(
         'switch_channel',
         (channel) => {
+
             if (
                 !validChannel(channel)
             ) {
@@ -872,6 +1032,7 @@ io.on('connection', (socket) => {
             }
 
             if (socket.isBlocked) {
+
                 socket.emit(
                     'you_are_blocked'
                 );
@@ -883,6 +1044,7 @@ io.on('connection', (socket) => {
                 socket.currentChannel ===
                 channel
             ) {
+
                 socket.emit(
                     'receive_history',
                     channels[channel]
@@ -912,9 +1074,11 @@ io.on('connection', (socket) => {
     // ========================================================
     // SEND MESSAGE
     // ========================================================
+
     socket.on(
         'send_message',
         (data = {}) => {
+
             const channel =
                 socket.currentChannel;
 
@@ -924,7 +1088,9 @@ io.on('connection', (socket) => {
                 return;
             }
 
+            // Ditolak kalau user ini diblokir admin
             if (socket.isBlocked) {
+
                 socket.emit(
                     'message_rejected',
                     { reason: 'blocked' }
@@ -933,12 +1099,14 @@ io.on('connection', (socket) => {
                 return;
             }
 
+            // ANTI-SPAM: batasi 1 pesan per 400ms per koneksi.
             const now = Date.now();
 
             if (
                 socket.lastMessageAt &&
                 now - socket.lastMessageAt < 400
             ) {
+
                 return;
             }
 
@@ -959,6 +1127,7 @@ io.on('connection', (socket) => {
                 data.replyTo ||
                 null;
 
+            // Pastikan reply memang ada
             if (
                 replyTo &&
                 !channels[channel].some(
@@ -968,12 +1137,15 @@ io.on('connection', (socket) => {
                 return;
             }
 
+            // Simpan gambar sebagai file terpisah,
+            // bukan base64 mentah di chat-data.json.
             let imageUrl = null;
 
             if (
                 typeof data.image === 'string' &&
                 data.image.startsWith('data:')
             ) {
+
                 const saved =
                     saveBase64File(
                         data.image,
@@ -983,17 +1155,22 @@ io.on('connection', (socket) => {
                     );
 
                 if (saved?.url) {
+
                     imageUrl = saved.url;
+
                 } else if (
                     saved?.error === 'too_large'
                 ) {
+
                     socket.emit(
                         'message_rejected',
                         { reason: 'image_too_large' }
                     );
 
                     return;
+
                 } else {
+
                     socket.emit(
                         'message_rejected',
                         { reason: 'invalid_image' }
@@ -1004,6 +1181,7 @@ io.on('connection', (socket) => {
             }
 
             const newMessage = {
+
                 id:
                     `${Date.now()}-${Math.random()
                     .toString(36)
@@ -1047,35 +1225,23 @@ io.on('connection', (socket) => {
                 newMessage
             );
 
+            // SIMPAN
             saveChannels();
 
             broadcastChannel(
                 channel
             );
-
-            // <-- TAMBAHAN TRIGGER WEB PUSH KE USER LAIN
-            Object.entries(onlineUsers).forEach(([sid, user]) => {
-                if (user.userId !== (socket.clientId || socket.userId)) {
-                    const sub = pushSubscriptions[user.userId];
-                    if (sub) {
-                        const payload = JSON.stringify({
-                            title: `${sender} di #${channel}`,
-                            body: newMessage.original || '[Mengirim Gambar]',
-                            url: '/'
-                        });
-                        webpush.sendNotification(sub, payload).catch(() => {});
-                    }
-                }
-            });
         }
     );
 
     // ========================================================
     // EDIT MESSAGE
     // ========================================================
+
     socket.on(
         'edit_message',
         (data = {}) => {
+
             const list =
                 channels[
                     socket.currentChannel
@@ -1090,10 +1256,17 @@ io.on('connection', (socket) => {
                 return;
             }
 
+            // Hanya pemilik
             if (
                 msg.userId !==
                 (socket.clientId || socket.userId)
             ) {
+
+                console.log(
+                    'Edit ditolak:',
+                    socket.id
+                );
+
                 return;
             }
 
@@ -1114,6 +1287,7 @@ io.on('connection', (socket) => {
             msg.edited =
                 true;
 
+            // SIMPAN
             saveChannels();
 
             broadcastChannel(
@@ -1126,9 +1300,11 @@ io.on('connection', (socket) => {
     // ========================================================
     // DELETE MESSAGE
     // ========================================================
+
     socket.on(
         'delete_message',
         (id) => {
+
             const list =
                 channels[
                     socket.currentChannel
@@ -1150,10 +1326,17 @@ io.on('connection', (socket) => {
             const msg =
                 list[index];
 
+            // Hanya pemilik
             if (
                 msg.userId !==
                 (socket.clientId || socket.userId)
             ) {
+
+                console.log(
+                    'Delete ditolak:',
+                    socket.id
+                );
+
                 return;
             }
 
@@ -1162,16 +1345,21 @@ io.on('connection', (socket) => {
                 1
             );
 
+            // Hapus reply yang menunjuk
+            // ke pesan yang sudah dihapus
             list.forEach(
                 m => {
+
                     if (
                         m.replyTo === id
                     ) {
                         m.replyTo = null;
                     }
+
                 }
             );
 
+            // SIMPAN
             saveChannels();
 
             broadcastChannel(
@@ -1184,9 +1372,11 @@ io.on('connection', (socket) => {
     // ========================================================
     // CLEAR ALL CHAT
     // ========================================================
+
     socket.on(
         'clear_all_chat',
         (payload = {}) => {
+
             const profile =
                 onlineUsers[socket.id];
 
@@ -1194,10 +1384,17 @@ io.on('connection', (socket) => {
                 return;
             }
 
+            // Hanya admin
             if (
                 profile.username !==
                 ADMIN_USERNAME
             ) {
+
+                console.log(
+                    'Clear chat ditolak (bukan admin):',
+                    profile.username
+                );
+
                 socket.emit(
                     'clear_chat_denied'
                 );
@@ -1214,6 +1411,12 @@ io.on('connection', (socket) => {
                 passwordGiven !==
                 ADMIN_PASSWORD
             ) {
+
+                console.log(
+                    'Clear chat ditolak (password salah):',
+                    profile.username
+                );
+
                 socket.emit(
                     'clear_chat_denied'
                 );
@@ -1233,20 +1436,29 @@ io.on('connection', (socket) => {
             channels[channel] =
                 [];
 
+            // SIMPAN
             saveChannels();
 
             broadcastChannel(
+                channel
+            );
+
+            console.log(
+                'CHAT DIHAPUS ADMIN:',
+                profile.username,
                 channel
             );
         }
     );
 
     // ========================================================
-    // BLOKIR / BUKA BLOKIR USER
+    // BLOKIR / BUKA BLOKIR USER (admin only)
     // ========================================================
+
     socket.on(
         'block_user',
         (payload = {}) => {
+
             const profile =
                 onlineUsers[socket.id];
 
@@ -1254,6 +1466,7 @@ io.on('connection', (socket) => {
                 !profile ||
                 profile.username !== ADMIN_USERNAME
             ) {
+
                 socket.emit(
                     'clear_chat_denied'
                 );
@@ -1265,6 +1478,7 @@ io.on('connection', (socket) => {
                 payload.password !==
                 ADMIN_PASSWORD
             ) {
+
                 socket.emit(
                     'clear_chat_denied'
                 );
@@ -1284,6 +1498,8 @@ io.on('connection', (socket) => {
             if (
                 targetUserId === socket.clientId
             ) {
+
+                // Admin tidak bisa blokir diri sendiri
                 return;
             }
 
@@ -1292,6 +1508,10 @@ io.on('connection', (socket) => {
                     payload.targetUsername || 'User'
                 ).slice(0, 50);
 
+            // Ambil IP terakhir yang diketahui dari target,
+            // baik dia sedang online maupun tidak, supaya
+            // blokir tetap efektif walau dia reset clientId
+            // (selama IP-nya belum ganti).
             const targetIp =
                 registeredMembers[targetUserId]?.lastIp ||
                 null;
@@ -1302,18 +1522,23 @@ io.on('connection', (socket) => {
                 targetUsername
             );
 
+            // Kalau target sedang online, putus akses
+            // chat-nya seketika.
             for (
                 const sid
                 of Object.keys(onlineUsers)
             ) {
+
                 if (
                     onlineUsers[sid].userId ===
                     targetUserId
                 ) {
+
                     const targetSocket =
                         io.sockets.sockets.get(sid);
 
                     if (targetSocket) {
+
                         targetSocket.isBlocked = true;
 
                         targetSocket.emit(
@@ -1323,13 +1548,24 @@ io.on('connection', (socket) => {
                 }
             }
 
+            // Refresh status blokir di semua client
+            // (termasuk dialog Anggota admin).
             broadcastMemberStats();
+
+            console.log(
+                'USER DIBLOKIR ADMIN:',
+                targetUsername,
+                targetUserId,
+                '| IP:',
+                targetIp
+            );
         }
     );
 
     socket.on(
         'unblock_user',
         (payload = {}) => {
+
             const profile =
                 onlineUsers[socket.id];
 
@@ -1337,6 +1573,7 @@ io.on('connection', (socket) => {
                 !profile ||
                 profile.username !== ADMIN_USERNAME
             ) {
+
                 socket.emit(
                     'clear_chat_denied'
                 );
@@ -1348,6 +1585,7 @@ io.on('connection', (socket) => {
                 payload.password !==
                 ADMIN_PASSWORD
             ) {
+
                 socket.emit(
                     'clear_chat_denied'
                 );
@@ -1368,29 +1606,40 @@ io.on('connection', (socket) => {
                 const sid
                 of Object.keys(onlineUsers)
             ) {
+
                 if (
                     onlineUsers[sid].userId ===
                     targetUserId
                 ) {
+
                     const targetSocket =
                         io.sockets.sockets.get(sid);
 
                     if (targetSocket) {
+
                         targetSocket.isBlocked = false;
                     }
                 }
             }
 
+            // Refresh status blokir di semua client
             broadcastMemberStats();
+
+            console.log(
+                'USER DIBUKA BLOKIRNYA:',
+                targetUserId
+            );
         }
     );
 
     // ========================================================
     // REACTION
     // ========================================================
+
     socket.on(
         'add_reaction',
         ({ id, emoji } = {}) => {
+
             const list =
                 channels[
                     socket.currentChannel
@@ -1433,11 +1682,14 @@ io.on('connection', (socket) => {
                 );
 
             if (pos >= 0) {
+
                 users.splice(
                     pos,
                     1
                 );
+
             } else {
+
                 users.push(
                     user.username
                 );
@@ -1446,11 +1698,13 @@ io.on('connection', (socket) => {
             if (
                 users.length === 0
             ) {
+
                 delete msg.reactions[
                     emoji
                 ];
             }
 
+            // SIMPAN
             saveChannels();
 
             broadcastChannel(
@@ -1463,9 +1717,11 @@ io.on('connection', (socket) => {
     // ========================================================
     // VOICE CHANNEL
     // ========================================================
+
     socket.on(
         'voice_join',
         (channelId) => {
+
             if (socket.isBlocked) {
                 return;
             }
@@ -1480,6 +1736,8 @@ io.on('connection', (socket) => {
                 onlineUsers[socket.id];
 
             if (!profile) {
+                // Belum registrasi profil, jangan izinkan
+                // join voice dulu.
                 return;
             }
 
@@ -1490,11 +1748,15 @@ io.on('connection', (socket) => {
             const isAdminUser =
                 profile.username === ADMIN_USERNAME;
 
+            // Channel undangan (mis. Voice Room): cuma admin
+            // (bebas) atau user yang sedang punya undangan
+            // valid yang boleh masuk.
             if (
                 INVITE_ONLY_VOICE_CHANNELS.has(channelId) &&
                 !isAdminUser &&
                 !voiceRoomInvites.has(userId)
             ) {
+
                 socket.emit(
                     'voice_join_denied',
                     { channelId: channelId }
@@ -1503,21 +1765,29 @@ io.on('connection', (socket) => {
                 return;
             }
 
+            // Undangan sekali pakai - habis dipakai begitu
+            // berhasil join.
             if (
                 INVITE_ONLY_VOICE_CHANNELS.has(channelId)
             ) {
                 voiceRoomInvites.delete(userId);
             }
 
+            // Cuma boleh di satu voice channel sekaligus,
+            // sama seperti Discord.
             if (socket.voiceChannel) {
                 removeFromVoiceChannel(socket);
             }
 
+            // Daftar peer yang SUDAH ada di channel ini
+            // sebelum socket ini join, supaya client tahu
+            // ke siapa saja dia harus mulai koneksi WebRTC.
             const existingPeers =
                 Object.entries(
                     voiceChannels[channelId]
                 ).map(
                     function([socketId, info]) {
+
                         return {
                             socketId: socketId,
                             userId: info.userId,
@@ -1550,12 +1820,20 @@ io.on('connection', (socket) => {
             );
 
             broadcastVoiceState();
+
+            console.log(
+                'Voice join:',
+                profile.username,
+                '->',
+                channelId
+            );
         }
     );
 
     socket.on(
         'voice_leave',
         () => {
+
             if (!socket.voiceChannel) {
                 return;
             }
@@ -1565,9 +1843,13 @@ io.on('connection', (socket) => {
         }
     );
 
+    // Relay sinyal WebRTC (offer/answer/ICE candidate) ke
+    // peer tujuan. Server tidak menyentuh isi audio sama
+    // sekali - audio mengalir langsung antar browser (P2P).
     socket.on(
         'voice_signal',
         (payload = {}) => {
+
             const targetSocketId =
                 payload.to;
 
@@ -1590,6 +1872,7 @@ io.on('connection', (socket) => {
     socket.on(
         'voice_mute',
         (muted) => {
+
             const channelId =
                 socket.voiceChannel;
 
@@ -1609,9 +1892,14 @@ io.on('connection', (socket) => {
         }
     );
 
+    // Admin mengundang user tertentu ke voice channel khusus
+    // undangan (Voice Room). Pakai password admin, sama seperti
+    // aksi admin lain (block/unblock/hapus chat), supaya nama
+    // "Admin" tidak bisa dipalsukan begitu saja dari client.
     socket.on(
         'voice_invite_user',
         (payload = {}) => {
+
             const profile =
                 onlineUsers[socket.id];
 
@@ -1652,6 +1940,8 @@ io.on('connection', (socket) => {
                 return;
             }
 
+            // Cari socket target yang sedang online
+            // (undangan cuma masuk akal untuk yang online).
             const targetSocketId =
                 Object.keys(onlineUsers).find(
                     sid =>
@@ -1665,6 +1955,8 @@ io.on('connection', (socket) => {
 
             voiceRoomInvites.add(targetUserId);
 
+            // Undangan otomatis kedaluwarsa kalau tidak
+            // dipakai, supaya tidak menumpuk selamanya.
             setTimeout(
                 function() {
                     voiceRoomInvites.delete(
@@ -1688,12 +1980,21 @@ io.on('connection', (socket) => {
                     by: profile.username
                 }
             );
+
+            console.log(
+                'Voice invite:',
+                profile.username,
+                '->',
+                targetUserId,
+                channelId
+            );
         }
     );
 
     socket.on(
         'voice_invite_decline',
         () => {
+
             const userId =
                 socket.clientId ||
                 socket.userId;
@@ -1705,9 +2006,11 @@ io.on('connection', (socket) => {
     // ========================================================
     // TYPING
     // ========================================================
+
     socket.on(
         'typing',
         (username) => {
+
             socket
                 .to(
                     `channel:${socket.currentChannel}`
@@ -1722,6 +2025,7 @@ io.on('connection', (socket) => {
     socket.on(
         'stop_typing',
         () => {
+
             socket
                 .to(
                     `channel:${socket.currentChannel}`
@@ -1735,9 +2039,22 @@ io.on('connection', (socket) => {
     // ========================================================
     // DISCONNECT
     // ========================================================
+
     socket.on(
         'disconnect',
         () => {
+
+            const profile =
+                onlineUsers[socket.id];
+
+            if (profile) {
+
+                console.log(
+                    'User terputus:',
+                    profile.username
+                );
+            }
+
             delete onlineUsers[
                 socket.id
             ];
@@ -1755,12 +2072,14 @@ io.on('connection', (socket) => {
 // ============================================================
 // START SERVER
 // ============================================================
+
 const PORT =
     process.env.PORT || 3000;
 
 http.listen(
     PORT,
     () => {
+
         console.log(
             `Server Node.js berjalan di port ${PORT}`
         );
